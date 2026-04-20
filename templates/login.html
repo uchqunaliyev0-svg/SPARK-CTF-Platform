@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARK CTF | Tizimga kirish</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #050505; color: #e6e6e6;
+            font-family: 'Fira Code', monospace;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
+            position: relative;
+        }
+
+        /* MATRIX FONI */
+        #matrix { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.35; }
+
+        /* FORMA CONTAINER */
+        #auth-container {
+            width: 350px; height: 460px; perspective: 1000px;
+            animation: fadeIn 1s ease-in; z-index: 1;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        #card {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        #card.flipped { transform: rotateY(180deg); }
+
+        .face {
+            width: 100%; height: 100%; position: absolute; backface-visibility: hidden;
+            background: rgba(15, 20, 25, 0.85); /* Yarim shaffof orqa fon */
+            backdrop-filter: blur(5px); /* Orqadagi matrixni sal xiralashtiradi */
+            border: 1px solid #30363d; border-radius: 8px;
+            padding: 35px 30px; display: flex; flex-direction: column; justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .face.back { transform: rotateY(180deg); }
+
+        /* LOGOTIP */
+        .branding { text-align: center; margin-bottom: 25px; font-size: 24px; letter-spacing: 2px; font-weight: bold;}
+        .branding span.spark { color: #ff3333; }
+        .branding span.ctf { color: #3366ff; }
+
+        h2 { text-align: center; color: #8b949e; margin-bottom: 20px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
+        
+        input {
+            width: 100%; padding: 12px; margin: 10px 0; background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #30363d; border-radius: 4px; color: #c9d1d9;
+            font-family: 'Fira Code', monospace; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: #58a6ff; }
+        
+        /* OQ FON (AUTOFILL) FIX */
+        input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 30px #0a0a0a inset !important;
+            -webkit-text-fill-color: #c9d1d9 !important;
+        }
+
+        button {
+            width: 100%; padding: 12px; margin-top: 25px; background: transparent;
+            border: 1px solid #8b949e; border-radius: 4px; color: #c9d1d9;
+            font-family: 'Fira Code', monospace; cursor: pointer; transition: 0.3s; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        button:hover { background: #30363d; color: #fff; border-color: #fff; }
+
+        .link { text-align: center; margin-top: 20px; cursor: pointer; color: #8b949e; font-size: 13px; text-decoration: underline; transition: 0.3s;}
+        .link:hover { color: #58a6ff; }
+        
+        /* FLASH XABARLAR UCHUN ANIMATSIYALAR */
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix"></canvas>
+    
+    <!-- FLASH XABARLAR -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-messages" style="position: absolute; top: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 100;">
+          {% for category, message in messages %}
+            <div style="padding: 15px 20px; margin-bottom: 10px; border-radius: 5px; color: white; background: {% if category == 'error' %}rgba(255, 0, 0, 0.7){% else %}rgba(0, 255, 0, 0.7){% endif %}; backdrop-filter: blur(5px); border: 1px solid {% if category == 'error' %}#ff3333{% else %}#00ff00{% endif %}; min-width: 300px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); animation: slideDown 0.5s ease-out, fadeOut 0.5s ease-in 4.5s forwards;">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div id="auth-container">
+        <div id="card">
+            
+            <div class="face front">
+                <div class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></div>
+                <h2>Ro'yxatdan o'tish</h2>
+                <form action="/register" method="POST">
+                    <input type="text" name="username" placeholder="Foydalanuvchi nomi" required>
+                    <input type="email" name="email" placeholder="Elektron pochta" required>
+                    <input type="password" name="password" placeholder="Parol" required>
+                    <button type="submit">Yaratish</button>
+                </form>
+                <div class="link" onclick="flipCard()">Tizimga kirish</div>
+            </div>
+
+            <div class="face back">
+                <div class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></div>
+                <h2>Tizimga kirish</h2>
+                <form action="/login" method="POST">
+                    <input type="text" name="username" placeholder="Foydalanuvchi nomi" required>
+                    <input type="password" name="password" placeholder="Parol" required>
+                    <button type="submit">Kirish</button>
+                </form>
+                <div class="link" onclick="flipCard()">Yangi hisob ochish</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 1. KARTANI AYLANTIRISH
+        function flipCard() { document.getElementById('card').classList.toggle('flipped'); }
+
+        // 2. MATRIX EFFEKTI
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Custom Matrix belgilari
+        const chars = '01'.split(''); // Haqiqiy klassik 0 va 1 lar
+        const drops = [];
+        for(let x = 0; x < canvas.width/15; x++) drops[x] = 1;
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0'; // Yashil rang
+            ctx.font = '15px Fira Code';
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * 15, drops[i] * 15);
+                if(drops[i] * 15 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 40);
+    </script>
+</body>
+</html>
