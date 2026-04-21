@@ -75,13 +75,7 @@ def register():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Hozircha oddiy qilib qo'yamiz, keyin shu yerni haqiqiy o'yin maydoniga aylantirasiz
-    return f"""
-        <h1 style='color: white; font-family: monospace; background: #050505; padding: 20px;'>
-            Xush kelibsiz, {current_user.username}! Ballingiz: {current_user.score} 
-            <br><a href='/logout' style='color: #ff3333;'>Chiqish</a>
-        </h1>
-    """
+    return render_template('dashboard.html')
 
 @app.route('/logout')
 @login_required
