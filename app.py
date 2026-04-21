@@ -1,5 +1,6 @@
 # app.py
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+import json
 from models import db, User, Challenge, Submission
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -88,7 +89,25 @@ def dashboard():
 def leaderboard():
     # Eng yuqori ball to'plagan foydalanuvchilar (kuchli 50 talik)
     top_users = User.query.order_by(User.score.desc()).limit(50).all()
-    return render_template('leaderboard.html', top_users=top_users)
+    
+    # Grafika uchun ma'lumotlar (Top 10)
+    chart_data = {}
+    for user in top_users[:10]:
+        subs = Submission.query.filter_by(user_id=user.id).order_by(Submission.submitted_at).all()
+        user_points = 0
+        points_history = []
+        
+        for sub in subs:
+            user_points += sub.challenge.points
+            time_str = sub.submitted_at.isoformat()
+            points_history.append({"x": time_str, "y": user_points})
+            
+        if points_history:
+            # Boshlang'ich (0) nuqtani ham qo'shib qo'yamiz
+            # points_history.insert(0, {"x": user.created_at.isoformat(), "y": 0}) 
+            chart_data[user.username] = points_history
+            
+    return render_template('leaderboard.html', top_users=top_users, chart_data=json.dumps(chart_data))
 
 @app.route('/api/submit', methods=['POST'])
 @login_required
