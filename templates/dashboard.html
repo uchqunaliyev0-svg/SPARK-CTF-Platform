@@ -138,7 +138,7 @@
             margin-bottom: 5px;
             border-radius: 6px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -149,6 +149,11 @@
 
         .filter-item:hover {
             background-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .filter-item:active {
+            transform: translateX(5px) scale(0.98);
         }
 
         .filter-item.active {
@@ -156,6 +161,8 @@
             border-color: rgba(51, 102, 255, 0.3);
             color: var(--accent-hover);
             font-weight: 600;
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         .badge {
@@ -353,99 +360,35 @@
             </div>
 
             <!-- Task Skeletons -->
-            <div class="task-grid">
-                <!-- 1 -->
-                <div class="task-card">
-                    <div class="skel-header">
-                        <div class="skeleton-box skel-tag"></div>
-                        <div class="skeleton-box skel-diff"></div>
-                    </div>
-                    <div class="skeleton-box skel-title"></div>
-                    <div class="skeleton-box skel-desc1"></div>
-                    <div class="skeleton-box skel-desc2"></div>
-                    <div class="skel-footer">
-                        <div class="skeleton-box skel-points"></div>
-                        <div class="skeleton-box skel-btn"></div>
-                    </div>
-                </div>
-                
-                <!-- 2 -->
-                <div class="task-card">
-                    <div class="skel-header">
-                        <div class="skeleton-box skel-tag" style="width: 100px;"></div>
-                        <div class="skeleton-box skel-diff" style="width: 70px;"></div>
-                    </div>
-                    <div class="skeleton-box skel-title" style="width: 50%;"></div>
-                    <div class="skeleton-box skel-desc1"></div>
-                    <div class="skeleton-box skel-desc2" style="width: 90%;"></div>
-                    <div class="skel-footer">
-                        <div class="skeleton-box skel-points"></div>
-                        <div class="skeleton-box skel-btn"></div>
-                    </div>
-                </div>
-
-                <!-- 3 -->
-                <div class="task-card">
-                    <div class="skel-header">
-                        <div class="skeleton-box skel-tag"></div>
-                        <div class="skeleton-box skel-diff" style="width: 50px;"></div>
-                    </div>
-                    <div class="skeleton-box skel-title" style="width: 80%;"></div>
-                    <div class="skeleton-box skel-desc1"></div>
-                    <div class="skeleton-box skel-desc2" style="width: 60%;"></div>
-                    <div class="skel-footer">
-                        <div class="skeleton-box skel-points"></div>
-                        <div class="skeleton-box skel-btn"></div>
-                    </div>
-                </div>
-                
-                <!-- 4 -->
-                <div class="task-card">
-                    <div class="skel-header">
-                        <div class="skeleton-box skel-tag" style="width: 120px;"></div>
-                        <div class="skeleton-box skel-diff"></div>
-                    </div>
-                    <div class="skeleton-box skel-title" style="width: 65%;"></div>
-                    <div class="skeleton-box skel-desc1"></div>
-                    <div class="skeleton-box skel-desc2" style="width: 75%;"></div>
-                    <div class="skel-footer">
-                        <div class="skeleton-box skel-points"></div>
-                        <div class="skeleton-box skel-btn"></div>
-                    </div>
-                </div>
-                
-                 <!-- 5 -->
-                 <div class="task-card">
-                    <div class="skel-header">
-                        <div class="skeleton-box skel-tag" style="width: 90px;"></div>
-                        <div class="skeleton-box skel-diff" style="width: 55px;"></div>
-                    </div>
-                    <div class="skeleton-box skel-title" style="width: 60%;"></div>
-                    <div class="skeleton-box skel-desc1"></div>
-                    <div class="skeleton-box skel-desc2" style="width: 85%;"></div>
-                    <div class="skel-footer">
-                        <div class="skeleton-box skel-points"></div>
-                        <div class="skeleton-box skel-btn"></div>
-                    </div>
-                </div>
-                
-                 <!-- 6 -->
-                 <div class="task-card">
-                    <div class="skel-header">
-                        <div class="skeleton-box skel-tag"></div>
-                        <div class="skeleton-box skel-diff" style="width: 65px;"></div>
-                    </div>
-                    <div class="skeleton-box skel-title" style="width: 70%;"></div>
-                    <div class="skeleton-box skel-desc1"></div>
-                    <div class="skeleton-box skel-desc2" style="width: 50%;"></div>
-                    <div class="skel-footer">
-                        <div class="skeleton-box skel-points"></div>
-                        <div class="skeleton-box skel-btn"></div>
-                    </div>
-                </div>
+            <div class="task-grid" id="task-container">
+                <!-- Hozircha bo'sh. Masalalar backenddan shu yerga kelib tushadi -->
             </div>
         </main>
     </div>
 
+    <script>
+        // Kategoriya va qiyinlik tugmalarini "jonlantirish"
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterItems = document.querySelectorAll('.filter-item');
+            
+            filterItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Agar bu qidiruv oynasi bo'lsa hech nima qilmaymiz
+                    if(this.closest('.filter-section').querySelector('input')) return;
+                    
+                    // Xuddi shu ro'yxatdagi (ul) boshqa active klasslarni olib tashlaymiz
+                    const parentList = this.closest('.filter-list');
+                    if (parentList) {
+                        parentList.querySelectorAll('.filter-item').forEach(el => {
+                            el.classList.remove('active');
+                        });
+                    }
+                    
+                    // O'ziga active klassni beramiz
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
