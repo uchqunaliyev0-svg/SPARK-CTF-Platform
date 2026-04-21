@@ -1,7 +1,7 @@
 # app.py
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import json
-from models import db, User, Challenge, Submission
+from models import db, User, Challenge, Submission, UnlockedHint
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
@@ -82,7 +82,11 @@ def dashboard():
     solved_subs = Submission.query.filter_by(user_id=current_user.id).all()
     solved_ids = [sub.challenge_id for sub in solved_subs]
     
-    return render_template('dashboard.html', challenges=challenges, solved_ids=solved_ids)
+    # Ochilgan yordamlar ID lari
+    unlocked_hints = UnlockedHint.query.filter_by(user_id=current_user.id).all()
+    unlocked_hint_ids = [h.challenge_id for h in unlocked_hints]
+    
+    return render_template('dashboard.html', challenges=challenges, solved_ids=solved_ids, unlocked_hint_ids=unlocked_hint_ids)
 
 @app.route('/leaderboard')
 @login_required
@@ -142,6 +146,29 @@ def submit_flag():
     else:
         return jsonify({"status": "error", "message": "Noto'g'ri flag. Yana urinib ko'ring!"}), 400
 
+@app.route('/api/unlock_hint', methods=['POST'])
+@login_required
+def unlock_hint():
+    data = request.get_json()
+    challenge_id = data.get('challenge_id')
+    challenge = Challenge.query.get(challenge_id)
+    
+    if not challenge or not challenge.hint:
+        return jsonify({"status": "error", "message": "Yordam mavjud emas"})
+        
+    if challenge.id in [h.challenge_id for h in UnlockedHint.query.filter_by(user_id=current_user.id).all()]:
+        return jsonify({"status": "success", "hint": challenge.hint})
+        
+    if current_user.score < challenge.hint_cost:
+        return jsonify({"status": "error", "message": f"Yordamni ochish uchun {challenge.hint_cost} ball kerak! Sizda: {current_user.score} ball bor."})
+        
+    current_user.score -= challenge.hint_cost
+    new_unlock = UnlockedHint(user_id=current_user.id, challenge_id=challenge.id)
+    db.session.add(new_unlock)
+    db.session.commit()
+    
+    return jsonify({"status": "success", "hint": challenge.hint, "new_score": current_user.score})
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -162,6 +189,8 @@ def admin_panel():
         difficulty = request.form.get('difficulty')
         flag = request.form.get('flag')
         points = request.form.get('points')
+        hint = request.form.get('hint')
+        hint_cost = request.form.get('hint_cost', 0)
         
         new_challenge = Challenge(
             title=title,
@@ -169,7 +198,9 @@ def admin_panel():
             category=category,
             difficulty=difficulty,
             flag=flag,
-            points=int(points)
+            points=int(points),
+            hint=hint,
+            hint_cost=int(hint_cost) if hint_cost else 0
         )
         db.session.add(new_challenge)
         db.session.commit()
@@ -193,6 +224,46 @@ def delete_challenge(id):
     db.session.commit()
     flash("Masala o'chirildi!", "success")
     return redirect(url_for('admin_panel'))
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'update_profile':
+            username = request.form.get('username')
+            email = request.form.get('email')
+            
+            if username != current_user.username and User.query.filter_by(username=username).first():
+                flash("Bu foydalanuvchi nomi band!", "error")
+            elif email != current_user.email and User.query.filter_by(email=email).first():
+                flash("Bu email band!", "error")
+            else:
+                current_user.username = username
+                current_user.email = email
+                db.session.commit()
+                flash("Profil ma'lumotlari yangilandi!", "success")
+                
+        elif action == 'update_password':
+            current_pw = request.form.get('current_password')
+            new_pw = request.form.get('new_password')
+            
+            if bcrypt.check_password_hash(current_user.password, current_pw):
+                current_user.password = bcrypt.generate_password_hash(new_pw).decode('utf-8')
+                db.session.commit()
+                flash("Parol muvaffaqiyatli o'zgartirildi!", "success")
+            else:
+                flash("Hozirgi parol noto'g'ri!", "error")
+                
+        elif action == 'delete_account':
+            db.session.delete(current_user)
+            db.session.commit()
+            return redirect(url_for('home'))
+            
+        return redirect(url_for('settings'))
+        
+    return render_template('settings.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

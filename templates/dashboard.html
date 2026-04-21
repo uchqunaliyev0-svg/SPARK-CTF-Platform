@@ -276,6 +276,7 @@
         <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></a>
         <div class="user-nav">
             <a href="/leaderboard" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">🏆 Reyting</a>
+            <a href="/settings" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">⚙️ Sozlamalar</a>
             <div class="score-badge">{{ current_user.score }} pts</div>
             <div class="username">{{ current_user.username }}</div>
             <a href="/logout" class="logout-btn">Chiqish</a>
@@ -364,7 +365,7 @@
             <div class="task-grid" id="task-container">
                 {% if challenges %}
                     {% for challenge in challenges %}
-                        <div class="task-card" data-category="{{ challenge.category }}" data-difficulty="{{ challenge.difficulty }}" onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title|escape }}', '{{ challenge.description|escape }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {% if challenge.id in solved_ids %}true{% else %}false{% endif %})">
+                        <div class="task-card" data-category="{{ challenge.category }}" data-difficulty="{{ challenge.difficulty }}" onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title|escape }}', '{{ challenge.description|escape }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {% if challenge.id in solved_ids %}true{% else %}false{% endif %}, {% if challenge.hint %}{{ challenge.hint_cost }}{% else %}-1{% endif %}, {% if challenge.id in unlocked_hint_ids %}true{% else %}false{% endif %})">
                             <div class="skel-header" style="margin-bottom: 15px; display: flex; justify-content: space-between;">
                                 <span class="badge">{{ challenge.category }}</span>
                                 <span class="badge diff-{{ challenge.difficulty|lower }}" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);"><span class="diff-indicator diff-{{ challenge.difficulty|lower }}"></span>{{ challenge.difficulty }}</span>
@@ -403,8 +404,20 @@
             
             <h2 id="modalTitle" style="color: #fff; margin-bottom: 20px; font-size: 24px;"></h2>
             
-            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
                 <p id="modalDescription" style="color: var(--text-main); line-height: 1.6; white-space: pre-wrap; font-family: 'Inter', sans-serif;"></p>
+            </div>
+            
+            <div id="hintContainer" style="margin-bottom: 25px; display: none;">
+                <div id="hintButtonContainer">
+                    <button id="unlockHintBtn" onclick="unlockHint()" style="background: rgba(210, 153, 34, 0.1); color: #d29922; border: 1px solid #d29922; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; transition: 0.3s;" onmouseover="this.style.background='rgba(210, 153, 34, 0.3)'" onmouseout="this.style.background='rgba(210, 153, 34, 0.1)'">
+                        💡 Yordam olish (Narxi: <span id="hintCostSpan"></span> pts)
+                    </button>
+                </div>
+                <div id="hintTextContainer" style="display: none; background: rgba(210, 153, 34, 0.1); border-left: 4px solid #d29922; padding: 15px; border-radius: 4px;">
+                    <p style="color: #d29922; font-weight: bold; margin-bottom: 5px; font-size: 14px;">Yordam:</p>
+                    <p id="hintText" style="color: var(--text-main); font-size: 14px; white-space: pre-wrap;"></p>
+                </div>
             </div>
             
             <div id="submitSection">
@@ -425,7 +438,7 @@
         // Modal Logic
         let currentChallengeId = null;
 
-        function openChallengeModal(id, title, desc, points, cat, diff, isSolved) {
+        function openChallengeModal(id, title, desc, points, cat, diff, isSolved, hintCost, isHintUnlocked) {
             currentChallengeId = id;
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalDescription').textContent = desc;
@@ -444,10 +457,55 @@
                 document.getElementById('solvedMessage').style.display = 'none';
             }
             
-            document.getElementById('challengeModal').style.display = 'flex';
+            // Hint Logic
+            const hintContainer = document.getElementById('hintContainer');
+            const hintBtnContainer = document.getElementById('hintButtonContainer');
+            const hintTextContainer = document.getElementById('hintTextContainer');
             
-            // Prevent scrolling on body when modal is open
+            if (hintCost >= 0) {
+                hintContainer.style.display = 'block';
+                if (isHintUnlocked) {
+                    hintBtnContainer.style.display = 'none';
+                    hintTextContainer.style.display = 'block';
+                    document.getElementById('hintText').textContent = "Yuklanmoqda...";
+                    unlockHint(true); // O'zi fetch qiladi
+                } else {
+                    hintBtnContainer.style.display = 'block';
+                    hintTextContainer.style.display = 'none';
+                    document.getElementById('hintCostSpan').textContent = hintCost;
+                }
+            } else {
+                hintContainer.style.display = 'none';
+            }
+            
+            document.getElementById('challengeModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
+        }
+
+        async function unlockHint(force=false) {
+            if (!force && !confirm("Yordamni ochish uchun ballingizdan ayirilsinmi?")) return;
+            
+            try {
+                const response = await fetch('/api/unlock_hint', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({challenge_id: currentChallengeId})
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('hintButtonContainer').style.display = 'none';
+                    document.getElementById('hintTextContainer').style.display = 'block';
+                    document.getElementById('hintText').textContent = data.hint;
+                    if (data.new_score !== undefined) {
+                        document.querySelector('.score-badge').textContent = data.new_score + ' pts';
+                    }
+                } else if (!force) {
+                    alert(data.message);
+                }
+            } catch (err) {
+                if (!force) alert("Xatolik yuz berdi");
+            }
         }
 
         function closeModal() {

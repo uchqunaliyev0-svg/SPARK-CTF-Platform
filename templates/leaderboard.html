@@ -197,9 +197,10 @@
             <canvas id="scoreChart"></canvas>
         </div>
 
-        <table class="leaderboard-table">
-            <thead>
-                <tr>
+        <div style="background: rgba(13, 17, 23, 0.6); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); backdrop-filter: blur(5px);">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
                     <th style="text-align: center;">O'rin</th>
                     <th>Foydalanuvchi</th>
                     <th style="text-align: right;">Ball</th>
@@ -224,8 +225,9 @@
                     <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">Hali hech kim ball to'plamadi. Birinchi bo'ling!</td>
                 </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>

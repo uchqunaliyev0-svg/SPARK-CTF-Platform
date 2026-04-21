@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARK CTF | Sozlamalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-panel: #0d1117;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-spark: #ff3333;
+            --accent-ctf: #3366ff;
+            --accent-success: #3fb950;
+            --accent-warning: #d29922;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: rgba(13, 17, 23, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .branding { font-family: 'Fira Code', monospace; font-size: 20px; font-weight: bold; text-decoration: none;}
+        .branding .spark { color: var(--accent-spark); }
+        .branding .ctf { color: var(--accent-ctf); }
+        
+        .user-nav { display: flex; align-items: center; gap: 20px; font-family: 'Fira Code', monospace; font-size: 14px;}
+        .score-badge { border: 1px solid var(--accent-ctf); color: var(--accent-ctf); padding: 5px 12px; border-radius: 20px; }
+        .logout-btn { color: var(--text-muted); text-decoration: none; transition: 0.3s; }
+        .logout-btn:hover { color: var(--accent-spark); }
+
+        .container {
+            max-width: 900px; margin: 60px auto; padding: 0 20px;
+            display: flex; gap: 60px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .sidebar-item {
+            padding: 12px 20px; border-radius: 6px; cursor: pointer;
+            font-family: 'Fira Code', monospace; font-size: 14px; transition: 0.3s;
+            text-align: center; background: transparent; color: var(--text-muted); text-decoration: none;
+        }
+        .sidebar-item.active {
+            background: #b4ed50; color: #000; font-weight: bold;
+        }
+        .sidebar-item:hover:not(.active) {
+            background: rgba(255,255,255,0.05); color: #fff;
+        }
+
+        /* Main Content */
+        .content { flex: 1; }
+        .content-header {
+            font-family: 'Fira Code', monospace; font-size: 32px; color: #b4ed50; margin-bottom: 40px; text-align: left;
+        }
+        
+        .form-group { margin-bottom: 25px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; color: #fff; font-family: 'Fira Code', monospace; font-size: 14px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px 15px; background: transparent;
+            border: 1px solid var(--border-color); border-radius: 4px; color: #fff;
+            font-family: 'Fira Code', monospace; font-size: 14px; transition: 0.3s;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #b4ed50; }
+        
+        .btn-submit {
+            width: 100%; padding: 12px; background: #b4ed50; color: #000;
+            border: none; border-radius: 4px; font-family: 'Fira Code', monospace;
+            font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-submit:hover { filter: brightness(1.1); }
+        
+        .btn-danger {
+            background: transparent; color: var(--accent-spark); border: 1px solid var(--border-color);
+            padding: 12px; border-radius: 4px; font-family: 'Fira Code', monospace; font-weight: bold;
+            cursor: pointer; width: 100%; transition: 0.3s; text-align: center; display: block; text-decoration: none;
+        }
+        .btn-danger:hover { background: rgba(255, 51, 51, 0.1); border-color: var(--accent-spark); }
+
+        .flash-messages { margin-bottom: 20px; }
+        .flash { padding: 15px; border-radius: 6px; margin-bottom: 10px; font-family: 'Fira Code', monospace; font-size: 14px; border: 1px solid; }
+        .flash.success { background: rgba(63, 185, 80, 0.1); color: var(--accent-success); border-color: var(--accent-success); }
+        .flash.error { background: rgba(255, 51, 51, 0.1); color: var(--accent-spark); border-color: var(--accent-spark); }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="/dashboard" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></a>
+        <div class="user-nav">
+            <a href="/dashboard" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">Masalalar</a>
+            <a href="/leaderboard" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">🏆 Reyting</a>
+            <div class="score-badge">{{ current_user.score }} pts</div>
+            <div class="username">{{ current_user.username }}</div>
+            <a href="/logout" class="logout-btn">Chiqish</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <a href="/settings" class="sidebar-item active">Profile</a>
+            <!-- Tilni o'zgartirish kelajakda shuyerda JS orqali qilinadi -->
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h1 class="content-header">./settings</h1>
+
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Profile Form -->
+            <form action="/settings" method="POST" style="margin-bottom: 40px;">
+                <input type="hidden" name="action" value="update_profile">
+                
+                <div class="form-group">
+                    <label>User Name</label>
+                    <input type="text" name="username" value="{{ current_user.username }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ current_user.email }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Platform Language</label>
+                    <select id="langSelect" onchange="changeLanguage(this.value)">
+                        <option value="uz">O'zbekcha</option>
+                        <option value="en">English</option>
+                        <option value="ru">Русский</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-submit">Submit</button>
+            </form>
+
+            <hr style="border-color: var(--border-color); margin: 30px 0;">
+
+            <!-- Password Form -->
+            <form action="/settings" method="POST" style="margin-bottom: 40px;">
+                <input type="hidden" name="action" value="update_password">
+                
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" name="current_password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" required>
+                </div>
+                
+                <button type="submit" class="btn-submit">Update Password</button>
+            </form>
+            
+            <hr style="border-color: var(--border-color); margin: 30px 0;">
+            
+            <!-- Danger Zone -->
+            <h3 style="color: var(--accent-spark); font-family: 'Fira Code', monospace; margin-bottom: 15px;">Danger Zone</h3>
+            <form action="/settings" method="POST" onsubmit="return confirm('Hisobingizni o\'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo\'lmaydi!')">
+                <input type="hidden" name="action" value="delete_account">
+                <button type="submit" class="btn-danger">Delete Account</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Oddiy til o'zgartirish funksiyasi (Hozircha localStorage'da saqlaydi)
+        function changeLanguage(lang) {
+            localStorage.setItem('ctf_lang', lang);
+            alert("Til saqlandi! Keyingi yangilanishlarda tarjima funksiyasi to'liq ishga tushadi.");
+        }
+        
+        // Saqlangan tilni tanlash
+        const savedLang = localStorage.getItem('ctf_lang') || 'uz';
+        document.getElementById('langSelect').value = savedLang;
+    </script>
+</body>
+</html>
