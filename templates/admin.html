@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARK CTF | Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-panel: #0d1117;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-spark: #ff3333;
+            --accent-ctf: #3366ff;
+            --accent-hover: #58a6ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: rgba(13, 17, 23, 0.9);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .branding {
+            font-family: 'Fira Code', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .branding span.spark { color: var(--accent-spark); }
+        .branding span.ctf { color: var(--accent-ctf); }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        h2 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-ctf);
+        }
+
+        button.btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-ctf);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .challenge-list {
+            list-style: none;
+        }
+
+        .challenge-item {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .challenge-info h4 {
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .challenge-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .btn-danger {
+            background: rgba(248, 81, 73, 0.1);
+            color: #f85149;
+            border: 1px solid #f85149;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .alert.success { background: rgba(46, 160, 67, 0.1); color: #2ea043; border: 1px solid #2ea043; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span> <span style="font-size:14px; color: #f85149; margin-left:10px;">[ADMIN]</span></a>
+        <div style="display: flex; gap: 20px;">
+            <a href="/dashboard" style="color: var(--text-main); text-decoration: none;">Masalalar</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Add Challenge Form -->
+        <div class="panel">
+            <h2>Yangi masala qo'shish</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form action="/admin" method="POST">
+                <div class="form-group">
+                    <label>Sarlavha (Title)</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Kategoriya</label>
+                    <select name="category" required>
+                        <option value="Web Exploitation">Web Exploitation</option>
+                        <option value="Cryptography">Cryptography</option>
+                        <option value="Reverse Engineering">Reverse Engineering</option>
+                        <option value="Forensics">Forensics</option>
+                        <option value="OSINT">OSINT</option>
+                        <option value="Misc">Misc</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Qiyinlik darajasi</label>
+                    <select name="difficulty" required>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Beriladigan ball</label>
+                    <input type="number" name="points" required>
+                </div>
+                <div class="form-group">
+                    <label>Javob kaliti (Flag)</label>
+                    <input type="text" name="flag" placeholder="sparkCTF{...}" required>
+                </div>
+                <div class="form-group">
+                    <label>Ta'rif (Description)</label>
+                    <textarea name="description" placeholder="Masala shartini yozing..." required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Qo'shish</button>
+            </form>
+        </div>
+
+        <!-- Challenge List -->
+        <div class="panel">
+            <h2>Mavjud masalalar</h2>
+            <ul class="challenge-list">
+                {% for challenge in challenges %}
+                <li class="challenge-item">
+                    <div class="challenge-info">
+                        <h4>{{ challenge.title }}</h4>
+                        <p>{{ challenge.category }} | {{ challenge.difficulty }} | {{ challenge.points }} pts</p>
+                    </div>
+                    <a href="/admin/delete/{{ challenge.id }}" class="btn-danger" onclick="return confirm('Rostdan ham o\'chirmoqchimisiz?');">O'chirish</a>
+                </li>
+                {% else %}
+                <p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Masalalar mavjud emas.</p>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

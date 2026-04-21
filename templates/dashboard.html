@@ -275,6 +275,7 @@
     <nav class="navbar">
         <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></a>
         <div class="user-nav">
+            <a href="/leaderboard" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">🏆 Reyting</a>
             <div class="score-badge">{{ current_user.score }} pts</div>
             <div class="username">{{ current_user.username }}</div>
             <a href="/logout" class="logout-btn">Chiqish</a>
@@ -359,14 +360,162 @@
                 <p>Chap tomondagi menudan o'zingizga mos bo'lim va qiyinlik darajasini tanlang. Hozircha masalalar joylanmoqda.</p>
             </div>
 
-            <!-- Task Skeletons -->
+            <!-- Task Grid -->
             <div class="task-grid" id="task-container">
-                <!-- Hozircha bo'sh. Masalalar backenddan shu yerga kelib tushadi -->
+                {% if challenges %}
+                    {% for challenge in challenges %}
+                        <div class="task-card" data-category="{{ challenge.category }}" data-difficulty="{{ challenge.difficulty }}" onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title|escape }}', '{{ challenge.description|escape }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {% if challenge.id in solved_ids %}true{% else %}false{% endif %})">
+                            <div class="skel-header" style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+                                <span class="badge">{{ challenge.category }}</span>
+                                <span class="badge diff-{{ challenge.difficulty|lower }}" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);"><span class="diff-indicator diff-{{ challenge.difficulty|lower }}"></span>{{ challenge.difficulty }}</span>
+                            </div>
+                            <h3 style="color: #fff; margin-bottom: 10px; font-size: 18px;">{{ challenge.title }}</h3>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ challenge.description }}</p>
+                            
+                            <div class="skel-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                                <span style="color: var(--accent-hover); font-weight: bold; font-size: 18px;">{{ challenge.points }} <span style="font-size:12px; color:var(--text-muted)">pts</span></span>
+                                
+                                {% if challenge.id in solved_ids %}
+                                    <button style="background: rgba(46, 160, 67, 0.2); color: #2ea043; border: 1px solid #2ea043; padding: 5px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">Yechilgan</button>
+                                {% else %}
+                                    <button style="background: var(--accent-ctf); color: #fff; border: none; padding: 5px 15px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-weight: 600;">Boshlash</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-muted); grid-column: 1 / -1; text-align: center; padding: 40px;">Hozircha masalalar yo'q. Tez orada qo'shiladi!</p>
+                {% endif %}
             </div>
         </main>
     </div>
 
+    <!-- Challenge Modal -->
+    <div id="challengeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 600px; padding: 30px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <button onclick="closeModal()" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                <span id="modalCategory" class="badge"></span>
+                <span id="modalDifficulty" class="badge" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);"></span>
+                <span style="color: var(--accent-hover); font-weight: bold; margin-left: auto; font-size: 18px;"><span id="modalPoints"></span> pts</span>
+            </div>
+            
+            <h2 id="modalTitle" style="color: #fff; margin-bottom: 20px; font-size: 24px;"></h2>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+                <p id="modalDescription" style="color: var(--text-main); line-height: 1.6; white-space: pre-wrap; font-family: 'Inter', sans-serif;"></p>
+            </div>
+            
+            <div id="submitSection">
+                <input type="text" id="flagInput" placeholder="sparkCTF{...}" style="width: 100%; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: 'Fira Code', monospace; margin-bottom: 15px; outline: none; transition: 0.3s;" onfocus="this.style.borderColor='var(--accent-ctf)'" onblur="this.style.borderColor='var(--border-color)'">
+                
+                <button id="submitBtn" onclick="submitFlag()" style="width: 100%; padding: 12px; background: var(--accent-ctf); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 16px;">Javobni yuborish</button>
+            </div>
+            
+            <div id="solvedMessage" style="display: none; text-align: center; color: #2ea043; padding: 15px; background: rgba(46, 160, 67, 0.1); border: 1px solid #2ea043; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                Siz bu masalani allaqachon yechgansiz! 🎉
+            </div>
+            
+            <p id="modalFeedback" style="margin-top: 15px; text-align: center; display: none; font-weight: 600;"></p>
+        </div>
+    </div>
+
     <script>
+        // Modal Logic
+        let currentChallengeId = null;
+
+        function openChallengeModal(id, title, desc, points, cat, diff, isSolved) {
+            currentChallengeId = id;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalDescription').textContent = desc;
+            document.getElementById('modalPoints').textContent = points;
+            document.getElementById('modalCategory').textContent = cat;
+            document.getElementById('modalDifficulty').innerHTML = `<span class="diff-indicator diff-${diff.toLowerCase()}"></span>${diff}`;
+            
+            document.getElementById('modalFeedback').style.display = 'none';
+            document.getElementById('flagInput').value = '';
+            
+            if (isSolved) {
+                document.getElementById('submitSection').style.display = 'none';
+                document.getElementById('solvedMessage').style.display = 'block';
+            } else {
+                document.getElementById('submitSection').style.display = 'block';
+                document.getElementById('solvedMessage').style.display = 'none';
+            }
+            
+            document.getElementById('challengeModal').style.display = 'flex';
+            
+            // Prevent scrolling on body when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('challengeModal').style.display = 'none';
+            currentChallengeId = null;
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('challengeModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        async function submitFlag() {
+            const flag = document.getElementById('flagInput').value.trim();
+            if (!flag) return;
+            
+            const btn = document.getElementById('submitBtn');
+            const feedback = document.getElementById('modalFeedback');
+            
+            btn.disabled = true;
+            btn.textContent = 'Tekshirilmoqda...';
+            btn.style.opacity = '0.7';
+            
+            try {
+                const response = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        challenge_id: currentChallengeId,
+                        flag: flag
+                    })
+                });
+                
+                const data = await response.json();
+                
+                feedback.style.display = 'block';
+                if (data.status === 'success') {
+                    feedback.style.color = '#2ea043';
+                    feedback.textContent = data.message;
+                    document.getElementById('submitSection').style.display = 'none';
+                    document.getElementById('solvedMessage').style.display = 'block';
+                    
+                    // Update score in navbar
+                    document.querySelector('.score-badge').textContent = data.new_score + ' pts';
+                    
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    feedback.style.color = '#f85149';
+                    feedback.textContent = data.message;
+                    btn.disabled = false;
+                    btn.textContent = 'Javobni yuborish';
+                    btn.style.opacity = '1';
+                }
+            } catch (err) {
+                feedback.style.display = 'block';
+                feedback.style.color = '#f85149';
+                feedback.textContent = 'Xatolik yuz berdi. Qaytadan urinib ko\'ring.';
+                btn.disabled = false;
+                btn.textContent = 'Javobni yuborish';
+                btn.style.opacity = '1';
+            }
+        }
+
         // Kategoriya va qiyinlik tugmalarini "jonlantirish"
         document.addEventListener('DOMContentLoaded', () => {
             const filterItems = document.querySelectorAll('.filter-item');

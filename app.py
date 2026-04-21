@@ -1,6 +1,6 @@
 # app.py
-from flask import Flask, render_template, request, redirect, url_for, flash
-from models import db, User
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from models import db, User, Challenge, Submission
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
@@ -75,13 +75,104 @@ def register():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    challenges = Challenge.query.order_by(Challenge.created_at.desc()).all()
+    # Foydalanuvchi yechgan masalalar ID lari
+    solved_subs = Submission.query.filter_by(user_id=current_user.id).all()
+    solved_ids = [sub.challenge_id for sub in solved_subs]
+    
+    return render_template('dashboard.html', challenges=challenges, solved_ids=solved_ids)
+
+@app.route('/leaderboard')
+@login_required
+def leaderboard():
+    # Eng yuqori ball to'plagan foydalanuvchilar (kuchli 50 talik)
+    top_users = User.query.order_by(User.score.desc()).limit(50).all()
+    return render_template('leaderboard.html', top_users=top_users)
+
+@app.route('/api/submit', methods=['POST'])
+@login_required
+def submit_flag():
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": "error", "message": "Ma'lumot yuborilmadi"}), 400
+        
+    challenge_id = data.get('challenge_id')
+    flag = data.get('flag')
+    
+    challenge = Challenge.query.get(challenge_id)
+    if not challenge:
+        return jsonify({"status": "error", "message": "Masala topilmadi!"}), 404
+        
+    # Oldin yechilganligini tekshirish
+    existing_sub = Submission.query.filter_by(user_id=current_user.id, challenge_id=challenge.id).first()
+    if existing_sub:
+        return jsonify({"status": "error", "message": "Siz bu masalani allaqachon yechgansiz!"}), 400
+        
+    if challenge.flag == flag:
+        # To'g'ri javob
+        new_sub = Submission(user_id=current_user.id, challenge_id=challenge.id)
+        current_user.score += challenge.points
+        db.session.add(new_sub)
+        db.session.commit()
+        return jsonify({
+            "status": "success", 
+            "message": f"Tabriklaymiz! To'g'ri javob. +{challenge.points} ball",
+            "new_score": current_user.score
+        })
+    else:
+        return jsonify({"status": "error", "message": "Noto'g'ri flag. Yana urinib ko'ring!"}), 400
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+@app.route('/admin', methods=['GET', 'POST'])
+@login_required
+def admin_panel():
+    if not current_user.is_admin:
+        flash("Sizda admin huquqlari yo'q!", "error")
+        return redirect(url_for('dashboard'))
+        
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        category = request.form.get('category')
+        difficulty = request.form.get('difficulty')
+        flag = request.form.get('flag')
+        points = request.form.get('points')
+        
+        new_challenge = Challenge(
+            title=title,
+            description=description,
+            category=category,
+            difficulty=difficulty,
+            flag=flag,
+            points=int(points)
+        )
+        db.session.add(new_challenge)
+        db.session.commit()
+        flash("Masala muvaffaqiyatli qo'shildi!", "success")
+        return redirect(url_for('admin_panel'))
+        
+    challenges = Challenge.query.order_by(Challenge.created_at.desc()).all()
+    return render_template('admin.html', challenges=challenges)
+    
+@app.route('/admin/delete/<int:id>')
+@login_required
+def delete_challenge(id):
+    if not current_user.is_admin:
+        return redirect(url_for('dashboard'))
+        
+    challenge = Challenge.query.get_or_404(id)
+    # Delete related submissions first
+    Submission.query.filter_by(challenge_id=id).delete()
+    
+    db.session.delete(challenge)
+    db.session.commit()
+    flash("Masala o'chirildi!", "success")
+    return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

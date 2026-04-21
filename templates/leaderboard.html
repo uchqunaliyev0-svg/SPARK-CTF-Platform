@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARK CTF | Reyting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-panel: #0d1117;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-spark: #ff3333;
+            --accent-ctf: #3366ff;
+            --accent-hover: #58a6ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: rgba(13, 17, 23, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .branding {
+            font-family: 'Fira Code', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-decoration: none;
+        }
+        .branding span.spark { color: var(--accent-spark); }
+        .branding span.ctf { color: var(--accent-ctf); }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .leaderboard-table th {
+            text-align: left;
+            padding: 15px 20px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .leaderboard-row {
+            background-color: rgba(13, 17, 23, 0.6);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-row:hover {
+            transform: scale(1.01);
+            background-color: rgba(13, 17, 23, 0.9);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .leaderboard-row td {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .leaderboard-row td:first-child {
+            border-left: 1px solid var(--border-color);
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .leaderboard-row td:last-child {
+            border-right: 1px solid var(--border-color);
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+            text-align: right;
+            font-family: 'Fira Code', monospace;
+            font-size: 18px;
+            color: var(--accent-hover);
+            font-weight: bold;
+        }
+
+        .rank-1 td:first-child { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5); font-size: 24px; }
+        .rank-2 td:first-child { color: #c0c0c0; text-shadow: 0 0 10px rgba(192,192,192,0.5); font-size: 22px; }
+        .rank-3 td:first-child { color: #cd7f32; text-shadow: 0 0 10px rgba(205,127,50,0.5); font-size: 22px; }
+
+        .username {
+            font-weight: 600;
+            font-size: 18px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .me-badge {
+            background: rgba(51, 102, 255, 0.2);
+            color: var(--accent-hover);
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-ctf);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></a>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <a href="/dashboard" style="color: var(--text-main); text-decoration: none; font-weight: 600; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">Masalalar</a>
+            {% if current_user.is_authenticated and current_user.is_admin %}
+            <a href="/admin" style="color: #f85149; text-decoration: none; font-weight: 600;">Admin Panel</a>
+            {% endif %}
+            <a href="/logout" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Chiqish</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/dashboard" class="back-btn">← Orqaga</a>
+        
+        <div class="header">
+            <h1>🏆 Global Reyting</h1>
+            <p>Eng yuqori ball to'plagan xakerlar ro'yxati</p>
+        </div>
+
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th style="text-align: center;">O'rin</th>
+                    <th>Foydalanuvchi</th>
+                    <th style="text-align: right;">Ball</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in top_users %}
+                <tr class="leaderboard-row rank-{{ loop.index }}">
+                    <td>#{{ loop.index }}</td>
+                    <td>
+                        <div class="username">
+                            {{ user.username }}
+                            {% if current_user.is_authenticated and user.id == current_user.id %}
+                            <span class="me-badge">Siz</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>{{ user.score }} pts</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">Hali hech kim ball to'plamadi. Birinchi bo'ling!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
