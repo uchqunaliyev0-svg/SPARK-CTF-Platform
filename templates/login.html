@@ -131,17 +131,23 @@
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
         
+        let drops = [];
+        
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            
+            const columns = Math.floor(canvas.width / 15);
+            // Ekran kattalashsa, yangi ustunlarga tomchilar qo'shamiz
+            for(let x = drops.length; x < columns; x++) {
+                drops[x] = Math.random() * -100; 
+            }
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
         // Custom Matrix belgilari
         const chars = '01'.split(''); // Haqiqiy klassik 0 va 1 lar
-        const drops = [];
-        for(let x = 0; x < canvas.width/15; x++) drops[x] = 1;
         
         function drawMatrix() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';

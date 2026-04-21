@@ -22,8 +22,9 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Dastur ishga tushganda ma'lumotlar bazasini (jadvallarni) yaratish
-with app.app_context():
-    db.create_all()
+# Izoh: Vercel'da 500 Xatolik bermasligi uchun bu qatorlar olib tashlandi,
+# Chunki bu har safar server yonganda tekshiradi va vaqt ko'p ketadi.
+# Jadvallar allaqachon bazada yaratilgan!
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
