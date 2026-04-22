@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>SPARK CTF | Admin Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; color: #e6e6e6; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 40px; text-align: center; width: 350px; }
+        input { width: 100%; padding: 12px; margin: 20px 0; background: #050505; border: 1px solid #30363d; color: #fff; border-radius: 6px; outline: none; }
+        input:focus { border-color: #58a6ff; }
+        button { width: 100%; padding: 12px; background: #f85149; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Admin Tasdiqlash</h2>
+        <p style="color: #8b949e; font-size: 14px;">Panelga kirish uchun maxfiy parolni kiriting (Limit: 5 marta).</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="color: #f85149; margin-top: 15px; font-size: 14px;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/admin-login" method="POST">
+            <input type="password" name="admin_password" placeholder="Maxfiy parol..." required>
+            <button type="submit">Tasdiqlash</button>
+        </form>
+    </div>
+</body>
+</html>

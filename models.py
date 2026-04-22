@@ -24,6 +24,7 @@ class Challenge(db.Model):
     difficulty = db.Column(db.String(50), nullable=False) # Easy, Medium, Hard
     flag = db.Column(db.String(200), nullable=False) # Javob kaliti
     points = db.Column(db.Integer, nullable=False) # Beriladigan ball
+    hint = db.Column(db.Text, nullable=True) # Hint qo'shildi
     file_url = db.Column(db.String(500), nullable=True) # Fayl yuklab olish kerak bo'lsa
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>SPARK CTF | Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; color: #e6e6e6; font-family: 'Inter', sans-serif; margin: 0; padding: 40px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .branding { font-family: 'Fira Code', monospace; font-size: 24px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 30px; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .task { background: #050505; border: 1px solid #2ea043; border-radius: 8px; padding: 20px; }
+        .task h3 { margin: 0 0 10px 0; color: #fff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="branding">
+            <img src="/static/img/logo.png" alt="Logo" style="height: 40px; border-radius: 8px;">
+            <span><span style="color: #ff3333;">SPARK</span> <span style="color: #3366ff;">CTF</span></span>
+        </a>
+        <a href="/dashboard" style="color: #8b949e; text-decoration: none;">&larr; Orqaga</a>
+    </nav>
+
+    <div class="card" style="display: flex; align-items: center; gap: 20px;">
+        <div style="width: 80px; height: 80px; background: #3366ff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold;">
+            {{ user.username[0]|upper }}
+        </div>
+        <div>
+            <h1 style="margin: 0; color: #fff;">{{ user.username }}</h1>
+            <p style="color: #8b949e; margin: 5px 0 0 0;">Jami to'plangan ball: <strong style="color: #58a6ff;">{{ user.score }} pts</strong></p>
+        </div>
+    </div>
+
+    <h2>Yechilgan Masalalar ({{ solved_challenges|length }})</h2>
+    {% if solved_challenges %}
+    <div class="grid">
+        {% for chal in solved_challenges %}
+        <div class="task">
+            <h3>{{ chal.title }}</h3>
+            <p style="color: #8b949e; margin: 0; font-size: 14px;">{{ chal.category }} &bull; <span style="color: #2ea043;">{{ chal.points }} pts</span></p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #8b949e;">Hali hech qanday masala yechilmadi.</p>
+    {% endif %}
+</body>
+</html>

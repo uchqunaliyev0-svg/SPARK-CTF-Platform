@@ -1,8 +1,9 @@
-# app.py
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from models import db, User, Challenge, Submission, Report
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 
@@ -14,6 +15,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bwiusxkzvrhybnllf
 # Kutubxonalarni ilova bilan bog'lash
 db.init_app(app)
 bcrypt = Bcrypt(app)
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
@@ -151,12 +159,36 @@ def submit_report():
     
     return jsonify({"status": "success", "message": "Taklifingiz yuborildi. Rahmat!"})
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/profile')
 @login_required
-def admin_panel():
+def profile():
+    user_submissions = Submission.query.filter_by(user_id=current_user.id).order_by(Submission.submitted_at.desc()).all()
+    solved_challenges = [sub.challenge for sub in user_submissions]
+    return render_template('profile.html', user=current_user, solved_challenges=solved_challenges)
+
+@app.route('/admin-login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+@login_required
+def admin_login():
     if not current_user.is_admin:
         flash("Sizda admin huquqlari yo'q!", "error")
         return redirect(url_for('dashboard'))
+        
+    if request.method == 'POST':
+        password = request.form.get('admin_password')
+        if password == 'SparkAdmin2026!': # Maxfiy parol
+            session['admin_unlocked'] = True
+            return redirect(url_for('admin_panel'))
+        else:
+            flash("Parol noto'g'ri!", "error")
+            
+    return render_template('admin_login.html')
+
+@app.route('/admin', methods=['GET', 'POST'])
+@login_required
+def admin_panel():
+    if not current_user.is_admin or not session.get('admin_unlocked'):
+        return redirect(url_for('admin_login'))
         
     if request.method == 'POST':
         title = request.form.get('title')
@@ -165,6 +197,7 @@ def admin_panel():
         difficulty = request.form.get('difficulty')
         flag = request.form.get('flag')
         points = request.form.get('points')
+        hint = request.form.get('hint')
         
         new_challenge = Challenge(
             title=title,
@@ -172,7 +205,8 @@ def admin_panel():
             category=category,
             difficulty=difficulty,
             flag=flag,
-            points=int(points)
+            points=int(points),
+            hint=hint
         )
         db.session.add(new_challenge)
         db.session.commit()
