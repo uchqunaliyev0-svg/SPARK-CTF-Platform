@@ -24,19 +24,11 @@ class Challenge(db.Model):
     difficulty = db.Column(db.String(50), nullable=False) # Easy, Medium, Hard
     flag = db.Column(db.String(200), nullable=False) # Javob kaliti
     points = db.Column(db.Integer, nullable=False) # Beriladigan ball
-    hint = db.Column(db.Text, nullable=True) # Yordam matni
-    hint_cost = db.Column(db.Integer, default=0) # Yordam olish narxi
     file_url = db.Column(db.String(500), nullable=True) # Fayl yuklab olish kerak bo'lsa
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<Challenge {self.title}>"
-
-class UnlockedHint(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    challenge_id = db.Column(db.Integer, db.ForeignKey('challenge.id'), nullable=False)
-    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -49,3 +41,14 @@ class Submission(db.Model):
 
     def __repr__(self):
         return f"<Submission User:{self.user_id} Challenge:{self.challenge_id}>"
+
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('reports', lazy=True))
+
+    def __repr__(self):
+        return f"<Report {self.id} by User:{self.user_id}>"

@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPARK CTF | Reyting</title>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
     <style>
         :root {
             --bg-dark: #050505;
@@ -174,12 +170,12 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></a>
+        <a href="/" class="branding" style="display: flex; align-items: center; gap: 10px;">
+            <img src="/static/img/logo.png" alt="SPARK CTF Logo" style="height: 40px; border-radius: 8px;">
+            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span></span>
+        </a>
         <div style="display: flex; gap: 20px; align-items: center;">
             <a href="/dashboard" style="color: var(--text-main); text-decoration: none; font-weight: 600; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">Masalalar</a>
-            {% if current_user.is_authenticated and current_user.is_admin %}
-            <a href="/admin" style="color: #f85149; text-decoration: none; font-weight: 600;">Admin Panel</a>
-            {% endif %}
             <a href="/logout" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Chiqish</a>
         </div>
     </nav>
@@ -192,15 +188,9 @@
             <p>Eng yuqori ball to'plagan xakerlar ro'yxati</p>
         </div>
 
-        <!-- CHART CONTAINER -->
-        <div class="chart-container" style="position: relative; height:400px; width:100%; margin-bottom: 40px; background: rgba(13, 17, 23, 0.6); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); backdrop-filter: blur(5px);">
-            <canvas id="scoreChart"></canvas>
-        </div>
-
-        <div style="background: rgba(13, 17, 23, 0.6); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); backdrop-filter: blur(5px);">
-            <table class="leaderboard-table">
-                <thead>
-                    <tr>
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
                     <th style="text-align: center;">O'rin</th>
                     <th>Foydalanuvchi</th>
                     <th style="text-align: right;">Ball</th>
@@ -225,82 +215,9 @@
                     <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">Hali hech kim ball to'plamadi. Birinchi bo'ling!</td>
                 </tr>
                 {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            </tbody>
+        </table>
     </div>
 
-    <script>
-        const chartDataRaw = {{ chart_data | safe }};
-        const ctx = document.getElementById('scoreChart').getContext('2d');
-        
-        const datasets = [];
-        const colors = ['#0F0', '#3366ff', '#f85149', '#a371f7', '#d29922', '#58a6ff', '#e3b341', '#3fb950', '#ff3333', '#8957e5'];
-        
-        let colorIndex = 0;
-        for (const [username, dataPoints] of Object.entries(chartDataRaw)) {
-            datasets.push({
-                label: username,
-                data: dataPoints,
-                borderColor: colors[colorIndex % colors.length],
-                backgroundColor: colors[colorIndex % colors.length],
-                borderWidth: 2,
-                tension: 0, 
-                stepped: true, // Step chart (CUTS CTF style)
-                pointRadius: 4,
-                pointHoverRadius: 6
-            });
-            colorIndex++;
-        }
-
-        if(Object.keys(chartDataRaw).length > 0) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                tooltipFormat: 'DD.MM.YYYY HH:mm',
-                                displayFormats: {
-                                    hour: 'HH:mm',
-                                    day: 'MMM D'
-                                }
-                            },
-                            grid: { color: 'rgba(48, 54, 61, 0.5)' },
-                            ticks: { color: '#8b949e' }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(48, 54, 61, 0.5)' },
-                            ticks: { color: '#8b949e' }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: { color: '#c9d1d9', usePointStyle: true, boxWidth: 8 }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    }
-                }
-            });
-        } else {
-            // Agar umuman ma'lumot bo'lmasa, grafikni yashirish
-            document.querySelector('.chart-container').style.display = 'none';
-        }
-    </script>
 </body>
 </html>

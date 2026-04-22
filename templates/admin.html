@@ -162,7 +162,10 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span> <span style="font-size:14px; color: #f85149; margin-left:10px;">[ADMIN]</span></a>
+        <a href="/" class="branding" style="display: flex; align-items: center; gap: 10px;">
+            <img src="/static/img/logo.png" alt="SPARK CTF Logo" style="height: 40px; border-radius: 8px;">
+            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span> <span style="font-size:14px; color: #f85149; margin-left:10px;">[ADMIN]</span></span>
+        </a>
         <div style="display: flex; gap: 20px;">
             <a href="/dashboard" style="color: var(--text-main); text-decoration: none;">Masalalar</a>
         </div>
@@ -210,14 +213,6 @@
                     <input type="number" name="points" required>
                 </div>
                 <div class="form-group">
-                    <label>Yordam matni (Hint) - Ixtiyoriy</label>
-                    <textarea name="hint" placeholder="Masala bo'yicha kichik yordam..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Yordam olish narxi (ball) - Ixtiyoriy</label>
-                    <input type="number" name="hint_cost" value="0">
-                </div>
-                <div class="form-group">
                     <label>Javob kaliti (Flag)</label>
                     <input type="text" name="flag" placeholder="sparkCTF{...}" required>
                 </div>
@@ -232,7 +227,7 @@
         <!-- Challenge List -->
         <div class="panel">
             <h2>Mavjud masalalar</h2>
-            <ul class="challenge-list">
+            <ul class="challenge-list" style="margin-bottom: 30px;">
                 {% for challenge in challenges %}
                 <li class="challenge-item">
                     <div class="challenge-info">
@@ -243,6 +238,23 @@
                 </li>
                 {% else %}
                 <p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Masalalar mavjud emas.</p>
+                {% endfor %}
+            </ul>
+
+            <h2>Taklif va Xatolar (Foydalanuvchilardan)</h2>
+            <ul class="challenge-list">
+                {% for report in reports %}
+                <li class="challenge-item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <strong style="color: var(--accent-hover);">@{{ report.user.username }}</strong>
+                        <span style="font-size: 12px; color: var(--text-muted);">{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; width: 100%; color: #c9d1d9;">
+                        {{ report.message }}
+                    </div>
+                </li>
+                {% else %}
+                <p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Hozircha xabarlar yo'q.</p>
                 {% endfor %}
             </ul>
         </div>

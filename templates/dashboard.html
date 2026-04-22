@@ -273,10 +273,13 @@
 
     <!-- Navbar -->
     <nav class="navbar">
-        <a href="/" class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></a>
+        <a href="/" class="branding" style="display: flex; align-items: center; gap: 10px;">
+            <img src="/static/img/logo.png" alt="SPARK CTF Logo" style="height: 40px; border-radius: 8px;">
+            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span></span>
+        </a>
         <div class="user-nav">
+            <button onclick="openReportModal()" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-family: 'Inter', sans-serif; font-size: 14px;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--accent-spark)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border-color)';">💬 Taklif / Xato</button>
             <a href="/leaderboard" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">🏆 Reyting</a>
-            <a href="/settings" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">⚙️ Sozlamalar</a>
             <div class="score-badge">{{ current_user.score }} pts</div>
             <div class="username">{{ current_user.username }}</div>
             <a href="/logout" class="logout-btn">Chiqish</a>
@@ -287,70 +290,67 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="filter-section">
+                <h3>Qidiruv</h3>
+                <div style="background: rgba(10,10,10,0.8); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; align-items: center;">
+                    <input type="text" id="searchInput" placeholder="Masala nomi..." style="background: transparent; border: none; outline: none; color: var(--text-main); width: 100%; font-family: 'Inter', sans-serif;">
+                </div>
+            </div>
+
+            <div class="filter-section">
                 <h3>Kategoriyalar</h3>
-                <ul class="filter-list">
-                    <li class="filter-item active">
+                <ul class="filter-list" id="categoryFilter">
+                    <li class="filter-item active" data-val="all">
                         <span class="item-label">Barchasi</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="Web Exploitation">
                         <span class="item-label">Web Exploitation</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="Cryptography">
                         <span class="item-label">Cryptography</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="Reverse Engineering">
                         <span class="item-label">Reverse Engineering</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="Forensics">
                         <span class="item-label">Forensics</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="OSINT">
                         <span class="item-label">OSINT</span> 
-                        <span class="badge">0</span>
+                    </li>
+                    <li class="filter-item" data-val="Misc">
+                        <span class="item-label">Misc</span> 
                     </li>
                 </ul>
             </div>
 
             <div class="filter-section">
                 <h3>Qiyinlik darajasi</h3>
-                <ul class="filter-list">
-                    <li class="filter-item">
+                <ul class="filter-list" id="difficultyFilter">
+                    <li class="filter-item active" data-val="all">
+                        <span class="item-label">Barchasi</span> 
+                    </li>
+                    <li class="filter-item" data-val="Easy">
                         <span class="item-label"><span class="diff-indicator diff-easy"></span>Easy</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="Medium">
                         <span class="item-label"><span class="diff-indicator diff-medium"></span>Medium</span> 
-                        <span class="badge">0</span>
                     </li>
-                    <li class="filter-item">
+                    <li class="filter-item" data-val="Hard">
                         <span class="item-label"><span class="diff-indicator diff-hard"></span>Hard</span> 
-                        <span class="badge">0</span>
                     </li>
                 </ul>
             </div>
             
             <div class="filter-section">
                 <h3>Holat</h3>
-                <ul class="filter-list">
-                    <li class="filter-item">
-                        <span class="item-label">Yechilmagan</span>
+                <ul class="filter-list" id="statusFilter">
+                    <li class="filter-item active" data-val="all">
+                        <span class="item-label">Umumiy</span>
                     </li>
-                    <li class="filter-item">
-                        <span class="item-label">Yechilgan</span>
+                    <li class="filter-item" data-val="solved">
+                        <span class="item-label">Yechilganlar</span>
                     </li>
                 </ul>
-            </div>
-            
-            <div class="filter-section">
-                <h3>Qidiruv</h3>
-                <div style="background: rgba(10,10,10,0.8); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; align-items: center;">
-                    <input type="text" placeholder="Masala nomi..." style="background: transparent; border: none; outline: none; color: var(--text-main); width: 100%; font-family: 'Inter', sans-serif;">
-                </div>
             </div>
         </aside>
 
@@ -365,7 +365,7 @@
             <div class="task-grid" id="task-container">
                 {% if challenges %}
                     {% for challenge in challenges %}
-                        <div class="task-card" data-category="{{ challenge.category }}" data-difficulty="{{ challenge.difficulty }}" onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title|escape }}', '{{ challenge.description|escape }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {% if challenge.id in solved_ids %}true{% else %}false{% endif %}, {% if challenge.hint %}{{ challenge.hint_cost }}{% else %}-1{% endif %}, {% if challenge.id in unlocked_hint_ids %}true{% else %}false{% endif %})">
+                        <div class="task-card" data-category="{{ challenge.category }}" data-difficulty="{{ challenge.difficulty }}" data-solved="{% if challenge.id in solved_ids %}true{% else %}false{% endif %}" onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title|escape }}', '{{ challenge.description|escape }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {% if challenge.id in solved_ids %}true{% else %}false{% endif %})">
                             <div class="skel-header" style="margin-bottom: 15px; display: flex; justify-content: space-between;">
                                 <span class="badge">{{ challenge.category }}</span>
                                 <span class="badge diff-{{ challenge.difficulty|lower }}" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);"><span class="diff-indicator diff-{{ challenge.difficulty|lower }}"></span>{{ challenge.difficulty }}</span>
@@ -404,20 +404,8 @@
             
             <h2 id="modalTitle" style="color: #fff; margin-bottom: 20px; font-size: 24px;"></h2>
             
-            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
                 <p id="modalDescription" style="color: var(--text-main); line-height: 1.6; white-space: pre-wrap; font-family: 'Inter', sans-serif;"></p>
-            </div>
-            
-            <div id="hintContainer" style="margin-bottom: 25px; display: none;">
-                <div id="hintButtonContainer">
-                    <button id="unlockHintBtn" onclick="unlockHint()" style="background: rgba(210, 153, 34, 0.1); color: #d29922; border: 1px solid #d29922; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; transition: 0.3s;" onmouseover="this.style.background='rgba(210, 153, 34, 0.3)'" onmouseout="this.style.background='rgba(210, 153, 34, 0.1)'">
-                        💡 Yordam olish (Narxi: <span id="hintCostSpan"></span> pts)
-                    </button>
-                </div>
-                <div id="hintTextContainer" style="display: none; background: rgba(210, 153, 34, 0.1); border-left: 4px solid #d29922; padding: 15px; border-radius: 4px;">
-                    <p style="color: #d29922; font-weight: bold; margin-bottom: 5px; font-size: 14px;">Yordam:</p>
-                    <p id="hintText" style="color: var(--text-main); font-size: 14px; white-space: pre-wrap;"></p>
-                </div>
             </div>
             
             <div id="submitSection">
@@ -434,11 +422,22 @@
         </div>
     </div>
 
+    <!-- Report Modal -->
+    <div id="reportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 500px; padding: 30px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <button onclick="closeReportModal()" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
+            <h2 style="color: #fff; margin-bottom: 20px;">Taklif yoki Xato haqida xabar</h2>
+            <textarea id="reportMessage" placeholder="Xabar matni..." style="width: 100%; height: 120px; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 15px; resize: vertical;"></textarea>
+            <button id="reportSubmitBtn" onclick="submitReport()" style="width: 100%; padding: 12px; background: var(--accent-spark); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;">Yuborish</button>
+            <p id="reportFeedback" style="margin-top: 15px; text-align: center; display: none; font-weight: 600;"></p>
+        </div>
+    </div>
+
     <script>
         // Modal Logic
         let currentChallengeId = null;
 
-        function openChallengeModal(id, title, desc, points, cat, diff, isSolved, hintCost, isHintUnlocked) {
+        function openChallengeModal(id, title, desc, points, cat, diff, isSolved) {
             currentChallengeId = id;
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalDescription').textContent = desc;
@@ -457,55 +456,10 @@
                 document.getElementById('solvedMessage').style.display = 'none';
             }
             
-            // Hint Logic
-            const hintContainer = document.getElementById('hintContainer');
-            const hintBtnContainer = document.getElementById('hintButtonContainer');
-            const hintTextContainer = document.getElementById('hintTextContainer');
-            
-            if (hintCost >= 0) {
-                hintContainer.style.display = 'block';
-                if (isHintUnlocked) {
-                    hintBtnContainer.style.display = 'none';
-                    hintTextContainer.style.display = 'block';
-                    document.getElementById('hintText').textContent = "Yuklanmoqda...";
-                    unlockHint(true); // O'zi fetch qiladi
-                } else {
-                    hintBtnContainer.style.display = 'block';
-                    hintTextContainer.style.display = 'none';
-                    document.getElementById('hintCostSpan').textContent = hintCost;
-                }
-            } else {
-                hintContainer.style.display = 'none';
-            }
-            
             document.getElementById('challengeModal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        async function unlockHint(force=false) {
-            if (!force && !confirm("Yordamni ochish uchun ballingizdan ayirilsinmi?")) return;
             
-            try {
-                const response = await fetch('/api/unlock_hint', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({challenge_id: currentChallengeId})
-                });
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    document.getElementById('hintButtonContainer').style.display = 'none';
-                    document.getElementById('hintTextContainer').style.display = 'block';
-                    document.getElementById('hintText').textContent = data.hint;
-                    if (data.new_score !== undefined) {
-                        document.querySelector('.score-badge').textContent = data.new_score + ' pts';
-                    }
-                } else if (!force) {
-                    alert(data.message);
-                }
-            } catch (err) {
-                if (!force) alert("Xatolik yuz berdi");
-            }
+            // Prevent scrolling on body when modal is open
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
@@ -574,27 +528,98 @@
             }
         }
 
-        // Kategoriya va qiyinlik tugmalarini "jonlantirish"
+        // Report Modal Logic
+        function openReportModal() {
+            document.getElementById('reportModal').style.display = 'flex';
+            document.getElementById('reportFeedback').style.display = 'none';
+            document.getElementById('reportMessage').value = '';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        async function submitReport() {
+            const message = document.getElementById('reportMessage').value.trim();
+            if(!message) return;
+            
+            const btn = document.getElementById('reportSubmitBtn');
+            const feedback = document.getElementById('reportFeedback');
+            btn.disabled = true;
+            btn.textContent = 'Yuborilmoqda...';
+            
+            try {
+                const res = await fetch('/api/report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                
+                feedback.style.display = 'block';
+                if(data.status === 'success') {
+                    feedback.style.color = '#2ea043';
+                    feedback.textContent = data.message;
+                    setTimeout(closeReportModal, 1500);
+                } else {
+                    feedback.style.color = '#f85149';
+                    feedback.textContent = data.message;
+                }
+            } catch (err) {
+                feedback.style.display = 'block';
+                feedback.style.color = '#f85149';
+                feedback.textContent = "Xatolik yuz berdi.";
+            }
+            btn.disabled = false;
+            btn.textContent = 'Yuborish';
+        }
+
+        // Filtering Logic
+        function filterTasks() {
+            const search = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
+            const category = document.querySelector('#categoryFilter .active').dataset.val;
+            const difficulty = document.querySelector('#difficultyFilter .active').dataset.val;
+            const status = document.querySelector('#statusFilter .active').dataset.val;
+            
+            const cards = document.querySelectorAll('.task-card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const cardCat = card.dataset.category;
+                const cardDiff = card.dataset.difficulty;
+                const isSolved = card.dataset.solved === 'true';
+                
+                let show = true;
+                
+                if (search && !title.includes(search)) show = false;
+                if (category !== 'all' && cardCat !== category) show = false;
+                if (difficulty !== 'all' && cardDiff !== difficulty) show = false;
+                if (status === 'solved' && !isSolved) show = false;
+                
+                card.style.display = show ? 'block' : 'none';
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const filterItems = document.querySelectorAll('.filter-item');
             
             filterItems.forEach(item => {
                 item.addEventListener('click', function() {
-                    // Agar bu qidiruv oynasi bo'lsa hech nima qilmaymiz
-                    if(this.closest('.filter-section').querySelector('input')) return;
-                    
-                    // Xuddi shu ro'yxatdagi (ul) boshqa active klasslarni olib tashlaymiz
                     const parentList = this.closest('.filter-list');
                     if (parentList) {
-                        parentList.querySelectorAll('.filter-item').forEach(el => {
-                            el.classList.remove('active');
-                        });
+                        parentList.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
                     }
-                    
-                    // O'ziga active klassni beramiz
                     this.classList.add('active');
+                    filterTasks();
                 });
             });
+            
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', filterTasks);
+            }
         });
     </script>
 </body>

@@ -1,7 +1,6 @@
 # app.py
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-import json
-from models import db, User, Challenge, Submission, UnlockedHint
+from models import db, User, Challenge, Submission, Report
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
@@ -26,6 +25,14 @@ def load_user(user_id):
 # Izoh: Vercel'da 500 Xatolik bermasligi uchun bu qatorlar olib tashlandi,
 # Chunki bu har safar server yonganda tekshiradi va vaqt ko'p ketadi.
 # Jadvallar allaqachon bazada yaratilgan!
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -82,36 +89,14 @@ def dashboard():
     solved_subs = Submission.query.filter_by(user_id=current_user.id).all()
     solved_ids = [sub.challenge_id for sub in solved_subs]
     
-    # Ochilgan yordamlar ID lari
-    unlocked_hints = UnlockedHint.query.filter_by(user_id=current_user.id).all()
-    unlocked_hint_ids = [h.challenge_id for h in unlocked_hints]
-    
-    return render_template('dashboard.html', challenges=challenges, solved_ids=solved_ids, unlocked_hint_ids=unlocked_hint_ids)
+    return render_template('dashboard.html', challenges=challenges, solved_ids=solved_ids)
 
 @app.route('/leaderboard')
 @login_required
 def leaderboard():
     # Eng yuqori ball to'plagan foydalanuvchilar (kuchli 50 talik)
     top_users = User.query.order_by(User.score.desc()).limit(50).all()
-    
-    # Grafika uchun ma'lumotlar (Top 10)
-    chart_data = {}
-    for user in top_users[:10]:
-        subs = Submission.query.filter_by(user_id=user.id).order_by(Submission.submitted_at).all()
-        user_points = 0
-        points_history = []
-        
-        for sub in subs:
-            user_points += sub.challenge.points
-            time_str = sub.submitted_at.isoformat()
-            points_history.append({"x": time_str, "y": user_points})
-            
-        if points_history:
-            # Boshlang'ich (0) nuqtani ham qo'shib qo'yamiz
-            # points_history.insert(0, {"x": user.created_at.isoformat(), "y": 0}) 
-            chart_data[user.username] = points_history
-            
-    return render_template('leaderboard.html', top_users=top_users, chart_data=json.dumps(chart_data))
+    return render_template('leaderboard.html', top_users=top_users)
 
 @app.route('/api/submit', methods=['POST'])
 @login_required
@@ -146,34 +131,25 @@ def submit_flag():
     else:
         return jsonify({"status": "error", "message": "Noto'g'ri flag. Yana urinib ko'ring!"}), 400
 
-@app.route('/api/unlock_hint', methods=['POST'])
-@login_required
-def unlock_hint():
-    data = request.get_json()
-    challenge_id = data.get('challenge_id')
-    challenge = Challenge.query.get(challenge_id)
-    
-    if not challenge or not challenge.hint:
-        return jsonify({"status": "error", "message": "Yordam mavjud emas"})
-        
-    if challenge.id in [h.challenge_id for h in UnlockedHint.query.filter_by(user_id=current_user.id).all()]:
-        return jsonify({"status": "success", "hint": challenge.hint})
-        
-    if current_user.score < challenge.hint_cost:
-        return jsonify({"status": "error", "message": f"Yordamni ochish uchun {challenge.hint_cost} ball kerak! Sizda: {current_user.score} ball bor."})
-        
-    current_user.score -= challenge.hint_cost
-    new_unlock = UnlockedHint(user_id=current_user.id, challenge_id=challenge.id)
-    db.session.add(new_unlock)
-    db.session.commit()
-    
-    return jsonify({"status": "success", "hint": challenge.hint, "new_score": current_user.score})
-
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+@app.route('/api/report', methods=['POST'])
+@login_required
+def submit_report():
+    data = request.get_json()
+    if not data or not data.get('message'):
+        return jsonify({"status": "error", "message": "Xabar bo'sh bo'lishi mumkin emas!"}), 400
+        
+    message = data.get('message')
+    new_report = Report(user_id=current_user.id, message=message)
+    db.session.add(new_report)
+    db.session.commit()
+    
+    return jsonify({"status": "success", "message": "Taklifingiz yuborildi. Rahmat!"})
 
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
@@ -189,8 +165,6 @@ def admin_panel():
         difficulty = request.form.get('difficulty')
         flag = request.form.get('flag')
         points = request.form.get('points')
-        hint = request.form.get('hint')
-        hint_cost = request.form.get('hint_cost', 0)
         
         new_challenge = Challenge(
             title=title,
@@ -198,9 +172,7 @@ def admin_panel():
             category=category,
             difficulty=difficulty,
             flag=flag,
-            points=int(points),
-            hint=hint,
-            hint_cost=int(hint_cost) if hint_cost else 0
+            points=int(points)
         )
         db.session.add(new_challenge)
         db.session.commit()
@@ -208,7 +180,8 @@ def admin_panel():
         return redirect(url_for('admin_panel'))
         
     challenges = Challenge.query.order_by(Challenge.created_at.desc()).all()
-    return render_template('admin.html', challenges=challenges)
+    reports = Report.query.order_by(Report.created_at.desc()).all()
+    return render_template('admin.html', challenges=challenges, reports=reports)
     
 @app.route('/admin/delete/<int:id>')
 @login_required
@@ -224,46 +197,6 @@ def delete_challenge(id):
     db.session.commit()
     flash("Masala o'chirildi!", "success")
     return redirect(url_for('admin_panel'))
-
-@app.route('/settings', methods=['GET', 'POST'])
-@login_required
-def settings():
-    if request.method == 'POST':
-        action = request.form.get('action')
-        
-        if action == 'update_profile':
-            username = request.form.get('username')
-            email = request.form.get('email')
-            
-            if username != current_user.username and User.query.filter_by(username=username).first():
-                flash("Bu foydalanuvchi nomi band!", "error")
-            elif email != current_user.email and User.query.filter_by(email=email).first():
-                flash("Bu email band!", "error")
-            else:
-                current_user.username = username
-                current_user.email = email
-                db.session.commit()
-                flash("Profil ma'lumotlari yangilandi!", "success")
-                
-        elif action == 'update_password':
-            current_pw = request.form.get('current_password')
-            new_pw = request.form.get('new_password')
-            
-            if bcrypt.check_password_hash(current_user.password, current_pw):
-                current_user.password = bcrypt.generate_password_hash(new_pw).decode('utf-8')
-                db.session.commit()
-                flash("Parol muvaffaqiyatli o'zgartirildi!", "success")
-            else:
-                flash("Hozirgi parol noto'g'ri!", "error")
-                
-        elif action == 'delete_account':
-            db.session.delete(current_user)
-            db.session.commit()
-            return redirect(url_for('home'))
-            
-        return redirect(url_for('settings'))
-        
-    return render_template('settings.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
