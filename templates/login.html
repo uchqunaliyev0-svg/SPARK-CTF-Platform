@@ -3,166 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPARK CTF | Tizimga kirish</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <title>SPARK CTF | Kirish</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            background-color: #050505; color: #e6e6e6;
-            font-family: 'Fira Code', monospace;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; overflow: hidden;
+            background-color: #050505;
+            color: #e6e6e6;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
             position: relative;
         }
 
-        /* MATRIX FONI */
-        #matrix { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.35; }
+        #matrix { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.3; }
 
-        /* FORMA CONTAINER */
-        #auth-container {
-            width: 350px; height: 460px; perspective: 1000px;
-            animation: fadeIn 1s ease-in; z-index: 1;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        #card {
-            width: 100%; height: 100%; position: relative;
-            transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-        }
-        #card.flipped { transform: rotateY(180deg); }
-
-        .face {
-            width: 100%; height: 100%; position: absolute; backface-visibility: hidden;
-            background: rgba(15, 20, 25, 0.85); /* Yarim shaffof orqa fon */
-            backdrop-filter: blur(5px); /* Orqadagi matrixni sal xiralashtiradi */
-            border: 1px solid #30363d; border-radius: 8px;
-            padding: 35px 30px; display: flex; flex-direction: column; justify-content: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-        .face.back { transform: rotateY(180deg); }
-
-        /* LOGOTIP */
-        .branding { text-align: center; margin-bottom: 25px; font-size: 24px; letter-spacing: 2px; font-weight: bold;}
-        .branding span.spark { color: #ff3333; }
-        .branding span.ctf { color: #3366ff; }
-
-        h2 { text-align: center; color: #8b949e; margin-bottom: 20px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
-        
-        input {
-            width: 100%; padding: 12px; margin: 10px 0; background: rgba(10, 10, 10, 0.8);
-            border: 1px solid #30363d; border-radius: 4px; color: #c9d1d9;
-            font-family: 'Fira Code', monospace; outline: none; transition: 0.3s;
-        }
-        input:focus { border-color: #58a6ff; }
-        
-        /* OQ FON (AUTOFILL) FIX */
-        input:-webkit-autofill {
-            -webkit-box-shadow: 0 0 0 30px #0a0a0a inset !important;
-            -webkit-text-fill-color: #c9d1d9 !important;
+        /* --- AUTH BOX --- */
+        #auth-box {
+            width: 400px;
+            background: rgba(13, 17, 23, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid #21262d;
+            border-radius: 12px;
+            padding: 40px;
+            z-index: 1;
+            animation: fadeUp 0.6s ease-out both;
         }
 
-        button {
-            width: 100%; padding: 12px; margin-top: 25px; background: transparent;
-            border: 1px solid #8b949e; border-radius: 4px; color: #c9d1d9;
-            font-family: 'Fira Code', monospace; cursor: pointer; transition: 0.3s; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 1px;
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        button:hover { background: #30363d; color: #fff; border-color: #fff; }
 
-        .link { text-align: center; margin-top: 20px; cursor: pointer; color: #8b949e; font-size: 13px; text-decoration: underline; transition: 0.3s;}
-        .link:hover { color: #58a6ff; }
-        
-        /* FLASH XABARLAR UCHUN ANIMATSIYALAR */
-        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+        /* --- BRANDING --- */
+        .branding {
+            text-align: center;
+            font-family: 'Fira Code', monospace;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        .branding .spark { color: #ff3333; }
+        .branding .ctf   { color: #3366ff; }
+
+        .tagline {
+            text-align: center;
+            color: #484f58;
+            font-size: 12px;
+            letter-spacing: 1px;
+            font-family: 'Fira Code', monospace;
+            margin-bottom: 32px;
+        }
+
+        /* --- TABS --- */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #21262d;
+            margin-bottom: 28px;
+        }
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 10px;
+            color: #484f58;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-btn.active {
+            color: #e6e6e6;
+            border-bottom-color: #3366ff;
+        }
+        .tab-btn:hover:not(.active) { color: #8b949e; }
+
+        /* --- PANELS --- */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* --- FORM ELEMENTS --- */
+        .input-group {
+            position: relative;
+            margin-bottom: 14px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 6px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 11px 14px;
+            background: rgba(22, 27, 34, 0.9);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: #e6e6e6;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:hover {
+            border-color: #8b949e;
+        }
+        .input-group input:focus {
+            border-color: #3366ff;
+            box-shadow: 0 0 0 3px rgba(51, 102, 255, 0.15);
+        }
+        .input-group input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 30px #161b22 inset !important;
+            -webkit-text-fill-color: #e6e6e6 !important;
+        }
+
+        /* MULTI-STEP: USERNAME CHECK */
+        .step { display: none; }
+        .step.active { display: block; }
+
+        /* --- BUTTON --- */
+        .btn-main {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            background: #3366ff;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.5px;
+        }
+        .btn-main:hover { background: #2952cc; }
+        .btn-main:active { transform: scale(0.99); }
+
+        /* --- SWITCH LINK --- */
+        .switch-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #484f58;
+        }
+        .switch-link span {
+            color: #3366ff;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .switch-link span:hover { color: #58a6ff; text-decoration: underline; }
+
+        /* --- DIVIDER --- */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            color: #30363d;
+            font-size: 12px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #21262d;
+        }
+
+        /* --- BACK BTN --- */
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 0;
+            margin-bottom: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: #e6e6e6; }
+
+        /* --- USER PREVIEW --- */
+        .user-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(51,102,255,0.08);
+            border: 1px solid rgba(51,102,255,0.2);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+        }
+        .user-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3366ff, #ff3333);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #fff;
+            font-family: 'Fira Code', monospace;
+        }
+        .user-preview-name { font-size: 14px; font-weight: 600; color: #e6e6e6; }
+        .user-preview-sub  { font-size: 12px; color: #484f58; }
+
+        /* --- FLASH --- */
+        #flash-wrap {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 999; display: flex; flex-direction: column; gap: 8px;
+        }
+        .flash-msg {
+            padding: 13px 20px; border-radius: 8px; color: #fff;
+            font-size: 14px; min-width: 300px; text-align: center;
+            backdrop-filter: blur(8px);
+            animation: slideDown 0.4s ease, fadeOut 0.5s ease 4s forwards;
+        }
+        .flash-error   { background: rgba(248,81,73,0.85); border: 1px solid #f85149; }
+        .flash-success { background: rgba(46,160,67,0.85); border: 1px solid #2ea043; }
+
+        @keyframes slideDown { from { opacity:0; transform:translateY(-15px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeOut   { from { opacity:1; } to { opacity:0; visibility:hidden; } }
     </style>
 </head>
 <body>
 
     <canvas id="matrix"></canvas>
-    
-    <!-- FLASH XABARLAR -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div id="flash-messages" style="position: absolute; top: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 100;">
+
+    <!-- Flash messages -->
+    <div id="flash-wrap">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
           {% for category, message in messages %}
-            <div style="padding: 15px 20px; margin-bottom: 10px; border-radius: 5px; color: white; background: {% if category == 'error' %}rgba(255, 0, 0, 0.7){% else %}rgba(0, 255, 0, 0.7){% endif %}; backdrop-filter: blur(5px); border: 1px solid {% if category == 'error' %}#ff3333{% else %}#00ff00{% endif %}; min-width: 300px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); animation: slideDown 0.5s ease-out, fadeOut 0.5s ease-in 4.5s forwards;">
-              {{ message }}
-            </div>
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
           {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <!-- AUTH BOX -->
+    <div id="auth-box">
+        <div class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></div>
+        <div class="tagline">// CTF Platform — Hujum. Himoya. G'alaba.</div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Kirish</button>
+            <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
         </div>
-      {% endif %}
-    {% endwith %}
 
-    <div id="auth-container">
-        <div id="card">
-            
-            <div class="face front">
-                <div class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></div>
-                <h2>Ro'yxatdan o'tish</h2>
-                <form action="/register" method="POST">
-                    <input type="text" name="username" placeholder="Foydalanuvchi nomi" required>
-                    <input type="email" name="email" placeholder="Elektron pochta" required>
-                    <input type="password" name="password" placeholder="Parol" required>
-                    <button type="submit">Yaratish</button>
-                </form>
-                <div class="link" onclick="flipCard()">Tizimga kirish</div>
+        <!-- ===== LOGIN PANEL ===== -->
+        <div class="panel active" id="panel-login">
+            <!-- STEP 1: Username -->
+            <div class="step active" id="login-step1">
+                <div class="input-group">
+                    <label>Foydalanuvchi nomi</label>
+                    <input type="text" id="login-username-input" placeholder="username" autocomplete="username">
+                </div>
+                <button class="btn-main" onclick="goToStep2()">Davom etish &rarr;</button>
             </div>
 
-            <div class="face back">
-                <div class="branding"><span class="spark">SPARK</span> <span class="ctf">CTF</span></div>
-                <h2>Tizimga kirish</h2>
-                <form action="/login" method="POST">
-                    <input type="text" name="username" placeholder="Foydalanuvchi nomi" required>
-                    <input type="password" name="password" placeholder="Parol" required>
-                    <button type="submit">Kirish</button>
-                </form>
-                <div class="link" onclick="flipCard()">Yangi hisob ochish</div>
-            </div>
+            <!-- STEP 2: Password -->
+            <div class="step" id="login-step2">
+                <div id="user-preview" class="user-preview">
+                    <div class="user-avatar" id="user-avatar-letter">?</div>
+                    <div>
+                        <div class="user-preview-name" id="user-preview-name">username</div>
+                        <div class="user-preview-sub">SPARK CTF hisob</div>
+                    </div>
+                </div>
 
+                <form action="/login" method="POST" id="loginForm">
+                    <input type="hidden" name="username" id="login-username-hidden">
+                    <div class="input-group">
+                        <label>Parol</label>
+                        <input type="password" name="password" id="login-password-input" placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn-main">Kirish</button>
+                </form>
+
+                <button class="back-btn" onclick="backToStep1()" style="margin-top:12px;">&#8592; Boshqa hisob</button>
+            </div>
+        </div>
+
+        <!-- ===== REGISTER PANEL ===== -->
+        <div class="panel" id="panel-register">
+            <form action="/register" method="POST">
+                <div class="input-group">
+                    <label>Foydalanuvchi nomi</label>
+                    <input type="text" name="username" placeholder="yangi_username" required>
+                </div>
+                <div class="input-group">
+                    <label>Elektron pochta</label>
+                    <input type="email" name="email" placeholder="email@example.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Parol</label>
+                    <input type="password" name="password" placeholder="kamida 6 ta belgi" required>
+                </div>
+                <button type="submit" class="btn-main">Hisob yaratish</button>
+            </form>
+            <div class="switch-link">Allaqachon hisobingiz bormi? <span onclick="switchTab('login')">Tizimga kirish</span></div>
         </div>
     </div>
 
     <script>
-        // 1. KARTANI AYLANTIRISH
-        function flipCard() { document.getElementById('card').classList.toggle('flipped'); }
+        // ---- TAB SWITCHING ----
+        function switchTab(tab) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('panel-' + tab).classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            // Reset login to step 1 when switching
+            if(tab === 'login') backToStep1();
+        }
 
-        // 2. MATRIX EFFEKTI
+        // ---- MULTI-STEP LOGIN ----
+        function goToStep2() {
+            const username = document.getElementById('login-username-input').value.trim();
+            if(!username) {
+                document.getElementById('login-username-input').style.borderColor = '#f85149';
+                return;
+            }
+            document.getElementById('login-step1').classList.remove('active');
+            document.getElementById('login-step2').classList.add('active');
+            document.getElementById('login-username-hidden').value = username;
+            document.getElementById('user-preview-name').textContent = username;
+            document.getElementById('user-avatar-letter').textContent = username[0].toUpperCase();
+            setTimeout(() => document.getElementById('login-password-input').focus(), 100);
+        }
+
+        function backToStep1() {
+            document.getElementById('login-step2').classList.remove('active');
+            document.getElementById('login-step1').classList.add('active');
+        }
+
+        // Allow pressing Enter on step 1 to proceed
+        document.getElementById('login-username-input').addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') { e.preventDefault(); goToStep2(); }
+        });
+
+        // ---- MATRIX BACKGROUND ----
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
-        
         let drops = [];
-        
+
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
+            canvas.width  = window.innerWidth;
             canvas.height = window.innerHeight;
-            
-            const columns = Math.floor(canvas.width / 15);
-            // Ekran kattalashsa, yangi ustunlarga tomchilar qo'shamiz
-            for(let x = drops.length; x < columns; x++) {
-                drops[x] = Math.random() * -100; 
-            }
+            const cols = Math.floor(canvas.width / 15);
+            for(let x = drops.length; x < cols; x++) drops[x] = Math.random() * -100;
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
-        
-        // Custom Matrix belgilari
-        const chars = '01'.split(''); // Haqiqiy klassik 0 va 1 lar
-        
+
         function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillStyle = 'rgba(0,0,0,0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0F0'; // Yashil rang
-            ctx.font = '15px Fira Code';
-            
+            ctx.fillStyle = '#0F0';
+            ctx.font = '14px Fira Code';
             for(let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * 15, drops[i] * 15);
+                ctx.fillText(Math.random() > 0.5 ? '1' : '0', i * 15, drops[i] * 15);
                 if(drops[i] * 15 > canvas.height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
             }
         }
         setInterval(drawMatrix, 40);
+
+        // Auto-switch to step2 if server redirected back with an error (username preserved)
+        {% if request.method == 'POST' %}
+            // If there's a flash error, user came from login, show step1 again
+        {% endif %}
     </script>
 </body>
 </html>

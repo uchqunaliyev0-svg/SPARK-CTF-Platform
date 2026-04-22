@@ -2,49 +2,153 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPARK CTF | Profil</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #050505; color: #e6e6e6; font-family: 'Inter', sans-serif; margin: 0; padding: 40px; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .branding { font-family: 'Fira Code', monospace; font-size: 24px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 10px; }
-        .card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 30px; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .task { background: #050505; border: 1px solid #2ea043; border-radius: 8px; padding: 20px; }
-        .task h3 { margin: 0 0 10px 0; color: #fff; }
+        :root {
+            --bg-dark: #050505; --bg-panel: #0d1117;
+            --border-color: #21262d; --text-main: #c9d1d9;
+            --text-muted: #8b949e; --accent-spark: #ff3333;
+            --accent-ctf: #3366ff; --accent-hover: #58a6ff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+        .navbar {
+            background: rgba(13,17,23,0.95); border-bottom: 1px solid var(--border-color);
+            padding: 14px 30px; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .branding { font-family: 'Fira Code', monospace; font-size: 22px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .branding .spark { color: var(--accent-spark); }
+        .branding .ctf   { color: var(--accent-ctf); }
+        .nav-link { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.2s; }
+        .nav-link:hover { color: #e6e6e6; }
+
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+
+        /* PROFILE HEADER */
+        .profile-header {
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 28px; margin-bottom: 24px;
+            display: flex; align-items: center; gap: 24px;
+        }
+        .avatar {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: linear-gradient(135deg, #3366ff, #ff3333);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fira Code', monospace; font-size: 30px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+        .profile-info h1 { font-size: 22px; color: #fff; margin-bottom: 6px; }
+        .profile-info p  { color: var(--text-muted); font-size: 14px; }
+        .score-pill {
+            margin-left: auto;
+            background: rgba(51,102,255,0.1); border: 1px solid rgba(51,102,255,0.3);
+            padding: 10px 20px; border-radius: 8px;
+            font-family: 'Fira Code', monospace; font-size: 20px; font-weight: 700; color: var(--accent-ctf);
+        }
+        .score-label { font-size: 11px; color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 400; display: block; text-align: center; margin-top: 2px; }
+
+        /* STATS BAR */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 16px 20px; text-align: center;
+        }
+        .stat-val { font-size: 26px; font-weight: 700; color: #fff; font-family: 'Fira Code', monospace; }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        /* SOLVED LIST */
+        .section-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+        .solved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+        .solved-card {
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 16px;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .solved-card:hover { border-color: rgba(46,160,67,0.5); transform: translateY(-2px); }
+        .solved-card h3 { font-size: 14px; color: #e6e6e6; margin-bottom: 8px; }
+        .solved-meta { display: flex; gap: 8px; align-items: center; }
+        .badge {
+            font-size: 11px; padding: 2px 8px; border-radius: 10px;
+            font-weight: 600; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color);
+        }
+        .pts { color: #2ea043; font-weight: 700; font-size: 13px; margin-left: auto; font-family: 'Fira Code', monospace; }
+
+        .empty { text-align: center; color: var(--text-muted); padding: 50px; font-size: 14px; }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <a href="/" class="branding">
-            <img src="/static/img/logo.png" alt="Logo" style="height: 40px; border-radius: 8px;">
-            <span><span style="color: #ff3333;">SPARK</span> <span style="color: #3366ff;">CTF</span></span>
+            <img src="/static/img/logo.png" alt="SPARK CTF" style="height: 36px; border-radius: 6px;">
+            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span></span>
         </a>
-        <a href="/dashboard" style="color: #8b949e; text-decoration: none;">&larr; Orqaga</a>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <a href="/dashboard" class="nav-link">Masalalar</a>
+            <a href="/leaderboard" class="nav-link">Reyting</a>
+            <a href="/logout" class="nav-link" style="color: var(--accent-spark);">Chiqish</a>
+        </div>
     </nav>
 
-    <div class="card" style="display: flex; align-items: center; gap: 20px;">
-        <div style="width: 80px; height: 80px; background: #3366ff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold;">
-            {{ user.username[0]|upper }}
+    <div class="container">
+        <!-- PROFILE HEADER -->
+        <div class="profile-header">
+            <div class="avatar">{{ user.username[0]|upper }}</div>
+            <div class="profile-info">
+                <h1>{{ user.username }}</h1>
+                <p>SPARK CTF foydalanuvchisi</p>
+            </div>
+            <div class="score-pill">
+                {{ user.score }}
+                <span class="score-label">umumiy ball</span>
+            </div>
         </div>
-        <div>
-            <h1 style="margin: 0; color: #fff;">{{ user.username }}</h1>
-            <p style="color: #8b949e; margin: 5px 0 0 0;">Jami to'plangan ball: <strong style="color: #58a6ff;">{{ user.score }} pts</strong></p>
-        </div>
-    </div>
 
-    <h2>Yechilgan Masalalar ({{ solved_challenges|length }})</h2>
-    {% if solved_challenges %}
-    <div class="grid">
-        {% for chal in solved_challenges %}
-        <div class="task">
-            <h3>{{ chal.title }}</h3>
-            <p style="color: #8b949e; margin: 0; font-size: 14px;">{{ chal.category }} &bull; <span style="color: #2ea043;">{{ chal.points }} pts</span></p>
+        <!-- STATS -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-val">{{ solved_challenges|length }}</div>
+                <div class="stat-label">Yechilgan masalalar</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val">{{ user.score }}</div>
+                <div class="stat-label">Jami to'plangan ball</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val">
+                    {% if solved_challenges %}
+                        {% set easy_count = solved_challenges | selectattr('difficulty', 'equalto', 'Easy') | list | length %}
+                        {{ easy_count }}
+                    {% else %}0{% endif %}
+                </div>
+                <div class="stat-label">Easy masalalar</div>
+            </div>
         </div>
-        {% endfor %}
+
+        <!-- SOLVED LIST -->
+        <div class="section-title">Yechilgan masalalar</div>
+        {% if solved_challenges %}
+        <div class="solved-grid">
+            {% for chal in solved_challenges %}
+            <div class="solved-card">
+                <h3>{{ chal.title }}</h3>
+                <div class="solved-meta">
+                    <span class="badge">{{ chal.category }}</span>
+                    <span class="badge diff-{{ chal.difficulty|lower }}">{{ chal.difficulty }}</span>
+                    <span class="pts">+{{ chal.points }} pts</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">Hali hech qanday masala yechilmadi.<br>Masalalarga boring va birinchi flagni toping!</div>
+        {% endif %}
     </div>
-    {% else %}
-    <p style="color: #8b949e;">Hali hech qanday masala yechilmadi.</p>
-    {% endif %}
 </body>
 </html>

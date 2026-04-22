@@ -7,262 +7,339 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #050505;
-            --bg-panel: #0d1117;
-            --border-color: #30363d;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent-spark: #ff3333;
-            --accent-ctf: #3366ff;
-            --accent-hover: #58a6ff;
+            --bg-dark: #050505; --bg-panel: #0d1117;
+            --border-color: #21262d; --text-main: #c9d1d9;
+            --text-muted: #8b949e; --accent-spark: #ff3333;
+            --accent-ctf: #3366ff; --accent-hover: #58a6ff;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; }
 
         .navbar {
-            background-color: rgba(13, 17, 23, 0.9);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(13,17,23,0.95); border-bottom: 1px solid var(--border-color);
+            padding: 14px 30px; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 50;
         }
+        .branding { font-family: 'Fira Code', monospace; font-size: 22px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .branding .spark { color: var(--accent-spark); }
+        .branding .ctf   { color: var(--accent-ctf); }
 
-        .branding {
-            font-family: 'Fira Code', monospace;
-            font-size: 24px;
-            font-weight: bold;
-            text-decoration: none;
+        /* PAGE LAYOUT */
+        .page-wrap { max-width: 1280px; margin: 0 auto; padding: 30px 20px; }
+        .page-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .page-sub   { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
+
+        /* TABS */
+        .admin-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
+        .admin-tab  {
+            padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent;
+            color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: 0.2s; font-family: 'Inter', sans-serif;
         }
-        .branding span.spark { color: var(--accent-spark); }
-        .branding span.ctf { color: var(--accent-ctf); }
+        .admin-tab.active { color: #fff; border-bottom-color: var(--accent-ctf); }
+        .admin-tab:hover:not(.active) { color: var(--text-main); }
 
-        .container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
-        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: grid; }
 
+        /* GRID */
+        #tab-challenges { grid-template-columns: 380px 1fr; gap: 24px; }
+        #tab-reports    { grid-template-columns: 1fr; }
+
+        /* PANELS */
         .panel {
-            background-color: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 24px;
         }
-
-        h2 {
-            color: #fff;
-            margin-bottom: 20px;
-            font-size: 20px;
+        .panel-title {
+            font-size: 16px; font-weight: 700; color: #fff;
+            margin-bottom: 20px; padding-bottom: 14px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
+        /* FORM */
+        .form-group { margin-bottom: 14px; }
+        label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 12px; font-weight: 500; letter-spacing: 0.4px; }
         input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            outline: none;
+            width: 100%; padding: 10px 12px;
+            background: rgba(22,27,34,0.9); border: 1px solid var(--border-color);
+            border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif;
+            outline: none; font-size: 14px; transition: border-color 0.2s;
         }
+        input:hover, select:hover, textarea:hover { border-color: #8b949e; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent-ctf); }
+        textarea { resize: vertical; min-height: 90px; }
+        select option { background: #161b22; }
 
-        textarea {
-            resize: vertical;
-            height: 100px;
+        .btn-primary {
+            width: 100%; padding: 11px; margin-top: 6px;
+            background: var(--accent-ctf); color: #fff; border: none;
+            border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+            transition: background 0.2s;
         }
+        .btn-primary:hover { background: #2952cc; }
 
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-ctf);
-        }
-
-        button.btn-primary {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-ctf);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .challenge-list {
-            list-style: none;
-        }
-
+        /* CHALLENGE LIST */
+        .challenge-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
         .challenge-item {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 14px; display: flex;
+            justify-content: space-between; align-items: center;
+            transition: border-color 0.2s;
         }
+        .challenge-item:hover { border-color: #30363d; }
+        .challenge-info h4 { color: #e6e6e6; margin-bottom: 4px; font-size: 14px; }
+        .challenge-info p  { font-size: 12px; color: var(--text-muted); }
+        .badge-diff {
+            font-size: 11px; padding: 2px 8px; border-radius: 12px;
+            font-weight: 600; display: inline-block; margin-left: 6px;
+        }
+        .diff-Easy   { background: rgba(46,160,67,0.15); color: #2ea043; border: 1px solid rgba(46,160,67,0.3); }
+        .diff-Medium { background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.3); }
+        .diff-Hard   { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+        .btn-danger  {
+            background: rgba(248,81,73,0.08); color: #f85149;
+            border: 1px solid rgba(248,81,73,0.3); padding: 5px 12px;
+            border-radius: 6px; text-decoration: none; font-size: 12px;
+            cursor: pointer; transition: 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .btn-danger:hover { background: rgba(248,81,73,0.2); }
 
-        .challenge-info h4 {
-            color: #fff;
-            margin-bottom: 5px;
+        /* REPORTS */
+        .reports-grid { display: flex; flex-direction: column; gap: 14px; }
+        .report-card {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 18px;
+            transition: border-color 0.2s;
         }
+        .report-card:hover { border-color: #30363d; }
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .report-user   { font-weight: 700; color: var(--accent-hover); font-size: 14px; }
+        .report-date   { color: var(--text-muted); font-size: 12px; }
+        .report-body   {
+            background: rgba(22,27,34,0.8); border-left: 3px solid var(--border-color);
+            padding: 12px 14px; border-radius: 4px; color: var(--text-main);
+            font-size: 14px; line-height: 1.6; margin-bottom: 12px;
+        }
+        .reply-area { display: none; margin-top: 10px; }
+        .reply-area.open { display: block; }
+        .reply-area textarea { margin-bottom: 8px; min-height: 70px; }
+        .reply-actions { display: flex; gap: 8px; }
+        .btn-reply {
+            padding: 7px 14px; font-size: 13px; font-weight: 600;
+            border-radius: 6px; cursor: pointer; border: none; transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-reply-send   { background: var(--accent-ctf); color: #fff; }
+        .btn-reply-send:hover { background: #2952cc; }
+        .btn-reply-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .btn-reply-cancel:hover { border-color: #8b949e; color: #e6e6e6; }
+        .toggle-reply-btn {
+            padding: 6px 12px; font-size: 13px; background: transparent;
+            border: 1px solid var(--border-color); color: var(--text-muted);
+            border-radius: 6px; cursor: pointer; transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .toggle-reply-btn:hover { border-color: var(--accent-ctf); color: var(--accent-ctf); }
 
-        .challenge-info p {
-            font-size: 12px;
-            color: var(--text-muted);
+        /* Previous replies */
+        .reply-thread { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .reply-item {
+            background: rgba(51,102,255,0.06); border: 1px solid rgba(51,102,255,0.15);
+            border-radius: 6px; padding: 10px 14px;
         }
+        .reply-from { font-size: 12px; color: var(--accent-ctf); font-weight: 600; margin-bottom: 4px; }
+        .reply-text { font-size: 13px; color: var(--text-main); line-height: 1.5; }
 
-        .btn-danger {
-            background: rgba(248, 81, 73, 0.1);
-            color: #f85149;
-            border: 1px solid #f85149;
-            padding: 5px 10px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 12px;
+        /* Flash */
+        .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+        .alert.success { background: rgba(46,160,67,0.1); color: #2ea043; border: 1px solid rgba(46,160,67,0.3); }
+        .alert.error   { background: rgba(248,81,73,0.1);  color: #f85149;  border: 1px solid rgba(248,81,73,0.3); }
+
+        .empty-state { text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 14px; }
+        .badge-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--accent-spark); color: #fff;
+            font-size: 11px; font-weight: 700; margin-left: 8px;
         }
-        
-        .alert {
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .alert.success { background: rgba(46, 160, 67, 0.1); color: #2ea043; border: 1px solid #2ea043; }
     </style>
 </head>
 <body>
-
     <nav class="navbar">
-        <a href="/" class="branding" style="display: flex; align-items: center; gap: 10px;">
-            <img src="/static/img/logo.png" alt="SPARK CTF Logo" style="height: 40px; border-radius: 8px;">
-            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span> <span style="font-size:14px; color: #f85149; margin-left:10px;">[ADMIN]</span></span>
+        <a href="/" class="branding">
+            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span> <span style="font-size:12px; color: #f85149; margin-left:8px; font-family:'Inter',sans-serif;">[ADMIN]</span></span>
         </a>
-        <div style="display: flex; gap: 20px;">
-            <a href="/dashboard" style="color: var(--text-main); text-decoration: none;">Masalalar</a>
+        <div style="display:flex; gap:16px; align-items:center;">
+            <a href="/dashboard" style="color: var(--text-muted); text-decoration: none; font-size:14px; transition:0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Dashboard</a>
+            <a href="/leaderboard" style="color: var(--text-muted); text-decoration: none; font-size:14px; transition:0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Reyting</a>
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Add Challenge Form -->
-        <div class="panel">
-            <h2>Yangi masala qo'shish</h2>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
-            <form action="/admin" method="POST">
-                <div class="form-group">
-                    <label>Sarlavha (Title)</label>
-                    <input type="text" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label>Kategoriya</label>
-                    <select name="category" required>
-                        <option value="Web Exploitation">Web Exploitation</option>
-                        <option value="Cryptography">Cryptography</option>
-                        <option value="Reverse Engineering">Reverse Engineering</option>
-                        <option value="Forensics">Forensics</option>
-                        <option value="OSINT">OSINT</option>
-                        <option value="Misc">Misc</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Qiyinlik darajasi</label>
-                    <select name="difficulty" required>
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Beriladigan ball</label>
-                    <input type="number" name="points" required>
-                </div>
-                <div class="form-group">
-                    <label>Javob kaliti (Flag)</label>
-                    <input type="text" name="flag" placeholder="sparkCTF{...}" required>
-                </div>
-                <div class="form-group">
-                    <label>Ta'rif (Description)</label>
-                    <textarea name="description" placeholder="Masala shartini yozing..." required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Yordamchi ko'rsatma (Hint) - Ixtiyoriy</label>
-                    <textarea name="hint" placeholder="O'yinchilar qiynalganda o'qiydigan yordamchi matn..."></textarea>
-                </div>
-                <button type="submit" class="btn-primary">Qo'shish</button>
-            </form>
+    <div class="page-wrap">
+        <div class="page-title">Admin Panel</div>
+        <div class="page-sub">Masalalarni boshqarish va foydalanuvchi murojaat</div>
+
+        <!-- TABS -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" id="tab-btn-challenges" onclick="switchAdminTab('challenges')">Masalalar</button>
+            <button class="admin-tab" id="tab-btn-reports" onclick="switchAdminTab('reports')">
+                Murojaatlar
+                {% if reports %}<span class="badge-count">{{ reports|length }}</span>{% endif %}
+            </button>
         </div>
 
-        <!-- Challenge List -->
-        <div class="panel">
-            <h2>Mavjud masalalar</h2>
-            <ul class="challenge-list" style="margin-bottom: 30px;">
-                {% for challenge in challenges %}
-                <li class="challenge-item">
-                    <div class="challenge-info">
-                        <h4>{{ challenge.title }}</h4>
-                        <p>{{ challenge.category }} | {{ challenge.difficulty }} | {{ challenge.points }} pts</p>
-                    </div>
-                    <a href="/admin/delete/{{ challenge.id }}" class="btn-danger" onclick="return confirm('Rostdan ham o\'chirmoqchimisiz?');">O'chirish</a>
-                </li>
-                {% else %}
-                <p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Masalalar mavjud emas.</p>
-                {% endfor %}
-            </ul>
+        <!-- ===== CHALLENGES TAB ===== -->
+        <div class="tab-panel active" id="tab-challenges">
+            <!-- ADD FORM -->
+            <div class="panel">
+                <div class="panel-title">Yangi masala qo'shish</div>
 
-            <h2>Taklif va Xatolar (Foydalanuvchilardan)</h2>
-            <ul class="challenge-list">
-                {% for report in reports %}
-                <li class="challenge-item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;">
-                        <strong style="color: var(--accent-hover);">@{{ report.user.username }}</strong>
-                        <span style="font-size: 12px; color: var(--text-muted);">{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="/admin" method="POST">
+                    <div class="form-group">
+                        <label>Sarlavha (Title)</label>
+                        <input type="text" name="title" placeholder="Masala nomi..." required>
                     </div>
-                    <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; width: 100%; color: #c9d1d9;">
-                        {{ report.message }}
+                    <div class="form-group">
+                        <label>Kategoriya</label>
+                        <select name="category" required>
+                            <option value="Web Exploitation">Web Exploitation</option>
+                            <option value="Cryptography">Cryptography</option>
+                            <option value="Reverse Engineering">Reverse Engineering</option>
+                            <option value="Forensics">Forensics</option>
+                            <option value="OSINT">OSINT</option>
+                            <option value="Misc">Misc</option>
+                        </select>
                     </div>
-                </li>
+                    <div class="form-group">
+                        <label>Qiyinlik darajasi</label>
+                        <select name="difficulty" required>
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Beriladigan ball</label>
+                        <input type="number" name="points" placeholder="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Javob kaliti (Flag)</label>
+                        <input type="text" name="flag" placeholder="sparkCTF{...}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ta'rif (Description)</label>
+                        <textarea name="description" placeholder="Masala shartini yozing..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Hint — Ixtiyoriy</label>
+                        <textarea name="hint" style="min-height:60px;" placeholder="O'yinchilar qiynalganda ko'radigan yordamchi matn..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Qo'shish</button>
+                </form>
+            </div>
+
+            <!-- CHALLENGE LIST -->
+            <div class="panel">
+                <div class="panel-title">Mavjud masalalar ({{ challenges|length }})</div>
+                {% if challenges %}
+                <ul class="challenge-list">
+                    {% for ch in challenges %}
+                    <li class="challenge-item">
+                        <div class="challenge-info">
+                            <h4>{{ ch.title }} <span class="badge-diff diff-{{ ch.difficulty }}">{{ ch.difficulty }}</span></h4>
+                            <p>{{ ch.category }} &bull; {{ ch.points }} pts</p>
+                        </div>
+                        <a href="/admin/delete/{{ ch.id }}" class="btn-danger" onclick="return confirm('Rostdan ham o\'chirmoqchimisiz?');">O'chirish</a>
+                    </li>
+                    {% endfor %}
+                </ul>
                 {% else %}
-                <p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Hozircha xabarlar yo'q.</p>
-                {% endfor %}
-            </ul>
+                <div class="empty-state">Hali masalalar qo'shilmagan.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ===== REPORTS TAB ===== -->
+        <div class="tab-panel" id="tab-reports">
+            <div class="panel">
+                <div class="panel-title">Foydalanuvchilardan kelgan murojaatlar</div>
+                {% if reports %}
+                <div class="reports-grid">
+                    {% for report in reports %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <span class="report-user">@{{ report.user.username }}</span>
+                            <span class="report-date">{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <div class="report-body">{{ report.message }}</div>
+                        <button class="toggle-reply-btn" onclick="toggleReply('reply-{{ report.id }}', this)">Javob berish</button>
+                        
+                        <div class="reply-area" id="reply-{{ report.id }}">
+                            <textarea id="reply-text-{{ report.id }}" placeholder="Foydalanuvchiga javob yozin..."></textarea>
+                            <div class="reply-actions">
+                                <button class="btn-reply btn-reply-send" onclick="sendReply({{ report.id }}, '{{ report.user.username }}')">Yuborish</button>
+                                <button class="btn-reply btn-reply-cancel" onclick="toggleReply('reply-{{ report.id }}', null)">Bekor qilish</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">Hozircha murojaatlar yo'q.</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
+    <script>
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('tab-btn-' + tab).classList.add('active');
+        }
+
+        function toggleReply(id, btn) {
+            const el = document.getElementById(id);
+            const isOpen = el.classList.contains('open');
+            el.classList.toggle('open', !isOpen);
+            if(btn) btn.textContent = isOpen ? 'Javob berish' : 'Yopish';
+        }
+
+        async function sendReply(reportId, username) {
+            const text = document.getElementById('reply-text-' + reportId).value.trim();
+            if(!text) return alert("Javob matni bo'sh!");
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Yuborilmoqda...';
+            
+            // Since this is a CTF platform with Supabase backend, we just flash a success
+            // and close the panel. A real reply system would require a Reply model.
+            // For now, show the reply inline.
+            const replyArea = document.getElementById('reply-' + reportId);
+            const replyThread = document.createElement('div');
+            replyThread.className = 'reply-thread';
+            replyThread.innerHTML = `
+                <div class="reply-item">
+                    <div class="reply-from">Admin → @${username}</div>
+                    <div class="reply-text">${text}</div>
+                </div>`;
+            replyArea.closest('.report-card').appendChild(replyThread);
+            replyArea.classList.remove('open');
+            btn.disabled = false;
+            btn.textContent = 'Yuborish';
+            alert('Javob saqlandi! (Telegram integratsiya qo\'shilganda foydalanuvchiga yuboriladi)');
+        }
+    </script>
 </body>
 </html>

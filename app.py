@@ -2,8 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from models import db, User, Challenge, Submission, Report
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    LIMITER_AVAILABLE = True
+except ImportError:
+    LIMITER_AVAILABLE = False
 
 app = Flask(__name__)
 
@@ -16,12 +20,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bwiusxkzvrhybnllf
 db.init_app(app)
 bcrypt = Bcrypt(app)
 
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
+if LIMITER_AVAILABLE:
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri="memory://"
+    )
+else:
+    # No-op fallback when flask_limiter not installed (local dev)
+    class _NoopLimiter:
+        def limit(self, *a, **kw):
+            return lambda f: f
+    limiter = _NoopLimiter()
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 

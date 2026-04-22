@@ -271,15 +271,15 @@
 </head>
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar">
-        <a href="/" class="branding" style="display: flex; align-items: center; gap: 10px;">
-            <img src="/static/img/logo.png" alt="SPARK CTF Logo" style="height: 40px; border-radius: 8px;">
+        <a href="/" class="branding" style="display: flex; align-items: center; gap: 12px;">
+            <img src="/static/img/logo.png" alt="SPARK CTF Logo" style="height: 36px; border-radius: 6px;">
             <span><span class="spark">SPARK</span> <span class="ctf">CTF</span></span>
         </a>
         <div class="user-nav">
-            <a href="/profile" data-i18n="nav_profile" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">👤 Profil</a>
-            <a href="/leaderboard" data-i18n="nav_rating" style="color: var(--text-main); text-decoration: none; margin-right: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s;" onmouseover="this.style.color='var(--accent-hover)'" onmouseout="this.style.color='var(--text-main)'">🏆 Reyting</a>
+            <a href="/profile" data-i18n="nav_profile" style="color: var(--text-muted); text-decoration: none; font-size:14px; font-weight: 600; transition: 0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Profil</a>
+            <a href="/leaderboard" data-i18n="nav_rating" style="color: var(--text-muted); text-decoration: none; font-size:14px; font-weight: 600; transition: 0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Reyting</a>
+            <button onclick="openSettingsModal()" data-i18n="nav_settings" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size:13px; font-family:'Inter',sans-serif; transition:0.2s;" onmouseover="this.style.color='#e6e6e6'; this.style.borderColor='#8b949e';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border-color)';">Sozlamalar</button>
             <div class="score-badge">{{ current_user.score }} pts</div>
             <div class="username">{{ current_user.username }}</div>
             <a href="/logout" data-i18n="nav_logout" class="logout-btn">Chiqish</a>
@@ -290,54 +290,32 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="filter-section">
-                <h3>Qidiruv</h3>
+                <h3 data-i18n="sidebar_search">Qidiruv</h3>
                 <div style="background: rgba(10,10,10,0.8); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; align-items: center;">
-                    <input type="text" id="searchInput" placeholder="Masala nomi..." style="background: transparent; border: none; outline: none; color: var(--text-main); width: 100%; font-family: 'Inter', sans-serif;">
+                    <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Masala nomi..." style="background: transparent; border: none; outline: none; color: var(--text-main); width: 100%; font-family: 'Inter', sans-serif;">
                 </div>
             </div>
 
             <div class="filter-section">
-                <h3>Kategoriyalar</h3>
+                <h3 data-i18n="sidebar_categories">Kategoriyalar</h3>
                 <ul class="filter-list" id="categoryFilter">
-                    <li class="filter-item active" data-val="all">
-                        <span class="item-label">Barchasi</span> 
-                    </li>
-                    <li class="filter-item" data-val="Web Exploitation">
-                        <span class="item-label">Web Exploitation</span> 
-                    </li>
-                    <li class="filter-item" data-val="Cryptography">
-                        <span class="item-label">Cryptography</span> 
-                    </li>
-                    <li class="filter-item" data-val="Reverse Engineering">
-                        <span class="item-label">Reverse Engineering</span> 
-                    </li>
-                    <li class="filter-item" data-val="Forensics">
-                        <span class="item-label">Forensics</span> 
-                    </li>
-                    <li class="filter-item" data-val="OSINT">
-                        <span class="item-label">OSINT</span> 
-                    </li>
-                    <li class="filter-item" data-val="Misc">
-                        <span class="item-label">Misc</span> 
-                    </li>
+                    <li class="filter-item active" data-val="all"><span class="item-label" data-i18n="filter_all">Barchasi</span></li>
+                    <li class="filter-item" data-val="Web Exploitation"><span class="item-label">Web Exploitation</span></li>
+                    <li class="filter-item" data-val="Cryptography"><span class="item-label">Cryptography</span></li>
+                    <li class="filter-item" data-val="Reverse Engineering"><span class="item-label">Reverse Engineering</span></li>
+                    <li class="filter-item" data-val="Forensics"><span class="item-label">Forensics</span></li>
+                    <li class="filter-item" data-val="OSINT"><span class="item-label">OSINT</span></li>
+                    <li class="filter-item" data-val="Misc"><span class="item-label">Misc</span></li>
                 </ul>
             </div>
 
             <div class="filter-section">
-                <h3>Qiyinlik darajasi</h3>
+                <h3 data-i18n="sidebar_difficulty">Qiyinlik darajasi</h3>
                 <ul class="filter-list" id="difficultyFilter">
-                    <li class="filter-item active" data-val="all">
-                        <span class="item-label">Barchasi</span> 
-                    </li>
-                    <li class="filter-item" data-val="Easy">
-                        <span class="item-label"><span class="diff-indicator diff-easy"></span>Easy</span> 
-                    </li>
-                    <li class="filter-item" data-val="Medium">
-                        <span class="item-label"><span class="diff-indicator diff-medium"></span>Medium</span> 
-                    </li>
-                    <li class="filter-item" data-val="Hard">
-                        <span class="item-label"><span class="diff-indicator diff-hard"></span>Hard</span> 
-                    </li>
+                    <li class="filter-item active" data-val="all"><span class="item-label" data-i18n="filter_all">Barchasi</span></li>
+                    <li class="filter-item" data-val="Easy"><span class="item-label"><span class="diff-indicator diff-easy"></span><span data-i18n="diff_easy">Easy</span></span></li>
+                    <li class="filter-item" data-val="Medium"><span class="item-label"><span class="diff-indicator diff-medium"></span><span data-i18n="diff_medium">Medium</span></span></li>
+                    <li class="filter-item" data-val="Hard"><span class="item-label"><span class="diff-indicator diff-hard"></span><span data-i18n="diff_hard">Hard</span></span></li>
                 </ul>
             </div>
             
@@ -449,7 +427,7 @@
             
             <hr style="border: none; border-top: 1px solid var(--border-color); margin: 25px 0;">
             
-            <button onclick="closeSettingsModal(); openReportModal();" style="width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 8px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='var(--accent-spark)'" onmouseout="this.style.borderColor='var(--border-color)'">💬 Taklif / Xato yuborish</button>
+            <button onclick="closeSettingsModal(); openReportModal();" data-i18n="report_btn" style="width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 8px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='var(--accent-spark)'" onmouseout="this.style.borderColor='var(--border-color)'">Taklif / Xato yuborish</button>
         </div>
     </div>
 
@@ -457,16 +435,25 @@
         // Translations
         const translations = {
             'uz': {
-                'nav_profile': '👤 Profil', 'nav_rating': '🏆 Reyting', 'nav_logout': 'Chiqish',
-                'settings_title': 'Sozlamalar', 'settings_lang': 'Tilni tanlang:'
+                'nav_profile': 'Profil', 'nav_rating': 'Reyting', 'nav_logout': 'Chiqish', 'nav_settings': 'Sozlamalar',
+                'settings_title': 'Sozlamalar', 'settings_lang': 'Tilni tanlang:',
+                'sidebar_search': 'Qidiruv', 'sidebar_categories': 'Kategoriyalar', 'sidebar_difficulty': 'Qiyinlik darajasi',
+                'filter_all': 'Barchasi', 'diff_easy': 'Easy', 'diff_medium': 'Medium', 'diff_hard': 'Hard',
+                'search_placeholder': 'Masala nomi...', 'report_btn': 'Taklif / Xato yuborish'
             },
             'ru': {
-                'nav_profile': '👤 Профиль', 'nav_rating': '🏆 Рейтинг', 'nav_logout': 'Выйти',
-                'settings_title': 'Настройки', 'settings_lang': 'Выберите язык:'
+                'nav_profile': 'Профиль', 'nav_rating': 'Рейтинг', 'nav_logout': 'Выйти', 'nav_settings': 'Настройки',
+                'settings_title': 'Настройки', 'settings_lang': 'Выберите язык:',
+                'sidebar_search': 'Поиск', 'sidebar_categories': 'Категории', 'sidebar_difficulty': 'Сложность',
+                'filter_all': 'Все', 'diff_easy': 'Лёгкий', 'diff_medium': 'Средний', 'diff_hard': 'Сложный',
+                'search_placeholder': 'Название задачи...', 'report_btn': 'Написать жалобу / идею'
             },
             'en': {
-                'nav_profile': '👤 Profile', 'nav_rating': '🏆 Leaderboard', 'nav_logout': 'Logout',
-                'settings_title': 'Settings', 'settings_lang': 'Select language:'
+                'nav_profile': 'Profile', 'nav_rating': 'Leaderboard', 'nav_logout': 'Logout', 'nav_settings': 'Settings',
+                'settings_title': 'Settings', 'settings_lang': 'Select language:',
+                'sidebar_search': 'Search', 'sidebar_categories': 'Categories', 'sidebar_difficulty': 'Difficulty',
+                'filter_all': 'All', 'diff_easy': 'Easy', 'diff_medium': 'Medium', 'diff_hard': 'Hard',
+                'search_placeholder': 'Challenge name...', 'report_btn': 'Submit Feedback'
             }
         };
 
@@ -475,10 +462,19 @@
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang] && translations[lang][key]) {
-                    if(el.tagName === 'INPUT' && el.placeholder) el.placeholder = translations[lang][key];
-                    else el.textContent = translations[lang][key];
+                    el.textContent = translations[lang][key];
                 }
             });
+            // Placeholder translations
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+            // Report button in settings
+            const reportBtn = document.querySelector('[data-i18n="report_btn"]');
+            if (reportBtn && translations[lang]) reportBtn.textContent = translations[lang]['report_btn'] || reportBtn.textContent;
         }
         
         document.addEventListener('DOMContentLoaded', () => {
