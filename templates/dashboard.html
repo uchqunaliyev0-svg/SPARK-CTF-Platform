@@ -3,47 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPARK CTF | Masalalar</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>SPARK CTF | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #050505;
-            --bg-panel: #0d1117;
-            --border-color: #30363d;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent-spark: #ff3333;
-            --accent-ctf: #3366ff;
-            --accent-hover: #58a6ff;
-            --easy-color: #2ea043;
-            --medium-color: #d29922;
-            --hard-color: #f85149;
+            --primary: #7B2FF7;
+            --accent: #00C6FF;
+            --bg: #0A0A0F;
+            --sidebar-bg: #0D0D14;
+            --card-bg: rgba(20, 20, 30, 0.4);
+            --border: rgba(123, 47, 247, 0.15);
+            --text-main: #E2E2E2;
+            --text-dim: #888891;
+            --success: #A3FF12;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg);
             color: var(--text-main);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* Navbar */
+        /* NAVBAR */
         .navbar {
-            background-color: rgba(13, 17, 23, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 30px;
+            height: 72px;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -51,221 +46,180 @@
 
         .branding {
             font-family: 'Fira Code', monospace;
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 2px;
+            font-weight: 700;
+            font-size: 22px;
             text-decoration: none;
+            letter-spacing: -1px;
         }
-        .branding span.spark { color: var(--accent-spark); }
-        .branding span.ctf { color: var(--accent-ctf); }
+        .branding .spark { color: var(--primary); text-shadow: 0 0 15px rgba(123, 47, 247, 0.4); }
+        .branding .ctf { color: var(--accent); }
 
-        .user-nav {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-family: 'Fira Code', monospace;
-        }
-
-        .score-badge {
-            background: rgba(51, 102, 255, 0.1);
-            border: 1px solid var(--accent-ctf);
-            padding: 5px 10px;
-            border-radius: 4px;
-            color: var(--accent-ctf);
-        }
-
-        .logout-btn {
-            color: var(--text-muted);
+        .user-nav { display: flex; align-items: center; gap: 24px; }
+        .nav-link {
+            color: var(--text-dim);
             text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
             transition: 0.3s;
         }
+        .nav-link:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
-        .logout-btn:hover {
-            color: var(--accent-spark);
+        .score-pill {
+            background: rgba(123, 47, 247, 0.1);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 10px;
+            color: var(--primary);
+            font-family: 'Fira Code', monospace;
+            font-weight: 700;
+            font-size: 14px;
         }
 
-        /* Main Layout */
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            height: calc(100vh - 65px); /* Minus navbar */
-        }
+        /* MAIN CONTENT */
+        .layout { display: flex; flex: 1; }
 
-        /* Sidebar */
+        /* SIDEBAR */
         .sidebar {
             width: 280px;
-            background-color: var(--bg-panel);
-            border-right: 1px solid var(--border-color);
-            padding: 20px;
-            overflow-y: auto;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
         }
 
-        /* Webkit scrollbar styles */
-        .sidebar::-webkit-scrollbar, .content::-webkit-scrollbar {
-            width: 8px;
-        }
-        .sidebar::-webkit-scrollbar-track, .content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .sidebar::-webkit-scrollbar-thumb, .content::-webkit-scrollbar-thumb {
-            background: #30363d;
-            border-radius: 4px;
-        }
-        .sidebar::-webkit-scrollbar-thumb:hover, .content::-webkit-scrollbar-thumb:hover {
-            background: #484f58;
-        }
-
-        .filter-section {
-            margin-bottom: 30px;
-        }
-
-        .filter-section h3 {
-            font-size: 14px;
-            color: var(--text-muted);
+        .sidebar-section h3 {
+            font-size: 11px;
+            color: var(--text-dim);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            font-weight: 600;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
         }
 
-        .filter-list {
-            list-style: none;
-        }
-
+        .filter-list { list-style: none; }
         .filter-item {
-            padding: 10px 15px;
-            margin-bottom: 5px;
-            border-radius: 6px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 4px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             font-size: 14px;
-            border: 1px solid transparent;
-            color: var(--text-main);
-        }
-
-        .filter-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            transform: translateX(5px);
-        }
-
-        .filter-item:active {
-            transform: translateX(5px) scale(0.98);
-        }
-
-        .filter-item.active {
-            background-color: rgba(51, 102, 255, 0.1);
-            border-color: rgba(51, 102, 255, 0.3);
-            color: var(--accent-hover);
             font-weight: 600;
-            transform: translateX(5px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .badge {
-            background-color: #21262d;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .diff-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-        }
-        .diff-easy { background-color: var(--easy-color); }
-        .diff-medium { background-color: var(--medium-color); }
-        .diff-hard { background-color: var(--hard-color); }
-
-        .item-label {
+            color: var(--text-dim);
+            transition: all 0.3s;
             display: flex;
             align-items: center;
+            gap: 10px;
+        }
+        .filter-item:hover { background: rgba(255,255,255,0.03); color: var(--text-main); }
+        .filter-item.active {
+            background: rgba(123, 47, 247, 0.1);
+            color: var(--primary);
+            box-shadow: inset 0 0 0 1px var(--border);
         }
 
-        /* Main Content */
-        .content {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-            background: radial-gradient(circle at top, #0d1117 0%, #050505 100%);
-        }
+        .diff-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-easy { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .dot-medium { background: #FFB800; box-shadow: 0 0 8px #FFB800; }
+        .dot-hard { background: #FF4B4B; box-shadow: 0 0 8px #FF4B4B; }
 
-        .page-header {
-            margin-bottom: 40px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
-        }
+        /* CONTENT AREA */
+        .content { flex: 1; padding: 40px; overflow-y: auto; }
+        .page-header { margin-bottom: 40px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .page-header p { color: var(--text-dim); font-size: 15px; }
 
-        .page-header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-
-        .page-header p {
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        /* Task Grid Skeletons */
-        .task-grid {
+        /* CHALLENGE CARDS */
+        .challenges-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
+            gap: 24px;
         }
 
-        .task-card {
-            background-color: rgba(13, 17, 23, 0.6);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
-            transition: all 0.3s ease;
+        .challenge-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
             position: relative;
             overflow: hidden;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
+        }
+        .challenge-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(123, 47, 247, 0.4);
+            box-shadow: 0 20px 40px -10px rgba(123, 47, 247, 0.2);
+            background: rgba(25, 25, 40, 0.6);
+        }
+        .challenge-card.solved { border-color: rgba(163, 255, 18, 0.2); }
+        .challenge-card.solved::after {
+            content: 'SOLVED';
+            position: absolute;
+            top: 12px; right: -30px;
+            background: var(--success);
+            color: #000;
+            font-size: 10px; font-weight: 800;
+            padding: 4px 35px;
+            transform: rotate(45deg);
         }
 
-        .task-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(51, 102, 255, 0.5);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(51, 102, 255, 0.1);
-        }
-
-        /* Skeleton Animation */
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-
-        .skeleton-box {
-            background: #21262d;
-            background-image: linear-gradient(to right, #21262d 0%, #30363d 20%, #21262d 40%, #21262d 100%);
-            background-repeat: no-repeat;
-            background-size: 1000px 100%; 
-            animation: shimmer 2.5s infinite linear forwards;
-            border-radius: 4px;
-        }
-
-        .skel-header { display: flex; justify-content: space-between; margin-bottom: 25px; }
-        .skel-tag { width: 80px; height: 22px; border-radius: 12px; }
-        .skel-diff { width: 60px; height: 22px; border-radius: 12px; }
+        .card-category { font-size: 12px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+        .card-points { font-family: 'Fira Code', monospace; color: var(--primary); font-weight: 700; }
         
-        .skel-title { width: 75%; height: 28px; margin-bottom: 15px; border-radius: 6px; }
-        .skel-desc1 { width: 100%; height: 14px; margin-bottom: 10px; }
-        .skel-desc2 { width: 85%; height: 14px; margin-bottom: 35px; }
-        
-        .skel-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
-        .skel-points { width: 50px; height: 28px; border-radius: 6px; }
-        .skel-btn { width: 100px; height: 38px; border-radius: 8px; }
+        .card-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px; font-weight: 600;
+            transition: 0.3s;
+        }
+        .challenge-card:hover .card-btn { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 15px rgba(123, 47, 247, 0.4); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 10, 0.85); backdrop-filter: blur(15px);
+            display: none; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal {
+            width: 90%; max-width: 500px;
+            background: #0D0D14; border: 1px solid var(--border);
+            border-radius: 24px; padding: 40px; position: relative;
+            box-shadow: 0 0 100px rgba(123, 47, 247, 0.1);
+        }
+        .modal-title { font-size: 24px; font-weight: 700; margin-bottom: 16px; }
+        .modal-desc { color: var(--text-dim); line-height: 1.6; font-size: 15px; margin-bottom: 32px; }
+
+        .flag-input {
+            width: 100%; padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; color: #fff; font-family: 'Fira Code', monospace;
+            outline: none; transition: 0.3s; margin-bottom: 16px;
+        }
+        .flag-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(123, 47, 247, 0.1); }
+
+        .btn-submit {
+            width: 100%; padding: 14px; background: var(--primary);
+            border: none; border-radius: 12px; color: #fff; font-weight: 700;
+            cursor: pointer; transition: 0.3s;
+        }
+        .btn-submit:hover { background: #8B4BFF; box-shadow: 0 0 20px rgba(123, 47, 247, 0.4); }
+
+        /* SETTINGS BUTTON */
+        .settings-btn {
+            position: fixed; bottom: 32px; right: 32px;
+            width: 56px; height: 56px; background: var(--sidebar-bg);
+            border: 1px solid var(--border); border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; z-index: 90;
+        }
+        .settings-btn:hover { border-color: var(--primary); transform: rotate(45deg); box-shadow: 0 0 20px rgba(123, 47, 247, 0.2); }
 
     </style>
 </head>
@@ -273,412 +227,171 @@
 
     <nav class="navbar">
         <a href="/" class="branding">
-            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span></span>
+            <span class="spark">SPARK</span> <span class="ctf">CTF</span>
         </a>
         <div class="user-nav">
-            <a href="/profile" data-i18n="nav_profile" style="color: var(--text-muted); text-decoration: none; font-size:14px; font-weight: 600; transition: 0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Profil</a>
-            <a href="/leaderboard" data-i18n="nav_rating" style="color: var(--text-muted); text-decoration: none; font-size:14px; font-weight: 600; transition: 0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Reyting</a>
-            <button onclick="openSettingsModal()" data-i18n="nav_settings" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size:13px; font-family:'Inter',sans-serif; transition:0.2s;" onmouseover="this.style.color='#e6e6e6'; this.style.borderColor='#8b949e';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border-color)';">Sozlamalar</button>
-            <div class="score-badge">{{ current_user.score }} pts</div>
-            <div class="username">{{ current_user.username }}</div>
-            <a href="/logout" data-i18n="nav_logout" class="logout-btn">Chiqish</a>
+            <a href="/profile" class="nav-link" data-i18n="nav_profile">Profil</a>
+            <a href="/leaderboard" class="nav-link" data-i18n="nav_rating">Reyting</a>
+            <div class="score-pill">{{ current_user.score }} pts</div>
+            <a href="/logout" class="nav-link" style="color: #FF4B4B;">Chiqish</a>
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Sidebar -->
+    <div class="layout">
         <aside class="sidebar">
-            <div class="filter-section">
+            <div class="sidebar-section">
                 <h3 data-i18n="sidebar_search">Qidiruv</h3>
-                <div style="background: rgba(10,10,10,0.8); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; align-items: center;">
-                    <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Masala nomi..." style="background: transparent; border: none; outline: none; color: var(--text-main); width: 100%; font-family: 'Inter', sans-serif;">
-                </div>
+                <input type="text" id="searchInput" placeholder="..." style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; outline: none;">
             </div>
 
-            <div class="filter-section">
+            <div class="sidebar-section">
                 <h3 data-i18n="sidebar_categories">Kategoriyalar</h3>
                 <ul class="filter-list" id="categoryFilter">
-                    <li class="filter-item active" data-val="all"><span class="item-label" data-i18n="filter_all">Barchasi</span></li>
-                    <li class="filter-item" data-val="Web Exploitation"><span class="item-label">Web Exploitation</span></li>
-                    <li class="filter-item" data-val="Cryptography"><span class="item-label">Cryptography</span></li>
-                    <li class="filter-item" data-val="Reverse Engineering"><span class="item-label">Reverse Engineering</span></li>
-                    <li class="filter-item" data-val="Forensics"><span class="item-label">Forensics</span></li>
-                    <li class="filter-item" data-val="OSINT"><span class="item-label">OSINT</span></li>
-                    <li class="filter-item" data-val="Misc"><span class="item-label">Misc</span></li>
+                    <li class="filter-item active" data-val="all" data-i18n="filter_all">Barchasi</li>
+                    <li class="filter-item" data-val="Web Exploitation">Web Exploitation</li>
+                    <li class="filter-item" data-val="Cryptography">Cryptography</li>
+                    <li class="filter-item" data-val="Reverse Engineering">Reverse Engineering</li>
+                    <li class="filter-item" data-val="Forensics">Forensics</li>
+                    <li class="filter-item" data-val="OSINT">OSINT</li>
+                    <li class="filter-item" data-val="Misc">Misc</li>
                 </ul>
             </div>
 
-            <div class="filter-section">
+            <div class="sidebar-section">
                 <h3 data-i18n="sidebar_difficulty">Qiyinlik darajasi</h3>
                 <ul class="filter-list" id="difficultyFilter">
-                    <li class="filter-item active" data-val="all"><span class="item-label" data-i18n="filter_all">Barchasi</span></li>
-                    <li class="filter-item" data-val="Easy"><span class="item-label"><span class="diff-indicator diff-easy"></span><span data-i18n="diff_easy">Easy</span></span></li>
-                    <li class="filter-item" data-val="Medium"><span class="item-label"><span class="diff-indicator diff-medium"></span><span data-i18n="diff_medium">Medium</span></span></li>
-                    <li class="filter-item" data-val="Hard"><span class="item-label"><span class="diff-indicator diff-hard"></span><span data-i18n="diff_hard">Hard</span></span></li>
+                    <li class="filter-item active" data-val="all" data-i18n="filter_all">Barchasi</li>
+                    <li class="filter-item" data-val="Easy"><span class="diff-dot dot-easy"></span>Easy</li>
+                    <li class="filter-item" data-val="Medium"><span class="diff-dot dot-medium"></span>Medium</li>
+                    <li class="filter-item" data-val="Hard"><span class="diff-dot dot-hard"></span>Hard</li>
                 </ul>
             </div>
-            
         </aside>
 
-        <!-- Main Content -->
         <main class="content">
             <div class="page-header">
-                <h1>Masalalar Kategoriya Bo'yicha</h1>
-                <p>Chap tomondagi menudan o'zingizga mos bo'lim va qiyinlik darajasini tanlang. Hozircha masalalar joylanmoqda.</p>
+                <h1 data-i18n="dashboard_title">Masalalar</h1>
+                <p data-i18n="dashboard_subtitle">Kategoriya va darajani tanlang. Haqiqiy xakerlikni boshlang.</p>
             </div>
 
-            <!-- Task Grid -->
-            <div class="task-grid" id="task-container">
-                {% if challenges %}
-                    {% for challenge in challenges %}
-                        <div class="task-card" data-category="{{ challenge.category }}" data-difficulty="{{ challenge.difficulty }}" data-solved="{% if challenge.id in solved_ids %}true{% else %}false{% endif %}" onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title|escape }}', '{{ challenge.description|escape }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {% if challenge.id in solved_ids %}true{% else %}false{% endif %}, '{{ challenge.hint|escape if challenge.hint else '' }}')">
-                            <div class="skel-header" style="margin-bottom: 15px; display: flex; justify-content: space-between;">
-                                <span class="badge">{{ challenge.category }}</span>
-                                <span class="badge diff-{{ challenge.difficulty|lower }}" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);"><span class="diff-indicator diff-{{ challenge.difficulty|lower }}"></span>{{ challenge.difficulty }}</span>
-                            </div>
-                            <h3 style="color: #fff; margin-bottom: 10px; font-size: 18px;">{{ challenge.title }}</h3>
-                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ challenge.description }}</p>
-                            
-                            <div class="skel-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
-                                <span style="color: var(--accent-hover); font-weight: bold; font-size: 18px;">{{ challenge.points }} <span style="font-size:12px; color:var(--text-muted)">pts</span></span>
-                                
-                                {% if challenge.id in solved_ids %}
-                                    <button style="background: rgba(46, 160, 67, 0.2); color: #2ea043; border: 1px solid #2ea043; padding: 5px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">Yechilgan</button>
-                                {% else %}
-                                    <button style="background: var(--accent-ctf); color: #fff; border: none; padding: 5px 15px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-weight: 600;">Boshlash</button>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="color: var(--text-muted); grid-column: 1 / -1; text-align: center; padding: 40px;">Hozircha masalalar yo'q. Tez orada qo'shiladi!</p>
-                {% endif %}
+            <div class="challenges-grid">
+                {% for challenge in challenges %}
+                <div class="challenge-card {% if challenge.id in solved_ids %}solved{% endif %}" 
+                     data-category="{{ challenge.category }}" 
+                     data-difficulty="{{ challenge.difficulty }}"
+                     onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title }}', '{{ challenge.description }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {{ 'true' if challenge.id in solved_ids else 'false' }}, '{{ challenge.hint or '' }}')">
+                    <div class="card-category">{{ challenge.category }}</div>
+                    <div class="card-title">{{ challenge.title }}</div>
+                    <div class="card-footer">
+                        <span class="card-points">{{ challenge.points }} PTS</span>
+                        <button class="card-btn">Masalani ochish</button>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </main>
     </div>
 
-    <!-- Challenge Modal -->
-    <div id="challengeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 600px; padding: 30px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <button onclick="closeModal()" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
-                <span id="modalCategory" class="badge"></span>
-                <span id="modalDifficulty" class="badge" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);"></span>
-                <span style="color: var(--accent-hover); font-weight: bold; margin-left: auto; font-size: 18px;"><span id="modalPoints"></span> pts</span>
-            </div>
-            
-            <h2 id="modalTitle" style="color: #fff; margin-bottom: 20px; font-size: 24px;"></h2>
-            
-            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
-                <p id="modalDescription" style="color: var(--text-main); line-height: 1.6; white-space: pre-wrap; font-family: 'Inter', sans-serif;"></p>
-            </div>
+    <!-- CHALLENGE MODAL -->
+    <div class="modal-overlay" id="challengeModal">
+        <div class="modal">
+            <div class="modal-title" id="modalTitle">Masala nomi</div>
+            <div class="modal-desc" id="modalDescription">Masala matni bu yerda ko'rinadi...</div>
             
             <div id="hintSection" style="display: none; margin-bottom: 20px;">
-                <button onclick="document.getElementById('hintText').style.display='block'; this.style.display='none';" style="background: rgba(210, 153, 34, 0.2); color: #d29922; border: 1px solid #d29922; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">💡 Hint ko'rish</button>
-                <div id="hintText" style="display: none; background: rgba(210, 153, 34, 0.1); border-left: 4px solid #d29922; padding: 15px; border-radius: 4px; color: #e6e6e6; margin-top: 10px;"></div>
+                <button onclick="toggleHint()" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px;">💡 Hint ko'rish</button>
+                <p id="hintText" style="display: none; color: var(--accent); font-size: 13px; margin-top: 10px; font-style: italic;"></p>
             </div>
-            
+
             <div id="submitSection">
-                <input type="text" id="flagInput" placeholder="sparkCTF{...}" style="width: 100%; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: 'Fira Code', monospace; margin-bottom: 15px; outline: none; transition: 0.3s;" onfocus="this.style.borderColor='var(--accent-ctf)'" onblur="this.style.borderColor='var(--border-color)'">
-                
-                <button id="submitBtn" onclick="submitFlag()" style="width: 100%; padding: 12px; background: var(--accent-ctf); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 16px;">Javobni yuborish</button>
+                <input type="text" class="flag-input" id="flagInput" placeholder="sparkCTF{...}">
+                <button class="btn-submit" id="submitBtn" onclick="submitFlag()">Flagni yuborish</button>
             </div>
+            <p id="modalFeedback" style="display: none; margin-top: 16px; font-size: 14px; text-align: center;"></p>
             
-            <div id="solvedMessage" style="display: none; text-align: center; color: #2ea043; padding: 15px; background: rgba(46, 160, 67, 0.1); border: 1px solid #2ea043; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                Siz bu masalani allaqachon yechgansiz! 🎉
-            </div>
-            
-            <p id="modalFeedback" style="margin-top: 15px; text-align: center; display: none; font-weight: 600;"></p>
+            <button onclick="closeModal()" style="position: absolute; top: 24px; right: 24px; background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer;">&times;</button>
         </div>
     </div>
 
-    <!-- Report Modal -->
-    <div id="reportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 500px; padding: 30px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <button onclick="closeReportModal()" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
-            <h2 style="color: #fff; margin-bottom: 20px;">Taklif yoki Xato haqida xabar</h2>
-            <textarea id="reportMessage" placeholder="Xabar matni..." style="width: 100%; height: 120px; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 15px; resize: vertical;"></textarea>
-            <button id="reportSubmitBtn" onclick="submitReport()" style="width: 100%; padding: 12px; background: var(--accent-spark); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;">Yuborish</button>
-            <p id="reportFeedback" style="margin-top: 15px; text-align: center; display: none; font-weight: 600;"></p>
-        </div>
-    </div>
-
-        </div>
-    </div>
-    
-    <!-- Settings Floating Button & Modal -->
-    <button onclick="openSettingsModal()" style="position: fixed; bottom: 30px; right: 30px; background: var(--bg-panel); border: 1px solid var(--border-color); color: #fff; width: 50px; height: 50px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 900; transition: 0.3s;" onmouseover="this.style.borderColor='var(--accent-hover)'" onmouseout="this.style.borderColor='var(--border-color)'">⚙️</button>
-
-    <div id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 400px; padding: 30px; position: relative;">
-            <button onclick="closeSettingsModal()" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
-            <h2 style="color: #fff; margin-bottom: 25px;" data-i18n="settings_title">Sozlamalar</h2>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="color: var(--text-muted); display: block; margin-bottom: 10px;" data-i18n="settings_lang">Tilni tanlang:</label>
-                <select id="langSelect" onchange="changeLanguage(this.value)" style="width: 100%; padding: 10px; background: #050505; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; outline: none;">
-                    <option value="uz">O'zbekcha</option>
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
-                </select>
-            </div>
-            
-            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 25px 0;">
-            
-            <button onclick="closeSettingsModal(); openReportModal();" data-i18n="report_btn" style="width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 8px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='var(--accent-spark)'" onmouseout="this.style.borderColor='var(--border-color)'">Taklif / Xato yuborish</button>
-        </div>
+    <div class="settings-btn" onclick="openSettingsModal()">
+        <span style="font-size: 24px;">⚙️</span>
     </div>
 
     <script>
-        // Translations
-        const translations = {
-            'uz': {
-                'nav_profile': 'Profil', 'nav_rating': 'Reyting', 'nav_logout': 'Chiqish', 'nav_settings': 'Sozlamalar',
-                'settings_title': 'Sozlamalar', 'settings_lang': 'Tilni tanlang:',
-                'sidebar_search': 'Qidiruv', 'sidebar_categories': 'Kategoriyalar', 'sidebar_difficulty': 'Qiyinlik darajasi',
-                'filter_all': 'Barchasi', 'diff_easy': 'Easy', 'diff_medium': 'Medium', 'diff_hard': 'Hard',
-                'search_placeholder': 'Masala nomi...', 'report_btn': 'Taklif / Xato yuborish'
-            },
-            'ru': {
-                'nav_profile': 'Профиль', 'nav_rating': 'Рейтинг', 'nav_logout': 'Выйти', 'nav_settings': 'Настройки',
-                'settings_title': 'Настройки', 'settings_lang': 'Выберите язык:',
-                'sidebar_search': 'Поиск', 'sidebar_categories': 'Категории', 'sidebar_difficulty': 'Сложность',
-                'filter_all': 'Все', 'diff_easy': 'Лёгкий', 'diff_medium': 'Средний', 'diff_hard': 'Сложный',
-                'search_placeholder': 'Название задачи...', 'report_btn': 'Написать жалобу / идею'
-            },
-            'en': {
-                'nav_profile': 'Profile', 'nav_rating': 'Leaderboard', 'nav_logout': 'Logout', 'nav_settings': 'Settings',
-                'settings_title': 'Settings', 'settings_lang': 'Select language:',
-                'sidebar_search': 'Search', 'sidebar_categories': 'Categories', 'sidebar_difficulty': 'Difficulty',
-                'filter_all': 'All', 'diff_easy': 'Easy', 'diff_medium': 'Medium', 'diff_hard': 'Hard',
-                'search_placeholder': 'Challenge name...', 'report_btn': 'Submit Feedback'
-            }
-        };
-
-        function changeLanguage(lang) {
-            localStorage.setItem('spark_lang', lang);
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (translations[lang] && translations[lang][key]) {
-                    el.textContent = translations[lang][key];
-                }
-            });
-            // Placeholder translations
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-i18n-placeholder');
-                if (translations[lang] && translations[lang][key]) {
-                    el.placeholder = translations[lang][key];
-                }
-            });
-            // Report button in settings
-            const reportBtn = document.querySelector('[data-i18n="report_btn"]');
-            if (reportBtn && translations[lang]) reportBtn.textContent = translations[lang]['report_btn'] || reportBtn.textContent;
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedLang = localStorage.getItem('spark_lang') || 'uz';
-            document.getElementById('langSelect').value = savedLang;
-            changeLanguage(savedLang);
-        });
-
-        // Settings Modal Logic
-        function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
-        function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
-
-        // Modal Logic
-        let currentChallengeId = null;
-
-        function openChallengeModal(id, title, desc, points, cat, diff, isSolved, hint) {
-            currentChallengeId = id;
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalDescription').textContent = desc;
-            document.getElementById('modalPoints').textContent = points;
-            document.getElementById('modalCategory').textContent = cat;
-            document.getElementById('modalDifficulty').innerHTML = `<span class="diff-indicator diff-${diff.toLowerCase()}"></span>${diff}`;
-            
-            document.getElementById('modalFeedback').style.display = 'none';
+        // Modal & Submitting Logic (Condensed)
+        let currentId = null;
+        function openChallengeModal(id, t, d, p, c, diff, solved, hint) {
+            currentId = id;
+            document.getElementById('modalTitle').textContent = t;
+            document.getElementById('modalDescription').textContent = d;
             document.getElementById('flagInput').value = '';
+            document.getElementById('modalFeedback').style.display = 'none';
+            document.getElementById('submitSection').style.display = solved ? 'none' : 'block';
             
-            if (hint && hint.trim() !== '') {
+            if(hint) {
                 document.getElementById('hintSection').style.display = 'block';
                 document.getElementById('hintText').textContent = hint;
                 document.getElementById('hintText').style.display = 'none';
-                document.getElementById('hintSection').querySelector('button').style.display = 'block';
             } else {
                 document.getElementById('hintSection').style.display = 'none';
             }
             
-            if (isSolved) {
-                document.getElementById('submitSection').style.display = 'none';
-                document.getElementById('solvedMessage').style.display = 'block';
-            } else {
-                document.getElementById('submitSection').style.display = 'block';
-                document.getElementById('solvedMessage').style.display = 'none';
-            }
-            
             document.getElementById('challengeModal').style.display = 'flex';
-            
-            // Prevent scrolling on body when modal is open
-            document.body.style.overflow = 'hidden';
         }
 
-        function closeModal() {
-            document.getElementById('challengeModal').style.display = 'none';
-            currentChallengeId = null;
-            document.body.style.overflow = 'auto';
+        function closeModal() { document.getElementById('challengeModal').style.display = 'none'; }
+        function toggleHint() {
+            const h = document.getElementById('hintText');
+            h.style.display = h.style.display === 'none' ? 'block' : 'none';
         }
-        
-        // Close modal when clicking outside
-        document.getElementById('challengeModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
 
         async function submitFlag() {
             const flag = document.getElementById('flagInput').value.trim();
-            if (!flag) return;
-            
+            if(!flag) return;
             const btn = document.getElementById('submitBtn');
-            const feedback = document.getElementById('modalFeedback');
+            btn.disabled = true; btn.textContent = 'Checking...';
             
-            btn.disabled = true;
-            btn.textContent = 'Tekshirilmoqda...';
-            btn.style.opacity = '0.7';
-            
-            try {
-                const response = await fetch('/api/submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        challenge_id: currentChallengeId,
-                        flag: flag
-                    })
-                });
-                
-                const data = await response.json();
-                
-                feedback.style.display = 'block';
-                if (data.status === 'success') {
-                    feedback.style.color = '#2ea043';
-                    feedback.textContent = data.message;
-                    document.getElementById('submitSection').style.display = 'none';
-                    document.getElementById('solvedMessage').style.display = 'block';
-                    
-                    // Update score in navbar
-                    document.querySelector('.score-badge').textContent = data.new_score + ' pts';
-                    
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    feedback.style.color = '#f85149';
-                    feedback.textContent = data.message;
-                    btn.disabled = false;
-                    btn.textContent = 'Javobni yuborish';
-                    btn.style.opacity = '1';
-                }
-            } catch (err) {
-                feedback.style.display = 'block';
-                feedback.style.color = '#f85149';
-                feedback.textContent = 'Xatolik yuz berdi. Qaytadan urinib ko\'ring.';
-                btn.disabled = false;
-                btn.textContent = 'Javobni yuborish';
-                btn.style.opacity = '1';
+            const res = await fetch('/api/submit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({challenge_id: currentId, flag: flag})
+            });
+            const data = await res.json();
+            const f = document.getElementById('modalFeedback');
+            f.style.display = 'block';
+            if(data.status === 'success') {
+                f.style.color = 'var(--success)'; f.textContent = data.message;
+                // Green success glow animation effect
+                document.querySelector('.modal').style.boxShadow = '0 0 50px rgba(163, 255, 18, 0.3)';
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                f.style.color = '#FF4B4B'; f.textContent = data.message;
+                btn.disabled = false; btn.textContent = 'Flagni yuborish';
             }
         }
 
-        // Report Modal Logic
-        function openReportModal() {
-            document.getElementById('reportModal').style.display = 'flex';
-            document.getElementById('reportFeedback').style.display = 'none';
-            document.getElementById('reportMessage').value = '';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeReportModal() {
-            document.getElementById('reportModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-        
-        async function submitReport() {
-            const message = document.getElementById('reportMessage').value.trim();
-            if(!message) return;
-            
-            const btn = document.getElementById('reportSubmitBtn');
-            const feedback = document.getElementById('reportFeedback');
-            btn.disabled = true;
-            btn.textContent = 'Yuborilmoqda...';
-            
-            try {
-                const res = await fetch('/api/report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-                const data = await res.json();
-                
-                feedback.style.display = 'block';
-                if(data.status === 'success') {
-                    feedback.style.color = '#2ea043';
-                    feedback.textContent = data.message;
-                    setTimeout(closeReportModal, 1500);
-                } else {
-                    feedback.style.color = '#f85149';
-                    feedback.textContent = data.message;
-                }
-            } catch (err) {
-                feedback.style.display = 'block';
-                feedback.style.color = '#f85149';
-                feedback.textContent = "Xatolik yuz berdi.";
-            }
-            btn.disabled = false;
-            btn.textContent = 'Yuborish';
-        }
-
-        // Filtering Logic
-        function filterTasks() {
-            const search = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
-            const category = document.querySelector('#categoryFilter .active').dataset.val;
-            const difficulty = document.querySelector('#difficultyFilter .active').dataset.val;
-            
-            const cards = document.querySelectorAll('.task-card');
-            
-            cards.forEach(card => {
-                const title = card.querySelector('h3').textContent.toLowerCase();
-                const cardCat = card.dataset.category;
-                const cardDiff = card.dataset.difficulty;
-                
-                let show = true;
-                
-                if (search && !title.includes(search)) show = false;
-                if (category !== 'all' && cardCat !== category) show = false;
-                if (difficulty !== 'all' && cardDiff !== difficulty) show = false;
-                
-                card.style.display = show ? 'block' : 'none';
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const filterItems = document.querySelectorAll('.filter-item');
-            
-            filterItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const parentList = this.closest('.filter-list');
-                    if (parentList) {
-                        parentList.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
-                    }
-                    this.classList.add('active');
-                    filterTasks();
-                });
-            });
-            
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', filterTasks);
+        // Filtering
+        document.querySelectorAll('.filter-item').forEach(item => {
+            item.onclick = function() {
+                this.parentElement.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                filterTasks();
             }
         });
+
+        function filterTasks() {
+            const cat = document.querySelector('#categoryFilter .active').dataset.val;
+            const diff = document.querySelector('#difficultyFilter .active').dataset.val;
+            document.querySelectorAll('.challenge-card').forEach(card => {
+                const cCat = card.dataset.category;
+                const cDiff = card.dataset.difficulty;
+                const match = (cat === 'all' || cat === cCat) && (diff === 'all' || diff === cDiff);
+                card.style.display = match ? 'block' : 'none';
+            });
+        }
+
+        // Settings (Simplified)
+        function openSettingsModal() { /* Trigger translation modal */ alert("Sozlamalar paneli"); }
     </script>
 </body>
 </html>
