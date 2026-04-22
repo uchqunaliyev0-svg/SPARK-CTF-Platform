@@ -31,12 +31,12 @@
             border-radius: 12px;
             padding: 40px;
             z-index: 1;
-            animation: fadeUp 0.6s ease-out both;
+            animation: matrixDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
 
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to   { opacity: 1; transform: translateY(0); }
+        @keyframes matrixDrop {
+            0% { opacity: 0; transform: translateY(-100px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         /* --- BRANDING --- */
@@ -146,8 +146,12 @@
             transition: background 0.2s, transform 0.1s;
             letter-spacing: 0.5px;
         }
-        .btn-main:hover { background: #2952cc; }
-        .btn-main:active { transform: scale(0.99); }
+        .btn-main:hover { 
+            background: #2952cc; 
+            box-shadow: 0 0 20px rgba(51, 102, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-main:active { transform: translateY(0) scale(0.98); }
 
         /* --- SWITCH LINK --- */
         .switch-link {
