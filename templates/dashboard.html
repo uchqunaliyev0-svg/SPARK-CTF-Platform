@@ -3,395 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPARK CTF | Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <title>SPARK CTF | Masalalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #7B2FF7;
             --accent: #00C6FF;
-            --bg: #0A0A0F;
-            --sidebar-bg: #0D0D14;
-            --card-bg: rgba(20, 20, 30, 0.4);
-            --border: rgba(123, 47, 247, 0.15);
-            --text-main: #E2E2E2;
-            --text-dim: #888891;
             --success: #A3FF12;
+            --danger: #FF4B4B;
+            --warn: #FFB800;
+            --bg: #0A0A0F;
+            --sidebar-bg: #0D0D16;
+            --card-bg: rgba(20,20,32,0.5);
+            --border: rgba(123,47,247,0.18);
+            --text: #E2E2E2;
+            --muted: #888891;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
 
         /* NAVBAR */
-        .navbar {
-            height: 72px;
-            background: rgba(10, 10, 15, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+        nav{height:68px;background:rgba(10,10,15,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:200;}
+        .brand{font-family:'Fira Code',monospace;font-weight:700;font-size:20px;text-decoration:none;letter-spacing:-1px;}
+        .brand .s{color:var(--primary);text-shadow:0 0 18px rgba(123,47,247,.5);}
+        .brand .c{color:var(--accent);}
+        .nav-r{display:flex;align-items:center;gap:20px;}
+        .nav-link{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;transition:.2s;}
+        .nav-link:hover{color:#fff;}
+        .score-pill{background:rgba(123,47,247,.12);border:1px solid var(--border);padding:6px 14px;border-radius:10px;color:var(--primary);font-family:'Fira Code',monospace;font-weight:700;font-size:14px;}
 
-        .branding {
-            font-family: 'Fira Code', monospace;
-            font-weight: 700;
-            font-size: 22px;
-            text-decoration: none;
-            letter-spacing: -1px;
-        }
-        .branding .spark { color: var(--primary); text-shadow: 0 0 15px rgba(123, 47, 247, 0.4); }
-        .branding .ctf { color: var(--accent); }
-
-        .user-nav { display: flex; align-items: center; gap: 24px; }
-        .nav-link {
-            color: var(--text-dim);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            transition: 0.3s;
-        }
-        .nav-link:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-
-        .score-pill {
-            background: rgba(123, 47, 247, 0.1);
-            border: 1px solid var(--border);
-            padding: 6px 14px;
-            border-radius: 10px;
-            color: var(--primary);
-            font-family: 'Fira Code', monospace;
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        /* MAIN CONTENT */
-        .layout { display: flex; flex: 1; }
+        /* LAYOUT */
+        .layout{display:flex;flex:1;overflow:hidden;}
 
         /* SIDEBAR */
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
-            padding: 32px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
+        aside{width:272px;background:var(--sidebar-bg);border-right:1px solid var(--border);padding:28px 20px;display:flex;flex-direction:column;gap:28px;overflow-y:auto;}
+        .sb-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:700;}
+        .sb-input{width:100%;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;color:#fff;outline:none;font-size:14px;font-family:inherit;transition:.2s;}
+        .sb-input:focus{border-color:var(--primary);}
+        .filter-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
+        .fi{padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:.25s;display:flex;align-items:center;gap:9px;}
+        .fi:hover{background:rgba(255,255,255,.04);color:var(--text);}
+        .fi.active{background:rgba(123,47,247,.12);color:var(--primary);box-shadow:inset 0 0 0 1px var(--border);}
+        .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+        .de{background:var(--success);box-shadow:0 0 7px var(--success);}
+        .dm{background:var(--warn);box-shadow:0 0 7px var(--warn);}
+        .dh{background:var(--danger);box-shadow:0 0 7px var(--danger);}
 
-        .sidebar-section h3 {
-            font-size: 11px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 16px;
-        }
+        /* CONTENT */
+        main{flex:1;padding:36px 40px;overflow-y:auto;}
+        .ph{margin-bottom:32px;}
+        .ph h1{font-size:26px;font-weight:700;color:#fff;margin-bottom:6px;}
+        .ph p{color:var(--muted);font-size:14px;}
+        .stats-row{display:flex;gap:16px;margin-bottom:32px;}
+        .stat{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px 22px;flex:1;}
+        .stat .val{font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:#fff;}
+        .stat .lbl{font-size:12px;color:var(--muted);margin-top:3px;}
 
-        .filter-list { list-style: none; }
-        .filter-item {
-            padding: 10px 14px;
-            border-radius: 10px;
-            margin-bottom: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-dim);
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .filter-item:hover { background: rgba(255,255,255,0.03); color: var(--text-main); }
-        .filter-item.active {
-            background: rgba(123, 47, 247, 0.1);
-            color: var(--primary);
-            box-shadow: inset 0 0 0 1px var(--border);
-        }
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
 
-        .diff-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .dot-easy { background: var(--success); box-shadow: 0 0 8px var(--success); }
-        .dot-medium { background: #FFB800; box-shadow: 0 0 8px #FFB800; }
-        .dot-hard { background: #FF4B4B; box-shadow: 0 0 8px #FF4B4B; }
+        /* CARD */
+        .card{background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:18px;padding:22px;transition:all .35s cubic-bezier(.175,.885,.32,1.1);cursor:pointer;position:relative;overflow:hidden;}
+        .card:hover{transform:translateY(-6px);border-color:rgba(123,47,247,.4);box-shadow:0 18px 40px -10px rgba(123,47,247,.2);}
+        .card.solved{border-color:rgba(163,255,18,.25);}
+        .card.solved .card-top{padding-right:52px;}
+        .card.solved::after{content:'✓ SOLVED';position:absolute;top:11px;right:-28px;background:var(--success);color:#000;font-size:9px;font-weight:800;padding:4px 34px;transform:rotate(45deg);}
+        .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+        .cat-badge{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:5px;}
+        .diff-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;}
+        .diff-Easy{background:rgba(163,255,18,.1);color:var(--success);border:1px solid rgba(163,255,18,.2);}
+        .diff-Medium{background:rgba(255,184,0,.1);color:var(--warn);border:1px solid rgba(255,184,0,.2);}
+        .diff-Hard{background:rgba(255,75,75,.1);color:var(--danger);border:1px solid rgba(255,75,75,.2);}
+        .card h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:14px;line-height:1.4;}
+        .card-footer{display:flex;justify-content:space-between;align-items:center;}
+        .pts{font-family:'Fira Code',monospace;color:var(--primary);font-weight:700;font-size:15px;}
+        .solvers{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+        .open-btn{padding:7px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:12px;font-weight:600;transition:.25s;}
+        .card:hover .open-btn{background:var(--primary);border-color:var(--primary);}
 
-        /* CONTENT AREA */
-        .content { flex: 1; padding: 40px; overflow-y: auto; }
-        .page-header { margin-bottom: 40px; }
-        .page-header h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-        .page-header p { color: var(--text-dim); font-size: 15px; }
-
-        /* CHALLENGE CARDS */
-        .challenges-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
-        }
-
-        .challenge-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 24px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        .challenge-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(123, 47, 247, 0.4);
-            box-shadow: 0 20px 40px -10px rgba(123, 47, 247, 0.2);
-            background: rgba(25, 25, 40, 0.6);
-        }
-        .challenge-card.solved { border-color: rgba(163, 255, 18, 0.2); }
-        .challenge-card.solved::after {
-            content: 'SOLVED';
-            position: absolute;
-            top: 12px; right: -30px;
-            background: var(--success);
-            color: #000;
-            font-size: 10px; font-weight: 800;
-            padding: 4px 35px;
-            transform: rotate(45deg);
-        }
-
-        .card-category { font-size: 12px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
-        .card-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 12px; }
-        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
-        .card-points { font-family: 'Fira Code', monospace; color: var(--primary); font-weight: 700; }
-        
-        .card-btn {
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 13px; font-weight: 600;
-            transition: 0.3s;
-        }
-        .challenge-card:hover .card-btn { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 15px rgba(123, 47, 247, 0.4); }
+        /* FLASH */
+        #flashes{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:8px;}
+        .flash{padding:13px 22px;border-radius:10px;font-size:14px;font-weight:600;backdrop-filter:blur(10px);min-width:280px;text-align:center;animation:sld .4s ease,fout .4s ease 4s forwards;}
+        .flash.error{background:rgba(255,75,75,.12);border:1px solid rgba(255,75,75,.3);color:#FF4B4B;}
+        .flash.success{background:rgba(163,255,18,.1);border:1px solid rgba(163,255,18,.3);color:var(--success);}
+        @keyframes sld{from{transform:translateY(-30px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @keyframes fout{from{opacity:1}to{opacity:0;pointer-events:none}}
 
         /* MODAL */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 10, 0.85); backdrop-filter: blur(15px);
-            display: none; align-items: center; justify-content: center; z-index: 1000;
-        }
-        .modal {
-            width: 90%; max-width: 500px;
-            background: #0D0D14; border: 1px solid var(--border);
-            border-radius: 24px; padding: 40px; position: relative;
-            box-shadow: 0 0 100px rgba(123, 47, 247, 0.1);
-        }
-        .modal-title { font-size: 24px; font-weight: 700; margin-bottom: 16px; }
-        .modal-desc { color: var(--text-dim); line-height: 1.6; font-size: 15px; margin-bottom: 32px; }
+        .overlay{position:fixed;inset:0;background:rgba(5,5,10,.88);backdrop-filter:blur(18px);display:none;align-items:center;justify-content:center;z-index:1000;}
+        .modal{width:90%;max-width:520px;background:#0E0E18;border:1px solid var(--border);border-radius:22px;padding:36px;position:relative;box-shadow:0 0 80px rgba(123,47,247,.12);}
+        .modal-cat{font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+        .modal-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:12px;}
+        .modal-desc{color:var(--muted);line-height:1.65;font-size:14px;margin-bottom:24px;}
+        .modal-meta{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+        .m-tag{font-size:12px;padding:4px 10px;border-radius:7px;font-weight:600;}
+        .m-pts{background:rgba(123,47,247,.12);color:var(--primary);border:1px solid var(--border);}
+        .m-solvers{background:rgba(0,198,255,.08);color:var(--accent);border:1px solid rgba(0,198,255,.2);}
+        .m-blood{background:rgba(255,75,75,.08);color:#FF4B4B;border:1px solid rgba(255,75,75,.2);}
+        .hint-btn{background:transparent;border:1px solid rgba(255,184,0,.3);color:var(--warn);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:16px;transition:.2s;}
+        .hint-btn:hover{background:rgba(255,184,0,.08);}
+        .hint-text{color:var(--warn);font-size:13px;font-style:italic;margin-bottom:16px;padding:10px 14px;background:rgba(255,184,0,.05);border-radius:8px;border-left:3px solid var(--warn);}
+        .file-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(0,198,255,.08);border:1px solid rgba(0,198,255,.2);color:var(--accent);padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;margin-bottom:16px;transition:.2s;}
+        .file-btn:hover{background:rgba(0,198,255,.15);}
+        .flag-inp{width:100%;padding:13px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:11px;color:#fff;font-family:'Fira Code',monospace;font-size:14px;outline:none;transition:.25s;margin-bottom:12px;}
+        .flag-inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(123,47,247,.12);}
+        .submit-btn{width:100%;padding:13px;background:var(--primary);border:none;border-radius:11px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;transition:.25s;}
+        .submit-btn:hover{background:#8B4BFF;box-shadow:0 0 20px rgba(123,47,247,.4);}
+        .feedback{margin-top:14px;font-size:14px;text-align:center;font-weight:600;}
+        .close-btn{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;transition:.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+        .close-btn:hover{color:#fff;background:rgba(255,255,255,.08);}
 
-        .flag-input {
-            width: 100%; padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; color: #fff; font-family: 'Fira Code', monospace;
-            outline: none; transition: 0.3s; margin-bottom: 16px;
-        }
-        .flag-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(123, 47, 247, 0.1); }
-
-        .btn-submit {
-            width: 100%; padding: 14px; background: var(--primary);
-            border: none; border-radius: 12px; color: #fff; font-weight: 700;
-            cursor: pointer; transition: 0.3s;
-        }
-        .btn-submit:hover { background: #8B4BFF; box-shadow: 0 0 20px rgba(123, 47, 247, 0.4); }
-
-        /* SETTINGS BUTTON */
-        .settings-btn {
-            position: fixed; bottom: 32px; right: 32px;
-            width: 56px; height: 56px; background: var(--sidebar-bg);
-            border: 1px solid var(--border); border-radius: 18px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s; z-index: 90;
-        }
-        .settings-btn:hover { border-color: var(--primary); transform: rotate(45deg); box-shadow: 0 0 20px rgba(123, 47, 247, 0.2); }
-
+        .empty-state{text-align:center;padding:80px 20px;color:var(--muted);}
+        .empty-state .icon{font-size:48px;margin-bottom:16px;}
+        .empty-state p{font-size:15px;}
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <a href="/" class="branding">
-            <span class="spark">SPARK</span> <span class="ctf">CTF</span>
-        </a>
-        <div class="user-nav">
-            <a href="/profile" class="nav-link" data-i18n="nav_profile">Profil</a>
-            <a href="/leaderboard" class="nav-link" data-i18n="nav_rating">Reyting</a>
-            <div class="score-pill">{{ current_user.score }} pts</div>
-            <a href="/logout" class="nav-link" style="color: #FF4B4B;">Chiqish</a>
-        </div>
-    </nav>
+<div id="flashes">
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for cat,msg in messages %}<div class="flash {{cat}}">{{msg}}</div>{% endfor %}{% endif %}
+{% endwith %}
+</div>
 
-    <div class="layout">
-        <aside class="sidebar">
-            <div class="sidebar-section">
-                <h3 data-i18n="sidebar_search">Qidiruv</h3>
-                <input type="text" id="searchInput" placeholder="..." style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; outline: none;">
-            </div>
+<nav>
+    <a href="/" class="brand"><span class="s">SPARK</span> <span class="c">CTF</span></a>
+    <div class="nav-r">
+        <a href="/profile" class="nav-link">Profil</a>
+        <a href="/leaderboard" class="nav-link">Reyting</a>
+        <div class="score-pill">{{ current_user.score }} pts</div>
+        <a href="/logout" class="nav-link" style="color:var(--danger);">Chiqish</a>
+    </div>
+</nav>
 
-            <div class="sidebar-section">
-                <h3 data-i18n="sidebar_categories">Kategoriyalar</h3>
-                <ul class="filter-list" id="categoryFilter">
-                    <li class="filter-item active" data-val="all" data-i18n="filter_all">Barchasi</li>
-                    <li class="filter-item" data-val="Web Exploitation">Web Exploitation</li>
-                    <li class="filter-item" data-val="Cryptography">Cryptography</li>
-                    <li class="filter-item" data-val="Reverse Engineering">Reverse Engineering</li>
-                    <li class="filter-item" data-val="Forensics">Forensics</li>
-                    <li class="filter-item" data-val="OSINT">OSINT</li>
-                    <li class="filter-item" data-val="Misc">Misc</li>
-                </ul>
-            </div>
+<div class="layout">
+<aside>
+    <div>
+        <div class="sb-label">Qidiruv</div>
+        <input class="sb-input" id="searchIn" placeholder="Masala nomi...">
+    </div>
+    <div>
+        <div class="sb-label">Kategoriya</div>
+        <ul class="filter-list" id="catF">
+            <li class="fi active" data-v="all">🌐 Barchasi</li>
+            <li class="fi" data-v="Web Exploitation">🕸️ Web</li>
+            <li class="fi" data-v="Cryptography">🔐 Crypto</li>
+            <li class="fi" data-v="Reverse Engineering">⚙️ Reverse</li>
+            <li class="fi" data-v="Forensics">🔍 Forensics</li>
+            <li class="fi" data-v="OSINT">👁️ OSINT</li>
+            <li class="fi" data-v="Pwn">💣 Pwn</li>
+            <li class="fi" data-v="Misc">🎯 Misc</li>
+        </ul>
+    </div>
+    <div>
+        <div class="sb-label">Qiyinlik</div>
+        <ul class="filter-list" id="diffF">
+            <li class="fi active" data-v="all">Barchasi</li>
+            <li class="fi" data-v="Easy"><span class="dot de"></span>Easy</li>
+            <li class="fi" data-v="Medium"><span class="dot dm"></span>Medium</li>
+            <li class="fi" data-v="Hard"><span class="dot dh"></span>Hard</li>
+        </ul>
+    </div>
+</aside>
 
-            <div class="sidebar-section">
-                <h3 data-i18n="sidebar_difficulty">Qiyinlik darajasi</h3>
-                <ul class="filter-list" id="difficultyFilter">
-                    <li class="filter-item active" data-val="all" data-i18n="filter_all">Barchasi</li>
-                    <li class="filter-item" data-val="Easy"><span class="diff-dot dot-easy"></span>Easy</li>
-                    <li class="filter-item" data-val="Medium"><span class="diff-dot dot-medium"></span>Medium</li>
-                    <li class="filter-item" data-val="Hard"><span class="diff-dot dot-hard"></span>Hard</li>
-                </ul>
-            </div>
-        </aside>
-
-        <main class="content">
-            <div class="page-header">
-                <h1 data-i18n="dashboard_title">Masalalar</h1>
-                <p data-i18n="dashboard_subtitle">Kategoriya va darajani tanlang. Haqiqiy xakerlikni boshlang.</p>
-            </div>
-
-            <div class="challenges-grid">
-                {% for challenge in challenges %}
-                <div class="challenge-card {% if challenge.id in solved_ids %}solved{% endif %}" 
-                     data-category="{{ challenge.category }}" 
-                     data-difficulty="{{ challenge.difficulty }}"
-                     onclick="openChallengeModal({{ challenge.id }}, '{{ challenge.title }}', '{{ challenge.description }}', {{ challenge.points }}, '{{ challenge.category }}', '{{ challenge.difficulty }}', {{ 'true' if challenge.id in solved_ids else 'false' }}, '{{ challenge.hint or '' }}')">
-                    <div class="card-category">{{ challenge.category }}</div>
-                    <div class="card-title">{{ challenge.title }}</div>
-                    <div class="card-footer">
-                        <span class="card-points">{{ challenge.points }} PTS</span>
-                        <button class="card-btn">Masalani ochish</button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </main>
+<main>
+    <div class="ph">
+        <h1>🚩 Masalalar</h1>
+        <p>Flagni toping, ball to'pang. Haqiqiy xakerlikni boshlang.</p>
     </div>
 
-    <!-- CHALLENGE MODAL -->
-    <div class="modal-overlay" id="challengeModal">
-        <div class="modal">
-            <div class="modal-title" id="modalTitle">Masala nomi</div>
-            <div class="modal-desc" id="modalDescription">Masala matni bu yerda ko'rinadi...</div>
-            
-            <div id="hintSection" style="display: none; margin-bottom: 20px;">
-                <button onclick="toggleHint()" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px;">💡 Hint ko'rish</button>
-                <p id="hintText" style="display: none; color: var(--accent); font-size: 13px; margin-top: 10px; font-style: italic;"></p>
-            </div>
-
-            <div id="submitSection">
-                <input type="text" class="flag-input" id="flagInput" placeholder="sparkCTF{...}">
-                <button class="btn-submit" id="submitBtn" onclick="submitFlag()">Flagni yuborish</button>
-            </div>
-            <p id="modalFeedback" style="display: none; margin-top: 16px; font-size: 14px; text-align: center;"></p>
-            
-            <button onclick="closeModal()" style="position: absolute; top: 24px; right: 24px; background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer;">&times;</button>
+    <div class="stats-row">
+        <div class="stat">
+            <div class="val">{{ challenges|length }}</div>
+            <div class="lbl">Jami masalalar</div>
+        </div>
+        <div class="stat">
+            <div class="val">{{ solved_ids|length }}</div>
+            <div class="lbl">Yechilgan</div>
+        </div>
+        <div class="stat">
+            <div class="val">{{ challenges|length - solved_ids|length }}</div>
+            <div class="lbl">Qolgan</div>
+        </div>
+        <div class="stat">
+            <div class="val">{{ current_user.score }}</div>
+            <div class="lbl">Sizning ballar</div>
         </div>
     </div>
 
-    <div class="settings-btn" onclick="openSettingsModal()">
-        <span style="font-size: 24px;">⚙️</span>
+    {% if challenges %}
+    <div class="grid" id="grid">
+        {% for ch in challenges %}
+        <div class="card {% if ch.id in solved_ids %}solved{% endif %}"
+             data-cat="{{ ch.category }}"
+             data-diff="{{ ch.difficulty }}"
+             data-title="{{ ch.title|lower }}"
+             onclick="openModal(
+                 {{ ch.id }},
+                 '{{ ch.title|replace("'","\\'")|replace('"','\\"') }}',
+                 '{{ ch.description|replace("'","\\'")|replace('"','\\"') }}',
+                 {{ ch.points }},
+                 '{{ ch.category }}',
+                 '{{ ch.difficulty }}',
+                 {{ 'true' if ch.id in solved_ids else 'false' }},
+                 '{{ ch.hint|replace("'","\\'")|replace('"','\\"') if ch.hint else '' }}',
+                 '{{ ch.file_url or '' }}',
+                 {{ solve_counts.get(ch.id, 0) }},
+                 '{{ first_bloods.get(ch.id, '') }}'
+             )">
+            <div class="card-top">
+                <div class="cat-badge">{{ ch.category }}</div>
+                <span class="diff-badge diff-{{ ch.difficulty }}">{{ ch.difficulty }}</span>
+            </div>
+            <h3>{{ ch.title }}</h3>
+            <div class="card-footer">
+                <span class="pts">{{ ch.points }} PTS</span>
+                <span class="solvers">👥 {{ solve_counts.get(ch.id, 0) }} ta yechdi</span>
+                <button class="open-btn">Ochish →</button>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">🏴</div>
+        <p>Hali masalalar qo'shilmagan.<br>Admin panel orqali masala qo'shing.</p>
+    </div>
+    {% endif %}
+</main>
+</div>
 
-    <script>
-        // Modal & Submitting Logic (Condensed)
-        let currentId = null;
-        function openChallengeModal(id, t, d, p, c, diff, solved, hint) {
-            currentId = id;
-            document.getElementById('modalTitle').textContent = t;
-            document.getElementById('modalDescription').textContent = d;
-            document.getElementById('flagInput').value = '';
-            document.getElementById('modalFeedback').style.display = 'none';
-            document.getElementById('submitSection').style.display = solved ? 'none' : 'block';
-            
-            if(hint) {
-                document.getElementById('hintSection').style.display = 'block';
-                document.getElementById('hintText').textContent = hint;
-                document.getElementById('hintText').style.display = 'none';
-            } else {
-                document.getElementById('hintSection').style.display = 'none';
-            }
-            
-            document.getElementById('challengeModal').style.display = 'flex';
-        }
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="modal-cat" id="mCat"></div>
+    <div class="modal-title" id="mTitle"></div>
+    <div class="modal-desc" id="mDesc"></div>
+    <div class="modal-meta" id="mMeta"></div>
+    <div id="mHintWrap"></div>
+    <div id="mFileWrap"></div>
+    <div id="mSubmit">
+        <input class="flag-inp" id="flagInp" placeholder="SPARK{flag_here}" autocomplete="off">
+        <button class="submit-btn" onclick="submitFlag()">🚩 Flagni yuborish</button>
+    </div>
+    <div class="feedback" id="feedback" style="display:none;"></div>
+</div>
+</div>
 
-        function closeModal() { document.getElementById('challengeModal').style.display = 'none'; }
-        function toggleHint() {
-            const h = document.getElementById('hintText');
-            h.style.display = h.style.display === 'none' ? 'block' : 'none';
-        }
+<script>
+let curId=null,curHint='',curFile='',hintShown=false;
 
-        async function submitFlag() {
-            const flag = document.getElementById('flagInput').value.trim();
-            if(!flag) return;
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true; btn.textContent = 'Checking...';
-            
-            const res = await fetch('/api/submit', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({challenge_id: currentId, flag: flag})
-            });
-            const data = await res.json();
-            const f = document.getElementById('modalFeedback');
-            f.style.display = 'block';
-            if(data.status === 'success') {
-                f.style.color = 'var(--success)'; f.textContent = data.message;
-                // Green success glow animation effect
-                document.querySelector('.modal').style.boxShadow = '0 0 50px rgba(163, 255, 18, 0.3)';
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                f.style.color = '#FF4B4B'; f.textContent = data.message;
-                btn.disabled = false; btn.textContent = 'Flagni yuborish';
-            }
-        }
+function openModal(id,title,desc,pts,cat,diff,solved,hint,file,solvers,blood){
+    curId=id;curHint=hint;curFile=file;hintShown=false;
+    document.getElementById('mCat').innerHTML=cat+' &nbsp;·&nbsp; <span class="diff-badge diff-'+diff+'" style="font-size:11px;">'+diff+'</span>';
+    document.getElementById('mTitle').textContent=title;
+    document.getElementById('mDesc').textContent=desc;
+    const meta=document.getElementById('mMeta');
+    meta.innerHTML='<span class="m-tag m-pts">'+pts+' pts</span>'
+        +'<span class="m-tag m-solvers">👥 '+solvers+' solver</span>'
+        +(blood?'<span class="m-tag m-blood">🩸 First: '+blood+'</span>':'');
+    const hw=document.getElementById('mHintWrap');
+    hw.innerHTML=hint?'<button class="hint-btn" onclick="toggleHint()">💡 Hint ko\'rish</button><div class="hint-text" id="hintTxt" style="display:none;">'+hint+'</div>':'';
+    const fw=document.getElementById('mFileWrap');
+    fw.innerHTML=file?'<a class="file-btn" href="'+file+'" target="_blank">📎 Faylni yuklab olish</a>':'';
+    document.getElementById('mSubmit').style.display=solved?'none':'block';
+    const fb=document.getElementById('feedback');
+    if(solved){fb.style.display='block';fb.style.color='var(--success)';fb.textContent='✓ Bu masalani yechgansiz!';}
+    else{fb.style.display='none';}
+    document.getElementById('flagInp').value='';
+    document.getElementById('overlay').style.display='flex';
+    if(!solved)setTimeout(()=>document.getElementById('flagInp').focus(),80);
+}
 
-        // Filtering
-        document.querySelectorAll('.filter-item').forEach(item => {
-            item.onclick = function() {
-                this.parentElement.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                filterTasks();
-            }
-        });
+function closeModal(){document.getElementById('overlay').style.display='none';}
 
-        function filterTasks() {
-            const cat = document.querySelector('#categoryFilter .active').dataset.val;
-            const diff = document.querySelector('#difficultyFilter .active').dataset.val;
-            document.querySelectorAll('.challenge-card').forEach(card => {
-                const cCat = card.dataset.category;
-                const cDiff = card.dataset.difficulty;
-                const match = (cat === 'all' || cat === cCat) && (diff === 'all' || diff === cDiff);
-                card.style.display = match ? 'block' : 'none';
-            });
-        }
+function toggleHint(){
+    const t=document.getElementById('hintTxt');
+    if(t){t.style.display=t.style.display==='none'?'block':'none';}
+}
 
-        // Settings (Simplified)
-        function openSettingsModal() { /* Trigger translation modal */ alert("Sozlamalar paneli"); }
-    </script>
+async function submitFlag(){
+    const flag=document.getElementById('flagInp').value.trim();
+    if(!flag)return;
+    const btn=document.querySelector('.submit-btn');
+    btn.disabled=true;btn.textContent='Tekshirilmoqda...';
+    const res=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge_id:curId,flag})});
+    const data=await res.json();
+    const fb=document.getElementById('feedback');
+    fb.style.display='block';
+    if(data.status==='success'){
+        fb.style.color='var(--success)';fb.textContent=data.message;
+        document.getElementById('mSubmit').style.display='none';
+        document.querySelector('.modal').style.boxShadow='0 0 60px rgba(163,255,18,.25)';
+        setTimeout(()=>location.reload(),1600);
+    } else {
+        fb.style.color='var(--danger)';fb.textContent=data.message;
+        btn.disabled=false;btn.textContent='🚩 Flagni yuborish';
+        document.getElementById('flagInp').style.borderColor='var(--danger)';
+        setTimeout(()=>document.getElementById('flagInp').style.borderColor='',1500);
+    }
+}
+
+document.getElementById('flagInp')?.addEventListener('keypress',e=>{if(e.key==='Enter')submitFlag();});
+
+// Filters
+function filter(){
+    const cat=document.querySelector('#catF .active').dataset.v;
+    const diff=document.querySelector('#diffF .active').dataset.v;
+    const q=document.getElementById('searchIn').value.toLowerCase();
+    document.querySelectorAll('.card').forEach(c=>{
+        const mc=cat==='all'||c.dataset.cat===cat;
+        const md=diff==='all'||c.dataset.diff===diff;
+        const mq=!q||c.dataset.title.includes(q);
+        c.style.display=mc&&md&&mq?'':'none';
+    });
+}
+document.querySelectorAll('.fi').forEach(f=>{
+    f.onclick=function(){
+        this.parentElement.querySelectorAll('.fi').forEach(i=>i.classList.remove('active'));
+        this.classList.add('active');filter();
+    };
+});
+document.getElementById('searchIn').addEventListener('input',filter);
+</script>
 </body>
 </html>
