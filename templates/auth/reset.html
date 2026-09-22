@@ -11,7 +11,7 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="field"><label>{{ _('Tasdiqlash kodi') }}</label>{{ otp() }}</div>
   {{ password_field('password', _('Yangi parol'), 'password', strength=True) }}
-  {{ password_field('password2', _('Yangi parolni takrorlang'), 'password2') }}
+  {{ password_field('password2', _('Yangi parolni takrorlang'), 'password2', placeholder=_('Parolni qayta kiriting')) }}
   <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _('Parolni yangilash') }}</button>
 </form>
 <p class="alt">{{ _('Kod kelmadimi?') }} <a href="{{ url_for('forgot') }}">{{ _("Qayta so'rash") }}</a></p>
