@@ -1,5 +1,5 @@
 {% extends 'app_layout.html' %}
-{% from '_macros.html' import icon, time, avatar %}
+{% from '_macros.html' import icon, time %}
 {% block title %}{{ _('Masalalar') }} — SPARK CTF{% endblock %}
 {% block app %}
 {% set DCOL = {'Easy': 'var(--green)', 'Medium': 'var(--amber)', 'Hard': 'var(--red)', 'Insane': 'var(--violet)'} %}
@@ -20,7 +20,6 @@
 {% else %}
   {% set total = namespace(n=0, s=0) %}
   {% for o in overview %}{% set total.n = total.n + o.total %}{% set total.s = total.s + o.solved %}{% endfor %}
-  {% set pct = ((total.s / total.n * 100)|round|int) if total.n else 0 %}
 
   <div class="page-head">
     <div>
@@ -36,21 +35,6 @@
         <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
       </div>
     {% endif %}
-  </div>
-
-  <div class="card me-strip">
-    {{ avatar(current_user.username, 'md') }}
-    <div class="who"><b>{{ current_user.username }}</b><span>{% if me %}{{ _('Reytingda #{rank} — {players} ta ishtirokchi orasida', rank=me.rank, players=players) }}{% elif current_user.is_admin %}{{ _("Admin hisobi reytingda ko'rinmaydi") }}{% else %}{{ _('Birinchi flagingizni toping!') }}{% endif %}</span></div>
-    <div class="kpis">
-      <div class="kpi"><b style="color:var(--cyan)" data-kpi-score>{{ my_score }}</b><span>{{ _('Ball') }}</span></div>
-      <div class="kpi"><b data-kpi-solved>{{ total.s }}</b><span>{{ _('Yechilgan') }}</span></div>
-      <div class="kpi"><b>{{ '#' ~ me.rank if me else '—' }}</b><span>{{ _("O'rin") }}</span></div>
-    </div>
-    <div class="ring" title="{{ pct }}%">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
-        <circle class="bg" cx="32" cy="32" r="26"/><circle class="fg" cx="32" cy="32" r="26" stroke-dasharray="163.36" stroke-dashoffset="{{ 163.36 * (1 - pct / 100) }}" data-ring/></svg>
-      <b data-ring-text>{{ pct }}%</b>
-    </div>
   </div>
 
   {% for a in announcements %}
