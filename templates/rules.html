@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}{{ _('Qoidalar') }} — SPARK CTF{% endblock %}
+{% block content %}
+<div class="page"><div class="container narrow">
+  <div class="page-head"><div><span class="eyebrow">// rules</span><h1>{{ _('Qoidalar') }}</h1><p>{{ _("Musobaqa hamma uchun adolatli bo'lishi uchun quyidagi qoidalarga amal qiling.") }}</p></div></div>
+  <div class="rules">
+    <div class="card rule"><div><h3>{{ _('Flag formati') }}</h3><p>{{ _('Flaglar odatda') }} <code>SPARK{...}</code> {{ _("ko'rinishida bo'ladi. Agar masalada boshqacha ko'rsatilmagan bo'lsa, katta-kichik harf farqlanadi.") }}</p></div></div>
+    <div class="card rule"><div><h3>{{ _('Bitta odam — bitta hisob') }}</h3><p>{{ _("Bir nechta hisob ochish, boshqalar bilan hisob bo'lishish yoki boshqa hisob nomidan o'ynash taqiqlanadi.") }}</p></div></div>
+    <div class="card rule"><div><h3>{{ _('Flag va yechimlarni ulashmang') }}</h3><p>{{ _("Musobaqa davomida flag, hint yoki yechimlarni boshqa ishtirokchilarga berish diskvalifikatsiyaga olib keladi.") }}</p></div></div>
+    <div class="card rule"><div><h3>{{ _('Platformaga hujum qilmang') }}</h3><p>{{ _("Faqat masalada ko'rsatilgan manzillar nishon hisoblanadi. SPARK CTF infratuzilmasi, boshqa ishtirokchilar va uchinchi shaxslarga hujum qilish qat'iyan man etiladi.") }}</p></div></div>
+    <div class="card rule"><div><h3>{{ _('Brute-force taqiqlangan') }}</h3><p>{{ _("Flag yuborish formasini avtomatlashtirilgan tarzda taxmin qilish mumkin emas — tizim ortiqcha urinishlarni avtomatik bloklaydi.") }}</p></div></div>
+    <div class="card rule"><div><h3>{{ _('Zaiflik topdingizmi?') }}</h3><p>{{ _("Platformaning o'zida xato topsangiz, undan foydalanmang — adminlarga Telegram orqali xabar bering.") }}</p></div></div>
+    <div class="card rule"><div><h3>{{ _('Adminlar qarori yakuniy') }}</h3><p>{{ _("Qoidabuzarlik aniqlansa, adminlar ballarni bekor qilish yoki hisobni bloklash huquqiga ega.") }}</p></div></div>
+  </div>
+</div></div>
+{% endblock %}

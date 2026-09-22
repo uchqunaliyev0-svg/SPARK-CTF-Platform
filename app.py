@@ -12,13 +12,23 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import HTTPException
 
 import scoring
+from i18n import LANGS, _, get_lang, js_strings
 from mailer import mail_enabled, send_code
 from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
                     User, db, utcnow)
 from security import (EMAIL_RE, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
-                      issue_code, password_problem, resend_wait_seconds)
+                      issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
+CATEGORY_META = {
+    'Web': ('#22d3ee', "Veb-ilovalardagi zaifliklar: SQLi, XSS, SSRF, autentifikatsiya xatolari."),
+    'Crypto': ('#a78bfa', "Klassik va zamonaviy shifrlar, xesh va kalit almashinuvi xatolarini buzish."),
+    'Reverse': ('#fbbf24', "Binar fayllar va dasturlarni teskari muhandislik orqali tahlil qilish."),
+    'Forensics': ('#34d399', "Tarmoq trafigi, xotira dampi va fayllardan raqamli izlarni topish."),
+    'Pwn': ('#ff3b5c', "Xotira zaifliklari: buffer overflow, format string, ROP zanjirlari."),
+    'OSINT': ('#60a5fa', "Ochiq manbalardan ma'lumot yig'ish va razvedka qilish."),
+    'Misc': ('#f472b6', "Mantiqiy jumboqlar, steganografiya va nostandart masalalar."),
+}
 DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Insane']
 MAX_LOGIN_FAILS = 5
 LOCK_TIME = timedelta(minutes=15)
@@ -48,6 +58,7 @@ app.config.update(
     REMEMBER_COOKIE_DURATION=timedelta(days=14),
     PERMANENT_SESSION_LIFETIME=timedelta(days=14),
     MAX_CONTENT_LENGTH=1024 * 1024,
+    CAPTCHA_BITS=int(os.getenv('CAPTCHA_BITS', '16')),
 )
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', '').strip().lower()
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '').strip().lower()
@@ -73,9 +84,12 @@ def load_user(user_id):
 @login_manager.unauthorized_handler
 def unauthorized():
     if request.path.startswith('/api/'):
-        return jsonify({'status': 'error', 'message': 'Avval tizimga kiring.'}), 401
-    flash('Davom etish uchun tizimga kiring.', 'info')
+        return jsonify({'status': 'error', 'message': _('Avval tizimga kiring.')}), 401
+    flash(_('Davom etish uchun tizimga kiring.'), 'info')
     return redirect(url_for('login', next=request.full_path.rstrip('?')))
+
+
+app.jinja_env.globals['_'] = _
 
 
 @app.template_filter('zip')
@@ -188,13 +202,20 @@ def start_login(user, remember=False):
     login_user(user, remember=remember)
 
 
+def captcha_ok():
+    if verify_captcha(request.form.get('captcha')):
+        return True
+    flash(_("Iltimos, robot emasligingizni tasdiqlang."), 'error')
+    return False
+
+
 def send_verification(user):
     wait = resend_wait_seconds(user, 'verify')
     if wait:
         return wait
     code = issue_code(user, 'verify')
     if not send_code(user.email, user.username, 'verify', code):
-        flash("Emailga kod yuborib bo'lmadi. Birozdan so'ng qayta yuborib ko'ring.", 'error')
+        flash(_("Emailga kod yuborib bo'lmadi. Birozdan so'ng qayta yuborib ko'ring."), 'error')
     return 0
 
 
@@ -205,7 +226,7 @@ def before():
     check_csrf()
     if current_user.is_authenticated and current_user.is_banned:
         logout_user()
-        flash('Hisobingiz bloklangan.', 'error')
+        flash(_('Hisobingiz bloklangan.'), 'error')
         return redirect(url_for('login'))
 
 
@@ -233,11 +254,14 @@ def security_headers(resp):
 @app.context_processor
 def inject():
     ctx = {'csrf_token': csrf_token, 'CATEGORIES': CATEGORIES, 'DIFFICULTIES': DIFFICULTIES,
-           'ctf_state': ctf_state, 'mail_enabled': mail_enabled()}
+           'CATEGORY_META': CATEGORY_META, 'ctf_state': ctf_state, 'mail_enabled': mail_enabled(),
+           'lang': get_lang(), 'js_i18n': js_strings(), 'year': utcnow().year}
     if current_user.is_authenticated and current_user.is_verified:
         if 'my_score' not in g:
             g.my_score = scoring.user_score(current_user)
+            g.bell = Announcement.query.order_by(Announcement.created_at.desc()).limit(5).all()
         ctx['my_score'] = g.my_score
+        ctx['bell'] = g.bell
     return ctx
 
 
@@ -253,7 +277,7 @@ def server_error(e):
     print(f'[error] {e!r}')
     db.session.rollback()
     if wants_json():
-        return api_error('Serverda xatolik yuz berdi.', 500)
+        return api_error(_('Serverda xatolik yuz berdi.'), 500)
     return render_template('error.html', code=500,
                            message="Serverda kutilmagan xatolik. Birozdan so'ng qayta urinib ko'ring."), 500
 
@@ -272,32 +296,90 @@ def index():
     return render_template('index.html', top=rows[:5], stats=stats, start=start, end=end)
 
 
+@app.route('/api/captcha')
+def api_captcha():
+    return jsonify(new_captcha())
+
+
+def _category_progress(user_id):
+    chs = Challenge.query.filter_by(visible=True).all()
+    solved = {s.challenge_id for s in Solve.query.filter_by(user_id=user_id).all()}
+    names = CATEGORIES + sorted({c.category for c in chs} - set(CATEGORIES))
+    out = []
+    for n in names:
+        items = [c for c in chs if c.category == n]
+        out.append({'name': n, 'total': len(items), 'solved': sum(1 for c in items if c.id in solved),
+                    'color': CATEGORY_META.get(n, ('#22d3ee', ''))[0]})
+    diffs = []
+    for d in DIFFICULTIES:
+        items = [c for c in chs if c.difficulty == d]
+        diffs.append({'name': d, 'total': len(items), 'solved': sum(1 for c in items if c.id in solved)})
+    return out, diffs
+
+
+@app.route('/dashboard')
+@verified_required
+def dashboard():
+    rows = scoring.standings()
+    me = next((r for r in rows if r['user'].id == current_user.id), None)
+    stats = scoring.profile_stats(current_user, utcnow())
+    cats, diffs = _category_progress(current_user.id)
+    recent = (Solve.query.filter_by(user_id=current_user.id).join(Challenge)
+              .filter(Challenge.visible.is_(True)).order_by(Solve.created_at.desc()).limit(6).all())
+    anns = Announcement.query.order_by(Announcement.created_at.desc()).limit(3).all()
+    return render_template('dashboard.html', row=me, players=len(rows), stats=stats, cats=cats,
+                           diffs=diffs, recent=recent, announcements=anns,
+                           values=scoring.current_values())
+
+
+@app.route('/notifications')
+@verified_required
+def notifications():
+    anns = Announcement.query.order_by(Announcement.created_at.desc()).all()
+    return render_template('notifications.html', announcements=anns)
+
+
+@app.route('/vpn')
+@verified_required
+def vpn():
+    return render_template('vpn.html')
+
+
+@app.route('/lang/<code>')
+def set_lang(code):
+    resp = redirect(safe_next(request.args.get('next')) or url_for('index'))
+    if code in LANGS:
+        resp.set_cookie('lang', code, max_age=365 * 86400, samesite='Lax', secure=IS_PROD)
+    return resp
+
+
+@app.route('/rules')
+def rules():
+    return render_template('rules.html')
+
+
 @app.route('/scoreboard')
+@verified_required
 def scoreboard():
     rows = scoring.standings()
     return render_template('scoreboard.html', rows=rows, series=scoring.graph_series(rows))
 
 
 @app.route('/users/<username>')
+@verified_required
 def user_page(username):
     user = User.query.filter(func.lower(User.username) == username.lower()).first()
     if not user or user.is_banned or not user.is_verified:
         abort(404)
     rows = scoring.standings()
     me = next((r for r in rows if r['user'].id == user.id), None)
-    challenges = Challenge.query.filter_by(visible=True).all()
-    values = scoring.current_values(challenges)
+    stats = scoring.profile_stats(user, utcnow())
+    cats, diffs = _category_progress(user.id)
     solves = (Solve.query.filter_by(user_id=user.id).join(Challenge)
               .filter(Challenge.visible.is_(True)).order_by(Solve.created_at.desc()).all())
-    solved_ids = {s.challenge_id for s in solves}
-    breakdown = []
-    for cat in sorted({c.category for c in challenges}, key=lambda c: (CATEGORIES + [c]).index(c)):
-        total = [c for c in challenges if c.category == cat]
-        breakdown.append({'category': cat, 'total': len(total),
-                          'solved': sum(1 for c in total if c.id in solved_ids)})
-    return render_template('user.html', user=user, row=me, total_users=len(rows), solves=solves,
-                           values=values, breakdown=breakdown, total_challenges=len(challenges),
-                           score=me['score'] if me else scoring.user_score(user))
+    return render_template('user.html', user=user, row=me, players=len(rows), stats=stats,
+                           cats=cats, diffs=diffs, solves=solves, values=scoring.current_values(),
+                           bloods=scoring.first_blood_ids(user.id))
 
 
 # ---------------------------------------------------------------- auth
@@ -305,7 +387,7 @@ def user_page(username):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('challenges'))
+        return redirect(url_for('dashboard'))
     form = {}
     if request.method == 'POST':
         form = {k: (request.form.get(k) or '').strip() for k in ('username', 'email')}
@@ -313,17 +395,19 @@ def register():
         email = form['email'].lower()
         error = None
         if not USERNAME_RE.match(form['username']):
-            error = "Username 3–20 belgi: faqat lotin harflari, raqamlar va _ bo'lishi mumkin."
+            error = _("Username 3–20 belgi: faqat lotin harflari, raqamlar va _ bo'lishi mumkin.")
         elif len(email) > 120 or not EMAIL_RE.match(email):
-            error = "Email manzil noto'g'ri."
+            error = _("Email manzil noto'g'ri.")
         elif password_problem(pw):
             error = password_problem(pw)
         elif pw != pw2:
-            error = 'Parollar mos kelmadi.'
+            error = _('Parollar mos kelmadi.')
         elif User.query.filter(func.lower(User.username) == form['username'].lower()).first():
-            error = 'Bu username band.'
+            error = _('Bu username band.')
         elif User.query.filter_by(email=email).first():
-            error = "Bu email bilan allaqachon ro'yxatdan o'tilgan."
+            error = _("Bu email bilan allaqachon ro'yxatdan o'tilgan.")
+        if not error and not verify_captcha(request.form.get('captcha')):
+            error = _("Iltimos, robot emasligingizni tasdiqlang.")
         if error:
             flash(error, 'error')
             return render_template('auth/register.html', form=form), 400
@@ -335,12 +419,12 @@ def register():
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            flash('Bu username yoki email band.', 'error')
+            flash(_('Bu username yoki email band.'), 'error')
             return render_template('auth/register.html', form=form), 400
         if user.is_verified:
             start_login(user)
-            flash("Xush kelibsiz! Hisobingiz yaratildi.", 'success')
-            return redirect(url_for('challenges'))
+            flash(_("Xush kelibsiz! Hisobingiz yaratildi."), 'success')
+            return redirect(url_for('dashboard'))
         session['pending_uid'] = user.id
         send_verification(user)
         return redirect(url_for('verify'))
@@ -350,17 +434,19 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('challenges'))
+        return redirect(url_for('dashboard'))
     ident = ''
     if request.method == 'POST':
         ident = (request.form.get('identity') or '').strip()
         pw = request.form.get('password') or ''
+        if not captcha_ok():
+            return render_template('auth/login.html', ident=ident), 400
         user = User.query.filter(or_(func.lower(User.username) == ident.lower(),
                                      User.email == ident.lower())).first()
         now = utcnow()
         if user and user.locked_until and user.locked_until > now:
             mins = int((user.locked_until - now).total_seconds() // 60) + 1
-            flash(f"Ko'p noto'g'ri urinish. Hisob {mins} daqiqaga vaqtincha bloklandi.", 'error')
+            flash(_("Ko'p noto'g'ri urinish. Hisob {mins} daqiqaga vaqtincha bloklandi.", mins=mins), 'error')
             return render_template('auth/login.html', ident=ident), 429
         valid = bcrypt.check_password_hash(user.password_hash if user else DUMMY_HASH, pw)
         if not user or not valid:
@@ -370,10 +456,10 @@ def login():
                     user.failed_logins = 0
                     user.locked_until = now + LOCK_TIME
                 db.session.commit()
-            flash("Login yoki parol noto'g'ri.", 'error')
+            flash(_("Login yoki parol noto'g'ri."), 'error')
             return render_template('auth/login.html', ident=ident), 401
         if user.is_banned:
-            flash('Hisobingiz bloklangan.', 'error')
+            flash(_('Hisobingiz bloklangan.'), 'error')
             return render_template('auth/login.html', ident=ident), 403
         if not user.is_verified:
             if not mail_enabled():
@@ -381,11 +467,11 @@ def login():
             else:
                 session['pending_uid'] = user.id
                 send_verification(user)
-                flash('Avval emailingizni tasdiqlang.', 'info')
+                flash(_('Avval emailingizni tasdiqlang.'), 'info')
                 return redirect(url_for('verify'))
         nxt = safe_next(request.args.get('next'))
         start_login(user, remember=bool(request.form.get('remember')))
-        return redirect(nxt or url_for('challenges'))
+        return redirect(nxt or url_for('dashboard'))
     return render_template('auth/login.html', ident=ident)
 
 
@@ -404,8 +490,8 @@ def verify():
             user.is_verified = True
             db.session.commit()
             start_login(user)
-            flash('Email tasdiqlandi. Omad, xaker!', 'success')
-            return redirect(url_for('challenges'))
+            flash(_('Email tasdiqlandi. Omad, xaker!'), 'success')
+            return redirect(url_for('dashboard'))
     return render_template('auth/verify.html', email=mask_email(user.email),
                            wait=resend_wait_seconds(user, 'verify'))
 
@@ -418,9 +504,9 @@ def verify_resend():
         return redirect(url_for('login'))
     wait = send_verification(user)
     if wait:
-        flash(f"Yangi kodni {wait} soniyadan so'ng so'rashingiz mumkin.", 'error')
+        flash(_("Yangi kodni {wait} soniyadan so'ng so'rashingiz mumkin.", wait=wait), 'error')
     else:
-        flash('Yangi kod emailingizga yuborildi.', 'success')
+        flash(_('Yangi kod emailingizga yuborildi.'), 'success')
     return redirect(url_for('verify'))
 
 
@@ -428,14 +514,16 @@ def verify_resend():
 def forgot():
     if request.method == 'POST':
         if not mail_enabled():
-            flash("Email xizmati hozircha sozlanmagan. Admin bilan bog'laning.", 'error')
+            flash(_("Email xizmati hozircha sozlanmagan. Admin bilan bog'laning."), 'error')
             return render_template('auth/forgot.html'), 503
         email = (request.form.get('email') or '').strip().lower()
+        if not captcha_ok():
+            return render_template('auth/forgot.html'), 400
         user = User.query.filter_by(email=email).first()
         if user and not user.is_banned and not resend_wait_seconds(user, 'reset'):
             send_code(user.email, user.username, 'reset', issue_code(user, 'reset'))
         session['reset_email'] = email
-        flash("Agar bu email ro'yxatdan o'tgan bo'lsa, unga tiklash kodi yuborildi.", 'info')
+        flash(_("Agar bu email ro'yxatdan o'tgan bo'lsa, unga tiklash kodi yuborildi."), 'info')
         return redirect(url_for('reset'))
     return render_template('auth/forgot.html')
 
@@ -451,9 +539,9 @@ def reset():
         if password_problem(pw):
             flash(password_problem(pw), 'error')
         elif pw != pw2:
-            flash('Parollar mos kelmadi.', 'error')
+            flash(_('Parollar mos kelmadi.'), 'error')
         elif not user:
-            flash("Kod noto'g'ri.", 'error')
+            flash(_("Kod noto'g'ri."), 'error')
         else:
             err = consume_code(user, 'reset', request.form.get('code'))
             if err:
@@ -465,7 +553,7 @@ def reset():
                 user.locked_until = None
                 db.session.commit()
                 session.pop('reset_email', None)
-                flash("Parol yangilandi. Endi yangi parol bilan kiring.", 'success')
+                flash(_("Parol yangilandi. Endi yangi parol bilan kiring."), 'success')
                 return redirect(url_for('login'))
     return render_template('auth/reset.html', email=mask_email(email))
 
@@ -484,15 +572,15 @@ def settings():
         cur = request.form.get('current_password') or ''
         pw, pw2 = request.form.get('password') or '', request.form.get('password2') or ''
         if not bcrypt.check_password_hash(current_user.password_hash, cur):
-            flash("Joriy parol noto'g'ri.", 'error')
+            flash(_("Joriy parol noto'g'ri."), 'error')
         elif password_problem(pw):
             flash(password_problem(pw), 'error')
         elif pw != pw2:
-            flash('Yangi parollar mos kelmadi.', 'error')
+            flash(_('Yangi parollar mos kelmadi.'), 'error')
         else:
             current_user.password_hash = bcrypt.generate_password_hash(pw).decode()
             db.session.commit()
-            flash('Parol muvaffaqiyatli yangilandi.', 'success')
+            flash(_('Parol muvaffaqiyatli yangilandi.'), 'success')
             return redirect(url_for('settings'))
     return render_template('settings.html')
 
@@ -506,7 +594,8 @@ def challenges():
     start, end = ctf_window()
     if state == 'before' and not current_user.is_admin:
         return render_template('challenges.html', state=state, start=start, end=end, groups=[],
-                               announcements=[], solved=set(), values={}, counts={})
+                               announcements=[], solved=set(), values={}, counts={}, overview=[],
+                               me=None, players=0)
     q = Challenge.query
     if not current_user.is_admin:
         q = q.filter_by(visible=True)
@@ -520,16 +609,23 @@ def challenges():
         groups.setdefault(c.category, []).append(c)
     groups = sorted(groups.items(), key=lambda kv: (order.get(kv[0], 99), kv[0]))
     anns = Announcement.query.order_by(Announcement.created_at.desc()).limit(5).all()
+    names = CATEGORIES + sorted(k for k, _v in groups if k not in CATEGORIES)
+    by_cat = dict(groups)
+    overview = [{'name': n, 'total': len(by_cat.get(n, [])),
+                 'solved': sum(1 for c in by_cat.get(n, []) if c.id in solved)} for n in names]
+    rows = scoring.standings()
+    me = next((r for r in rows if r['user'].id == current_user.id), None)
     return render_template('challenges.html', state=state, start=start, end=end, groups=groups,
-                           counts=counts, values=values, solved=solved, announcements=anns)
+                           counts=counts, values=values, solved=solved, announcements=anns,
+                           overview=overview, me=me, players=len(rows))
 
 
 def _challenge_or_404(cid):
     ch = db.session.get(Challenge, cid)
     if not ch or (not ch.visible and not current_user.is_admin):
-        abort(404, description='Masala topilmadi.')
+        abort(404, description=_('Masala topilmadi.'))
     if ctf_state() == 'before' and not current_user.is_admin:
-        abort(403, description='Musobaqa hali boshlanmagan.')
+        abort(403, description=_('Musobaqa hali boshlanmagan.'))
     return ch
 
 
@@ -567,20 +663,20 @@ def api_submit(cid):
     ch = _challenge_or_404(cid)
     state = ctf_state()
     if state != 'running' and not current_user.is_admin:
-        return api_error('Musobaqa yakunlangan — flag qabul qilinmaydi.', 403)
+        return api_error(_('Musobaqa yakunlangan — flag qabul qilinmaydi.'), 403)
     if Solve.query.filter_by(user_id=current_user.id, challenge_id=ch.id).first():
-        return api_error('Bu masalani allaqachon yechgansiz.', 400)
+        return api_error(_('Bu masalani allaqachon yechgansiz.'), 400)
     since = utcnow() - FLAG_WINDOW
     wrong = Attempt.query.filter(Attempt.user_id == current_user.id, Attempt.correct.is_(False),
                                  Attempt.created_at >= since).count()
     if wrong >= FLAG_MAX_WRONG:
-        return api_error("Juda ko'p urinish. 1 daqiqa kuting.", 429)
+        return api_error(_("Juda ko'p urinish. 1 daqiqa kuting."), 429)
     data = request.get_json(silent=True) or {}
     submitted = str(data.get('flag') or '').strip()
     if not submitted:
-        return api_error('Flagni kiriting.', 400)
+        return api_error(_('Flagni kiriting.'), 400)
     if len(submitted) > 255:
-        return api_error('Flag juda uzun.', 400)
+        return api_error(_('Flag juda uzun.'), 400)
     a, b = submitted, ch.flag.strip()
     if ch.case_insensitive:
         a, b = a.lower(), b.lower()
@@ -589,19 +685,19 @@ def api_submit(cid):
                            correct=correct, ip=client_ip()))
     if not correct:
         db.session.commit()
-        return jsonify({'status': 'wrong', 'message': "Noto'g'ri flag. Yana urinib ko'ring."})
+        return jsonify({'status': 'wrong', 'message': _("Noto'g'ri flag. Yana urinib ko'ring.")})
     db.session.add(Solve(user_id=current_user.id, challenge_id=ch.id))
     try:
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return api_error('Bu masalani allaqachon yechgansiz.', 400)
+        return api_error(_('Bu masalani allaqachon yechgansiz.'), 400)
     counts = scoring.solve_counts()
     first = counts.get(ch.id, 0) == 1 and not current_user.is_admin
     return jsonify({'status': 'correct', 'first_blood': first,
                     'value': scoring.challenge_value(ch, counts.get(ch.id, 0)),
                     'score': scoring.user_score(current_user),
-                    'message': 'First blood! 🩸 Siz birinchi bo\'ldingiz!' if first else "To'g'ri flag! Tabriklaymiz."})
+                    'message': _("First blood! 🩸 Siz birinchi bo'ldingiz!") if first else _("To'g'ri flag! Tabriklaymiz.")})
 
 
 @app.route('/api/hints/<int:hid>/unlock', methods=['POST'])
@@ -614,9 +710,9 @@ def api_unlock_hint(hid):
     if HintUnlock.query.filter_by(user_id=current_user.id, hint_id=hint.id).first():
         return jsonify({'status': 'ok', 'content': hint.content})
     if ctf_state() != 'running' and not current_user.is_admin:
-        return api_error('Musobaqa yakunlangan.', 403)
+        return api_error(_('Musobaqa yakunlangan.'), 403)
     if hint.cost and scoring.user_score(current_user) < hint.cost:
-        return api_error(f"Bu hint uchun kamida {hint.cost} ball kerak.", 400)
+        return api_error(_("Bu hint uchun kamida {cost} ball kerak.", cost=hint.cost), 400)
     db.session.add(HintUnlock(user_id=current_user.id, hint_id=hint.id))
     try:
         db.session.commit()
@@ -658,17 +754,17 @@ def _challenge_from_form(ch):
     except ValueError:
         value = 0
     if not title or len(title) > 120:
-        errors.append('Nom 1–120 belgi bo\'lishi kerak.')
+        errors.append(_("Nom 1–120 belgi bo'lishi kerak."))
     if not category or len(category) > 40:
-        errors.append('Kategoriya tanlang.')
+        errors.append(_('Kategoriya tanlang.'))
     if difficulty not in DIFFICULTIES:
-        errors.append('Qiyinlik darajasini tanlang.')
+        errors.append(_('Qiyinlik darajasini tanlang.'))
     if not desc:
-        errors.append('Tavsif bo\'sh bo\'lmasin.')
+        errors.append(_("Tavsif bo'sh bo'lmasin."))
     if not flag or len(flag) > 255:
-        errors.append('Flag 1–255 belgi bo\'lishi kerak.')
+        errors.append(_("Flag 1–255 belgi bo'lishi kerak."))
     if not 1 <= value <= 10000:
-        errors.append('Ball 1–10000 oralig\'ida bo\'lsin.')
+        errors.append(_("Ball 1–10000 oralig'ida bo'lsin."))
     dynamic = bool(f.get('dynamic'))
     minimum = decay = None
     if dynamic:
@@ -677,10 +773,10 @@ def _challenge_from_form(ch):
         except ValueError:
             minimum = decay = -1
         if not 0 <= minimum <= value or decay < 1:
-            errors.append("Dinamik ball: minimum 0..boshlang'ich ball, decay ≥ 1 bo'lsin.")
+            errors.append(_("Dinamik ball: minimum 0..boshlang'ich ball, decay ≥ 1 bo'lsin."))
     files = [l.strip() for l in (f.get('files') or '').splitlines() if l.strip()]
     if any(not (u.startswith('https://') or u.startswith('http://')) for u in files):
-        errors.append('Fayl havolalari http(s):// bilan boshlanishi kerak.')
+        errors.append(_('Fayl havolalari http(s):// bilan boshlanishi kerak.'))
     hints = []
     for hid, content, cost in zip(f.getlist('hint_id'), f.getlist('hint_content'), f.getlist('hint_cost')):
         content = content.strip()
@@ -733,7 +829,7 @@ def admin_challenge_form(cid=None):
         else:
             db.session.add(ch)
             db.session.commit()
-            flash('Masala saqlandi.', 'success')
+            flash(_('Masala saqlandi.'), 'success')
             return redirect(url_for('admin_challenges'))
     return render_template('admin/challenge_form.html', ch=ch, is_new=cid is None)
 
@@ -744,14 +840,14 @@ def admin_challenge_action(cid, action):
     ch = db.session.get(Challenge, cid) or abort(404)
     if action == 'toggle':
         ch.visible = not ch.visible
-        flash(f"«{ch.title}» {'ko‘rinadigan' if ch.visible else 'yashirin'} qilindi.", 'success')
+        flash(_("«{title}» ko'rinadigan qilindi.", title=ch.title) if ch.visible else _("«{title}» yashirildi.", title=ch.title), 'success')
     elif action == 'delete':
         Attempt.query.filter_by(challenge_id=ch.id).delete()
         Solve.query.filter_by(challenge_id=ch.id).delete()
         for h in ch.hints:
             HintUnlock.query.filter_by(hint_id=h.id).delete()
         db.session.delete(ch)
-        flash("Masala o'chirildi.", 'success')
+        flash(_("Masala o'chirildi."), 'success')
     else:
         abort(404)
     db.session.commit()
@@ -776,7 +872,7 @@ def admin_users():
 def admin_user_action(uid, action):
     user = db.session.get(User, uid) or abort(404)
     if user.id == current_user.id and action in ('ban', 'unadmin', 'delete'):
-        flash("O'zingizga bu amalni qo'llab bo'lmaydi.", 'error')
+        flash(_("O'zingizga bu amalni qo'llab bo'lmaydi."), 'error')
         return redirect(url_for('admin_users'))
     if action == 'ban':
         user.is_banned = True
@@ -795,7 +891,7 @@ def admin_user_action(uid, action):
     else:
         abort(404)
     db.session.commit()
-    flash('Bajarildi.', 'success')
+    flash(_('Bajarildi.'), 'success')
     return redirect(url_for('admin_users', q=request.args.get('q', '')))
 
 
@@ -821,11 +917,11 @@ def admin_announcements():
         title = (request.form.get('title') or '').strip()[:120]
         content = (request.form.get('content') or '').strip()
         if not title or not content:
-            flash("Sarlavha va matnni to'ldiring.", 'error')
+            flash(_("Sarlavha va matnni to'ldiring."), 'error')
         else:
             db.session.add(Announcement(title=title, content=content))
             db.session.commit()
-            flash("E'lon joylandi.", 'success')
+            flash(_("E'lon joylandi."), 'success')
             return redirect(url_for('admin_announcements'))
     anns = Announcement.query.order_by(Announcement.created_at.desc()).all()
     return render_template('admin/announcements.html', announcements=anns)
@@ -837,7 +933,7 @@ def admin_announcement_delete(aid):
     a = db.session.get(Announcement, aid) or abort(404)
     db.session.delete(a)
     db.session.commit()
-    flash("E'lon o'chirildi.", 'success')
+    flash(_("E'lon o'chirildi."), 'success')
     return redirect(url_for('admin_announcements'))
 
 
@@ -848,12 +944,12 @@ def admin_settings():
         start = parse_iso(request.form.get('ctf_start'))
         end = parse_iso(request.form.get('ctf_end'))
         if start and end and end <= start:
-            flash("Tugash vaqti boshlanishdan keyin bo'lishi kerak.", 'error')
+            flash(_("Tugash vaqti boshlanishdan keyin bo'lishi kerak."), 'error')
         else:
             set_setting('ctf_start', start.isoformat() if start else None)
             set_setting('ctf_end', end.isoformat() if end else None)
             db.session.commit()
-            flash('Sozlamalar saqlandi.', 'success')
+            flash(_('Sozlamalar saqlandi.'), 'success')
             return redirect(url_for('admin_settings'))
     start, end = ctf_window()
     return render_template('admin/settings.html', start=start, end=end)

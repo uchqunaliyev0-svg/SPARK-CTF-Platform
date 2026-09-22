@@ -120,3 +120,9 @@ class Setting(db.Model):
     __tablename__ = 'settings'
     key = db.Column(db.String(40), primary_key=True)
     value = db.Column(db.Text, nullable=True)
+
+
+class CaptchaUse(db.Model):
+    __tablename__ = 'captcha_uses'
+    sig = db.Column(db.String(64), primary_key=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)

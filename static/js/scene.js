@@ -112,6 +112,21 @@
     scene.add(grid);
   }
 
+  const glows = [];
+  core.traverse((o) => { if (o.isSprite) glows.push(o); });
+  function applyTheme() {
+    const light = document.documentElement.dataset.theme === 'light';
+    scene.fog.color.set(light ? 0xf5f7fb : 0x05070f);
+    scene.fog.density = light ? 0.03 : 0.045;
+    glows.forEach((g) => { g.material.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending; g.material.needsUpdate = true; });
+    stars.material.opacity = light ? 0.55 : 0.8;
+    outer.material.color.set(light ? 0x0891b2 : CYAN);
+    innerWire.material.color.set(light ? 0x2563eb : 0x9be9ff);
+    if (grid) grid.material.opacity = light ? 0.22 : 0.16;
+  }
+  applyTheme();
+  window.addEventListener('spark:theme', () => { applyTheme(); if (reduced) frame(); });
+
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   window.addEventListener('pointermove', (e) => {
     mouse.tx = (e.clientX / window.innerWidth) * 2 - 1;

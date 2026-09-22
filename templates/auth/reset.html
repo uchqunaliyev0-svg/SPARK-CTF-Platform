@@ -1,18 +1,18 @@
 {% extends 'auth/_layout.html' %}
 {% from '_macros.html' import icon, otp, password_field %}
-{% block title %}Yangi parol — SPARK CTF{% endblock %}
-{% block visual_title %}Yangi parol o'rnating.{% endblock %}
-{% block visual_text %}Kuchli parol tanlang: harflar, raqamlar va belgilar aralashmasi.{% endblock %}
+{% block title %}{{ _('Yangi parol') }} — SPARK CTF{% endblock %}
+{% block visual_title %}{{ _("Yangi parol o'rnating.") }}{% endblock %}
+{% block visual_text %}{{ _('Kuchli parol tanlang: harflar, raqamlar va belgilar aralashmasi.') }}{% endblock %}
 {% block card %}
 <div class="lock-ico">{{ icon('shield') }}</div>
-<h1>Yangi parol</h1>
-<p class="sub"><b style="color:var(--text)">{{ email }}</b> manziliga kelgan kodni va yangi parolni kiriting.</p>
+<h1>{{ _('Yangi parol') }}</h1>
+<p class="sub">{{ _('{email} manziliga kelgan kodni va yangi parolni kiriting.', email=email) }}</p>
 <form method="post" action="{{ url_for('reset') }}" data-match="password,password2">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <div class="field"><label>Tasdiqlash kodi</label>{{ otp() }}</div>
-  {{ password_field('password', 'Yangi parol', 'password', strength=True) }}
-  {{ password_field('password2', 'Yangi parolni takrorlang', 'password2') }}
-  <button type="submit" class="btn btn-primary btn-block btn-lg">Parolni yangilash</button>
+  <div class="field"><label>{{ _('Tasdiqlash kodi') }}</label>{{ otp() }}</div>
+  {{ password_field('password', _('Yangi parol'), 'password', strength=True) }}
+  {{ password_field('password2', _('Yangi parolni takrorlang'), 'password2') }}
+  <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _('Parolni yangilash') }}</button>
 </form>
-<p class="alt">Kod kelmadimi? <a href="{{ url_for('forgot') }}">Qayta so'rash</a></p>
+<p class="alt">{{ _('Kod kelmadimi?') }} <a href="{{ url_for('forgot') }}">{{ _("Qayta so'rash") }}</a></p>
 {% endblock %}

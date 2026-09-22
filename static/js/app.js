@@ -4,6 +4,21 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || '';
+  let I18N = {};
+  try { I18N = JSON.parse($('#i18n')?.textContent || '{}'); } catch (e) { I18N = {}; }
+  const t = (s, vars) => {
+    let out = I18N[s] || s;
+    if (vars) Object.keys(vars).forEach((k) => { out = out.replace(`{${k}}`, vars[k]); });
+    return out;
+  };
+
+  // ---------- theme
+  $$('[data-theme-toggle]').forEach((b) => b.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('spark_theme', next); } catch (e) { /* storage unavailable */ }
+    window.dispatchEvent(new CustomEvent('spark:theme', { detail: next }));
+  }));
 
   // ---------- toasts
   function dismiss(t) {
@@ -36,14 +51,31 @@
       credentials: 'same-origin',
     });
     let data = {};
-    try { data = await res.json(); } catch (e) { data = { status: 'error', message: 'Server javobi noto\'g\'ri.' }; }
+    try { data = await res.json(); } catch (e) { data = { status: 'error', message: t("Server javobi noto'g'ri.") }; }
     data._status = res.status;
     return data;
   }
 
-  // ---------- nav
+  // ---------- nav + app sidebar
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } } };
+  const isApp = document.body.classList.contains('app');
+  if (isApp && store.get('spark_sb') === '1') document.body.classList.add('sb-collapsed');
+  $('[data-sb-collapse]')?.addEventListener('click', () => {
+    const c = document.body.classList.toggle('sb-collapsed');
+    store.set('spark_sb', c ? '1' : '0');
+  });
+  $$('[data-sb-close]').forEach((el) => el.addEventListener('click', () => document.body.classList.remove('sb-open')));
   const burger = $('[data-burger]');
-  burger?.addEventListener('click', () => $('#navLinks').classList.toggle('open'));
+  burger?.addEventListener('click', () => {
+    if (isApp && window.innerWidth <= 1000) document.body.classList.toggle('sb-open');
+    else $('#navLinks').classList.toggle('open');
+  });
+  const bell = $('[data-bell]');
+  if (bell) {
+    const latest = parseInt(bell.dataset.bell, 10) || 0;
+    if (latest > (parseInt(store.get('spark_bell'), 10) || 0)) bell.classList.add('unread');
+    bell.addEventListener('click', () => { bell.classList.remove('unread'); store.set('spark_bell', String(latest)); });
+  }
   $$('[data-dropdown]').forEach((btn) => {
     const dd = document.getElementById(btn.dataset.dropdown);
     btn.addEventListener('click', (e) => {
@@ -131,7 +163,7 @@
     inp.type = show ? 'text' : 'password';
     b.innerHTML = show ? eyeOff : eye;
   }));
-  const LEVELS = [['#ff3b5c', 'Juda zaif'], ['#ff7a45', 'Zaif'], ['#fbbf24', "O'rtacha"], ['#34d399', 'Kuchli']];
+  const LEVELS = [['#ff3b5c', t('Juda zaif')], ['#ff7a45', t('Zaif')], ['#fbbf24', t("O'rtacha")], ['#34d399', t('Kuchli')]];
   $$('input[data-strength]').forEach((inp) => {
     const field = inp.closest('.field');
     const bars = $$('.strength i', field); const label = $('.strength-label', field);
@@ -141,7 +173,7 @@
       if (/[a-z]/i.test(v) && /\d/.test(v)) s++;
       if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
       if (/[^A-Za-z0-9]/.test(v) || v.length >= 14) s++;
-      if (!v) { bars.forEach((b) => { b.style.background = ''; }); label.textContent = 'Kamida 8 belgi, harf va raqam.'; label.style.color = ''; return; }
+      if (!v) { bars.forEach((b) => { b.style.background = ''; }); label.textContent = t('Kamida 8 belgi, harf va raqam.'); label.style.color = ''; return; }
       const [c, t] = LEVELS[Math.max(s - 1, 0)];
       bars.forEach((b, i) => { b.style.background = i < s ? c : ''; });
       label.textContent = t; label.style.color = c;
@@ -149,7 +181,7 @@
   });
   $$('form[data-match]').forEach((f) => f.addEventListener('submit', (e) => {
     const [a, b] = f.dataset.match.split(',').map((n) => f.elements[n]);
-    if (a.value !== b.value) { e.preventDefault(); toast('Parollar mos kelmadi.', 'error'); b.focus(); }
+    if (a.value !== b.value) { e.preventDefault(); toast(t('Parollar mos kelmadi.'), 'error'); b.focus(); }
   }));
 
   // ---------- OTP inputs
@@ -184,7 +216,7 @@
     });
     form.addEventListener('submit', (e) => {
       sync();
-      if (hidden.value.length !== 6) { e.preventDefault(); toast("6 xonali kodni to'liq kiriting.", 'error'); boxes[0].focus(); }
+      if (hidden.value.length !== 6) { e.preventDefault(); toast(t("6 xonali kodni to'liq kiriting."), 'error'); boxes[0].focus(); }
     });
     boxes[0].focus();
   });
@@ -211,5 +243,5 @@
     if (!window.confirm(f.dataset.confirm)) e.preventDefault();
   }));
 
-  window.Spark = { $, $$, api, toast, fmtTimes, tilt, reduced };
+  window.Spark = { $, $$, api, toast, fmtTimes, tilt, reduced, t };
 })();

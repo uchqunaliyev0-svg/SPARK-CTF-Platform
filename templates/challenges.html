@@ -1,125 +1,177 @@
-{% extends 'base.html' %}
-{% from '_macros.html' import icon, time %}
-{% block title %}Masalalar — SPARK CTF{% endblock %}
-{% block content %}
-<div class="page"><div class="container">
+{% extends 'app_layout.html' %}
+{% from '_macros.html' import icon, time, avatar %}
+{% block title %}{{ _('Masalalar') }} — SPARK CTF{% endblock %}
+{% block app %}
+{% set DCOL = {'Easy': 'var(--green)', 'Medium': 'var(--amber)', 'Hard': 'var(--red)', 'Insane': 'var(--violet)'} %}
+<div class="app-page">
 
 {% if state == 'before' and not current_user.is_admin %}
   <div class="card state-card">
-    <span class="eyebrow">// musobaqa</span>
-    <h2>Musobaqa hali boshlanmadi</h2>
-    <p>Masalalar boshlanish vaqtida avtomatik ochiladi. Tayyorlaning!</p>
+    <span class="eyebrow">// {{ _('musobaqa') }}</span>
+    <h2>{{ _('Musobaqa hali boshlanmadi') }}</h2>
+    <p>{{ _('Masalalar boshlanish vaqtida avtomatik ochiladi. Tayyorlaning!') }}</p>
     {% if start %}
     <div class="countdown" data-countdown="{{ start.isoformat() }}Z" data-reload>
-      <div><b data-d>0</b><span>kun</span></div><div><b data-h>00</b><span>soat</span></div>
-      <div><b data-m>00</b><span>daqiqa</span></div><div><b data-s>00</b><span>soniya</span></div>
+      <div><b data-d>0</b><span>{{ _('kun') }}</span></div><div><b data-h>00</b><span>{{ _('soat') }}</span></div>
+      <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
     </div>
     {% endif %}
   </div>
 {% else %}
-
   {% set total = namespace(n=0, s=0) %}
-  {% for cat, items in groups %}{% set total.n = total.n + items|length %}{% for c in items %}{% if c.id in solved %}{% set total.s = total.s + 1 %}{% endif %}{% endfor %}{% endfor %}
+  {% for o in overview %}{% set total.n = total.n + o.total %}{% set total.s = total.s + o.solved %}{% endfor %}
+  {% set pct = ((total.s / total.n * 100)|round|int) if total.n else 0 %}
 
   <div class="page-head">
     <div>
       <span class="eyebrow">// challenges</span>
-      <h1>Masalalar</h1>
-      <p>{{ total.s }} / {{ total.n }} ta masala yechilgan</p>
+      <h1>{{ _('Masalalar') }}</h1>
+      <p data-progress-text>{{ _('{solved} / {total} ta masala yechilgan', solved=total.s, total=total.n) }}</p>
     </div>
     {% if state == 'ended' %}
-      <span class="badge b-red" style="font-size:13px;padding:8px 14px">Musobaqa yakunlangan — flaglar qabul qilinmaydi</span>
+      <span class="badge b-red" style="font-size:13px;padding:8px 14px">{{ _('Musobaqa yakunlangan — flag qabul qilinmaydi.') }}</span>
     {% elif end %}
-      <div class="countdown" data-countdown="{{ end.isoformat() }}Z" style="justify-content:flex-end" title="Tugashiga qolgan vaqt">
-        <div><b data-d>0</b><span>kun</span></div><div><b data-h>00</b><span>soat</span></div>
-        <div><b data-m>00</b><span>daq</span></div><div><b data-s>00</b><span>son</span></div>
+      <div class="countdown" data-countdown="{{ end.isoformat() }}Z" title="{{ _('Musobaqa tugashiga') }}">
+        <div><b data-d>0</b><span>{{ _('kun') }}</span></div><div><b data-h>00</b><span>{{ _('soat') }}</span></div>
+        <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
       </div>
     {% endif %}
+  </div>
+
+  <div class="card me-strip">
+    {{ avatar(current_user.username, 'md') }}
+    <div class="who"><b>{{ current_user.username }}</b><span>{% if me %}{{ _('Reytingda #{rank} — {players} ta ishtirokchi orasida', rank=me.rank, players=players) }}{% elif current_user.is_admin %}{{ _("Admin hisobi reytingda ko'rinmaydi") }}{% else %}{{ _('Birinchi flagingizni toping!') }}{% endif %}</span></div>
+    <div class="kpis">
+      <div class="kpi"><b style="color:var(--cyan)" data-kpi-score>{{ my_score }}</b><span>{{ _('Ball') }}</span></div>
+      <div class="kpi"><b data-kpi-solved>{{ total.s }}</b><span>{{ _('Yechilgan') }}</span></div>
+      <div class="kpi"><b>{{ '#' ~ me.rank if me else '—' }}</b><span>{{ _("O'rin") }}</span></div>
+    </div>
+    <div class="ring" title="{{ pct }}%">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
+        <circle class="bg" cx="32" cy="32" r="26"/><circle class="fg" cx="32" cy="32" r="26" stroke-dasharray="163.36" stroke-dashoffset="{{ 163.36 * (1 - pct / 100) }}" data-ring/></svg>
+      <b data-ring-text>{{ pct }}%</b>
+    </div>
   </div>
 
   {% for a in announcements %}
   <div class="card ann" data-ann="{{ a.id }}">
     <span class="ico">{{ icon('megaphone') }}</span>
     <div><h4>{{ a.title }}</h4><p>{{ a.content }}</p><p class="dim" style="font-size:12px;margin-top:4px">{{ time(a.created_at) }}</p></div>
-    <button class="x" data-ann-close aria-label="Yopish">×</button>
+    <button class="x" data-ann-close aria-label="{{ _('Yopish') }}">×</button>
   </div>
   {% endfor %}
 
-  {% if groups %}
-  <div class="toolbar">
-    <label class="search">{{ icon('search') }}<input class="input" id="q" type="search" placeholder="Masala qidirish..." autocomplete="off"></label>
-    <select class="input" id="diff" style="width:auto;min-width:160px" aria-label="Qiyinlik">
-      <option value="">Barcha darajalar</option>
-      {% for d in DIFFICULTIES %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
-    </select>
-    <div class="seg" id="status" role="group" aria-label="Holat">
-      <button class="on" data-v="">Hammasi</button><button data-v="open">Yechilmagan</button><button data-v="solved">Yechilgan</button>
-    </div>
-  </div>
-  <div class="chips" id="cats">
-    <button class="chip on" data-v="">Barchasi <span class="cnt">{{ total.n }}</span></button>
-    {% for cat, items in groups %}<button class="chip" data-v="{{ cat }}">{{ icon(cat) }} {{ cat }} <span class="cnt">{{ items|length }}</span></button>{% endfor %}
-  </div>
+  <div class="board">
+    <aside class="card board-side">
+      {% if groups %}
+      <label class="search" style="max-width:none">{{ icon('search') }}<input class="input" id="q" type="search" placeholder="{{ _('Masala qidirish...') }}" autocomplete="off"></label>
+      {% endif %}
+      <div class="frow">
+        <div class="side-label">{{ _('Kategoriyalar') }}</div>
+        <div class="side-list scroll-x" id="cats">
+          <button class="side-item on" data-v=""><span class="ic">{{ icon('grid') }}</span>{{ _('Barchasi') }}<span class="n">{{ total.s }}/{{ total.n }}</span></button>
+          {% for o in overview %}
+          {% set col = CATEGORY_META.get(o.name, ('#22d3ee', ''))[0] %}
+          <button class="side-item" data-v="{{ o.name }}" style="--c: {{ col }}" {% if not o.total %}disabled title="{{ _('Tez orada') }}"{% endif %}>
+            <span class="ic">{{ icon(o.name) }}</span>{{ o.name }}<span class="n" data-cat-count="{{ o.name }}">{{ o.solved }}/{{ o.total }}</span>
+            <span class="mini"><i style="width:{{ ((o.solved / o.total * 100)|round|int) if o.total else 0 }}%"></i></span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% if groups %}
+      <div class="frow">
+        <div class="side-label">{{ _('Qiyinlik') }}</div>
+        <div class="side-list scroll-x" id="diffs">
+          <button class="side-item on" data-v=""><span class="dotc" style="background:var(--muted)"></span>{{ _('Barchasi') }}<span></span></button>
+          {% for d in DIFFICULTIES %}<button class="side-item" data-v="{{ d }}"><span class="dotc" style="background:{{ DCOL[d] }};box-shadow:0 0 8px {{ DCOL[d] }}"></span>{{ d }}<span></span></button>{% endfor %}
+        </div>
+      </div>
+      <div class="frow">
+        <div class="side-label">{{ _('Holat') }}</div>
+        <div class="side-list scroll-x" id="status">
+          <button class="side-item on" data-v=""><span class="dotc" style="background:var(--muted)"></span>{{ _('Hammasi') }}<span></span></button>
+          <button class="side-item" data-v="open"><span class="dotc" style="background:var(--cyan)"></span>{{ _('Yechilmagan') }}<span></span></button>
+          <button class="side-item" data-v="solved"><span class="dotc" style="background:var(--green)"></span>{{ _('Yechilgan') }}<span></span></button>
+        </div>
+      </div>
+      {% endif %}
+    </aside>
 
-  {% for cat, items in groups %}
-  {% set done = items|selectattr('id', 'in', solved)|list|length %}
-  <section class="cat-section" data-cat-section="{{ cat }}">
-    <div class="cat-head">
-      <span class="ic">{{ icon(cat) }}</span><h2>{{ cat }}</h2>
-      <span class="prog">{{ done }}/{{ items|length }}</span>
-      <span class="bar"><i style="width:{{ (done / items|length * 100)|round|int }}%"></i></span>
-    </div>
-    <div class="ch-grid">
-      {% for c in items %}
-      <button type="button" class="card ch-card{% if c.id in solved %} solved{% endif %}{% if not c.visible %} is-hidden{% endif %}" data-tilt="7"
-              data-id="{{ c.id }}" data-title="{{ c.title|lower }}" data-cat="{{ c.category }}" data-diff="{{ c.difficulty }}">
-        <span class="tick">{{ icon('check') }}</span>
-        <div class="top">
-          <span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span>
-          {% if not c.visible %}<span class="badge b-muted">yashirin</span>{% endif %}
+    <div class="board-main">
+    {% if groups %}
+      {% for cat, items in groups %}
+      {% set done = items|selectattr('id', 'in', solved)|list|length %}
+      {% set meta = CATEGORY_META.get(cat, ('#22d3ee', '')) %}
+      <section class="cat-section" data-cat-section="{{ cat }}" style="--c: {{ meta[0] }}">
+        <div class="cat-head">
+          <span class="ic">{{ icon(cat) }}</span>
+          <div><h2>{{ cat }}</h2>{% if meta[1] %}<div class="desc-line">{{ _(meta[1]) }}</div>{% endif %}</div>
+          <span class="prog">{{ done }}/{{ items|length }}</span>
+          <span class="bar"><i style="width:{{ (done / items|length * 100)|round|int }}%"></i></span>
         </div>
-        <h3>{{ c.title }}</h3>
-        <div class="bottom">
-          <span class="val" data-val>{{ values[c.id] }}<small>pts</small></span>
-          <span class="solves">{{ icon('users') }} <span data-solves>{{ counts.get(c.id, 0) }}</span></span>
+        <div class="ch-grid">
+          {% for c in items %}
+          <button type="button" class="card ch-card{% if c.id in solved %} solved{% endif %}{% if not c.visible %} is-hidden{% endif %}" data-tilt="7"
+                  data-id="{{ c.id }}" data-title="{{ c.title|lower }}" data-cat="{{ c.category }}" data-diff="{{ c.difficulty }}">
+            <span class="tick">{{ icon('check') }}</span>
+            <div class="top">
+              <span class="cat-dot">{{ icon(cat) }} {{ cat }}</span>
+              <span style="display:flex;gap:6px">{% if not c.visible %}<span class="badge b-muted">{{ _('yashirin') }}</span>{% endif %}<span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></span>
+            </div>
+            <h3>{{ c.title }}</h3>
+            <div class="bottom">
+              <span class="val" data-val>{{ values[c.id] }}<small>pts</small></span>
+              <span class="solves" title="{{ _('Yechganlar') }}">{{ icon('users') }} <span data-solves>{{ counts.get(c.id, 0) }}</span></span>
+            </div>
+          </button>
+          {% endfor %}
         </div>
-      </button>
+      </section>
       {% endfor %}
+      <div class="card empty hidden" id="noMatch"><div class="ico">{{ icon('search') }}</div><h3>{{ _('Hech narsa topilmadi') }}</h3><p>{{ _("Filtrlarni o'zgartirib ko'ring.") }}</p></div>
+    {% else %}
+      <div class="card board-empty-head">
+        <span class="ic">{{ icon('flag') }}</span>
+        <div><h3>{{ _('Masalalar tez orada ochiladi') }}</h3><p>{{ _("Quyidagi yo'nalishlar bo'yicha masalalar tayyorlanmoqda. E'lonlarni kuzatib boring!") }}</p></div>
+      </div>
+      <div class="locked-grid">
+        {% for name in CATEGORIES %}
+        <div class="card locked" style="--c: {{ CATEGORY_META[name][0] }}" data-reveal="{{ loop.index0 % 3 }}">
+          <span class="badge b-muted soon">{{ icon('lock') }} {{ _('Tez orada') }}</span>
+          <div class="ic">{{ icon(name) }}</div>
+          <h3>{{ name }}</h3>
+          <p>{{ _(CATEGORY_META[name][1]) }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
     </div>
-  </section>
-  {% endfor %}
-  <div class="empty hidden" id="noMatch"><div class="ico">{{ icon('search') }}</div><h3>Hech narsa topilmadi</h3><p>Filtrlarni o'zgartirib ko'ring.</p></div>
-  {% else %}
-  <div class="card empty">
-    <div class="ico">{{ icon('flag') }}</div>
-    <h3>Hozircha masalalar yo'q</h3>
-    <p>Masalalar tez orada qo'shiladi. E'lonlarni kuzatib boring!</p>
   </div>
-  {% endif %}
 {% endif %}
-</div></div>
+</div>
 
 <div class="modal-bg" id="modal" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
     <div class="modal-head">
-      <button class="close" data-close aria-label="Yopish">{{ icon('x') }}</button>
+      <button class="close" data-close aria-label="{{ _('Yopish') }}">{{ icon('x') }}</button>
       <div class="meta" id="mMeta"></div>
       <h2 id="mTitle"></h2>
       <div class="sub" id="mSub"></div>
     </div>
     <div class="tabs">
-      <button class="on" data-tab="info">Masala</button>
-      <button data-tab="solves">Yechganlar <span id="mSolveCnt"></span></button>
+      <button class="on" data-tab="info">{{ _('Masala') }}</button>
+      <button data-tab="solves">{{ _('Yechganlar') }} <span id="mSolveCnt"></span></button>
     </div>
     <div class="modal-body">
       <div data-pane="info">
         <div class="desc" id="mDesc"></div>
         <div class="files" id="mFiles"></div>
         <div class="hints" id="mHints"></div>
-        <div id="mSolved" class="solved-banner hidden">{{ icon('check') }} <span id="mSolvedText">Siz bu masalani yechgansiz!</span></div>
+        <div id="mSolved" class="solved-banner hidden">{{ icon('check') }} <span id="mSolvedText">{{ _('Siz bu masalani yechgansiz!') }}</span></div>
         <form class="flag-form" id="flagForm" autocomplete="off">
           <input class="input" id="flagInput" name="flag" placeholder="SPARK{...}" maxlength="255" spellcheck="false" autocomplete="off" aria-label="Flag">
-          <button type="submit" class="btn btn-primary">{{ icon('flag') }} Yuborish</button>
+          <button type="submit" class="btn btn-primary">{{ icon('flag') }} {{ _('Yuborish') }}</button>
         </form>
         <div class="result" id="mResult" role="status"></div>
       </div>
@@ -129,5 +181,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/challenges.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/challenges.js') }}?v=4"></script>
 {% endblock %}

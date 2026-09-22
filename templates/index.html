@@ -1,105 +1,83 @@
 {% extends 'base.html' %}
 {% from '_macros.html' import icon, avatar %}
-{% block title %}SPARK CTF — Capture The Flag platformasi{% endblock %}
+{% block title %}SPARK CTF — Capture The Flag{% endblock %}
 {% block content %}
 {% set state = ctf_state() %}
 <section class="hero">
   <canvas class="scene" data-scene="hero" aria-hidden="true"></canvas>
   <div class="container">
     <div class="hero-copy">
-      <span class="pill-live"><i></i>{% if state == 'before' %}Tez orada boshlanadi{% elif state == 'ended' %}Musobaqa yakunlangan{% else %}Platforma faol{% endif %}</span>
-      <h1>Xakerlik mahoratingizni <span class="grad">sinovdan</span> o'tkazing. <span class="red">Flagni</span> toping.</h1>
-      <p class="lead">SPARK CTF — kiberxavfsizlik bo'yicha amaliy masalalar platformasi. Zaifliklarni toping, shifrlarni buzing, izlarni tahlil qiling va reytingda yuqoriga chiqing.</p>
+      <span class="pill-live"><i></i>{% if state == 'before' %}{{ _('Tez orada boshlanadi') }}{% elif state == 'ended' %}{{ _('Musobaqa yakunlangan') }}{% else %}{{ _('Platforma faol') }}{% endif %}</span>
+      <h1>{{ _('Xakerlik mahoratingizni') }} <span class="grad">{{ _('sinovdan') }}</span> {{ _("o'tkazing.") }} <span class="red">{{ _('Flagni') }}</span> {{ _('toping.') }}</h1>
+      <p class="lead">{{ _("SPARK CTF — kiberxavfsizlik bo'yicha amaliy masalalar platformasi. Zaifliklarni toping, shifrlarni buzing, izlarni tahlil qiling va reytingda yuqoriga chiqing.") }}</p>
       <div class="hero-cta">
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">Masalalarga o'tish {{ icon('arrow') }}</a>
+          <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">{{ _("Masalalarga o'tish") }} {{ icon('arrow') }}</a>
         {% else %}
-          <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Boshlash — bepul {{ icon('arrow') }}</a>
-          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">Kirish</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">{{ _('Boshlash — bepul') }} {{ icon('arrow') }}</a>
+          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">{{ _('Kirish') }}</a>
         {% endif %}
       </div>
       <div class="term" aria-hidden="true"><span class="p">root@spark:~$</span><span class="t" data-typer='["submit SPARK{w3lc0m3_h4ck3r}", "nmap -sV target.spark", "strings binary | grep flag", "echo cGxheSBmYWly | base64 -d"]'></span><span class="cur"></span></div>
     </div>
   </div>
-  <a href="#stats" class="scroll-hint" aria-label="Pastga"><span></span>scroll</a>
+  <a href="#stats" class="scroll-hint" aria-label="{{ _('Pastga') }}"><span></span>scroll</a>
 </section>
 
 <section id="stats">
   <div class="container">
     <div class="stat-strip" data-reveal>
-      <div><div class="v" data-count="{{ stats.users }}">0</div><div class="l">Ishtirokchilar</div></div>
-      <div><div class="v" data-count="{{ stats.challenges }}">0</div><div class="l">Masalalar</div></div>
-      <div><div class="v" data-count="{{ stats.solves }}">0</div><div class="l">Topilgan flaglar</div></div>
+      <div><div class="v" data-count="{{ stats.users }}">0</div><div class="l">{{ _('Ishtirokchilar') }}</div></div>
+      <div><div class="v" data-count="{{ stats.challenges }}">0</div><div class="l">{{ _('Masalalar') }}</div></div>
+      <div><div class="v" data-count="{{ stats.solves }}">0</div><div class="l">{{ _('Topilgan flaglar') }}</div></div>
     </div>
   </div>
 </section>
 
-{% if state == 'before' and start %}
+{% if (state == 'before' and start) or (state == 'running' and end) %}
 <section class="section" style="padding-bottom:0">
   <div class="container narrow">
     <div class="card cta-final" data-reveal>
-      <span class="eyebrow">// start</span>
-      <h2>Musobaqa boshlanishiga</h2>
-      <div class="countdown" data-countdown="{{ start.isoformat() }}Z" data-reload>
-        <div><b data-d>0</b><span>kun</span></div><div><b data-h>00</b><span>soat</span></div>
-        <div><b data-m>00</b><span>daqiqa</span></div><div><b data-s>00</b><span>soniya</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-{% elif state == 'running' and end %}
-<section class="section" style="padding-bottom:0">
-  <div class="container narrow">
-    <div class="card cta-final" data-reveal>
-      <span class="eyebrow">// live</span>
-      <h2>Musobaqa tugashiga</h2>
-      <div class="countdown" data-countdown="{{ end.isoformat() }}Z">
-        <div><b data-d>0</b><span>kun</span></div><div><b data-h>00</b><span>soat</span></div>
-        <div><b data-m>00</b><span>daqiqa</span></div><div><b data-s>00</b><span>soniya</span></div>
+      <span class="eyebrow">// {{ 'start' if state == 'before' else 'live' }}</span>
+      <h2>{{ _('Musobaqa boshlanishiga') if state == 'before' else _('Musobaqa tugashiga') }}</h2>
+      <div class="countdown" data-countdown="{{ (start if state == 'before' else end).isoformat() }}Z" {% if state == 'before' %}data-reload{% endif %}>
+        <div><b data-d>0</b><span>{{ _('kun') }}</span></div><div><b data-h>00</b><span>{{ _('soat') }}</span></div>
+        <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
       </div>
     </div>
   </div>
 </section>
 {% endif %}
 
-<section class="section">
+<section class="section" id="categories">
   <div class="container">
     <div class="section-head" data-reveal>
-      <span class="eyebrow">// kategoriyalar</span>
-      <h2>Har bir yo'nalishda sinovlar</h2>
-      <p>Haqiqiy hujum va himoya ssenariylariga asoslangan masalalar — boshlang'ichdan ekspertgacha.</p>
+      <span class="eyebrow">// {{ _('kategoriyalar') }}</span>
+      <h2>{{ _("Har bir yo'nalishda sinovlar") }}</h2>
+      <p>{{ _("Haqiqiy hujum va himoya ssenariylariga asoslangan masalalar — boshlang'ichdan ekspertgacha.") }}</p>
     </div>
-    {% set cats = [
-      ('Web', "Veb-ilovalardagi zaifliklar: SQLi, XSS, SSRF, autentifikatsiya xatolari."),
-      ('Crypto', "Klassik va zamonaviy shifrlar, xesh va kalit almashinuvi xatolarini buzish."),
-      ('Reverse', "Binar fayllar va dasturlarni teskari muhandislik orqali tahlil qilish."),
-      ('Forensics', "Tarmoq trafigi, xotira dampi va fayllardan raqamli izlarni topish."),
-      ('Pwn', "Xotira zaifliklari: buffer overflow, format string, ROP zanjirlari."),
-      ('OSINT', "Ochiq manbalardan ma'lumot yig'ish va razvedka qilish."),
-      ('Misc', "Mantiqiy jumboqlar, steganografiya va nostandart masalalar."),
-    ] %}
     <div class="cat-grid">
-      {% for name, text in cats %}
-      <div class="card cat-card" data-tilt="10" data-reveal="{{ loop.index0 % 4 }}">
-        <div class="ic">{{ icon(name) }}</div>
+      {% for name in CATEGORIES %}
+      <div class="card cat-card" data-tilt="10" data-reveal="{{ loop.index0 % 4 }}" style="--c: {{ CATEGORY_META[name][0] }}">
+        <div class="ic" style="color:var(--c);background:color-mix(in srgb, var(--c) 12%, transparent);border-color:color-mix(in srgb, var(--c) 30%, transparent)">{{ icon(name) }}</div>
         <h3>{{ name }}</h3>
-        <p>{{ text }}</p>
+        <p>{{ _(CATEGORY_META[name][1]) }}</p>
       </div>
       {% endfor %}
     </div>
   </div>
 </section>
 
-<section class="section" style="padding-top:24px">
+<section class="section" id="how" style="padding-top:24px">
   <div class="container">
     <div class="section-head" data-reveal>
-      <span class="eyebrow">// qanday ishlaydi</span>
-      <h2>Uch qadamda boshlang</h2>
+      <span class="eyebrow">// {{ _('qanday ishlaydi') }}</span>
+      <h2>{{ _('Uch qadamda boshlang') }}</h2>
     </div>
     <div class="steps">
-      <div class="card step" data-reveal="0"><span class="n">01</span><h3>Ro'yxatdan o'ting</h3><p>Hisob yarating va emailingizga kelgan 6 xonali kod bilan uni tasdiqlang.</p></div>
-      <div class="card step" data-reveal="1"><span class="n">02</span><h3>Masalani tanlang</h3><p>Kategoriya va qiyinlik bo'yicha saralang. Kerak bo'lsa hint oching.</p></div>
-      <div class="card step" data-reveal="2"><span class="n">03</span><h3>Flagni yuboring</h3><p>Yashirin flagni toping — odatda <code>SPARK{...}</code> ko'rinishida — va ball oling.</p></div>
+      <div class="card step" data-reveal="0"><span class="n">01</span><h3>{{ _("Ro'yxatdan o'ting") }}</h3><p>{{ _('Hisob yarating va emailingizga kelgan 6 xonali kod bilan uni tasdiqlang.') }}</p></div>
+      <div class="card step" data-reveal="1"><span class="n">02</span><h3>{{ _('Masalani tanlang') }}</h3><p>{{ _("Kategoriya va qiyinlik bo'yicha saralang. Kerak bo'lsa hint oching.") }}</p></div>
+      <div class="card step" data-reveal="2"><span class="n">03</span><h3>{{ _('Flagni yuboring') }}</h3><p>{{ _('Yashirin flagni toping — odatda') }} <code>SPARK{...}</code> {{ _("ko'rinishida — va ball oling.") }}</p></div>
     </div>
   </div>
 </section>
@@ -107,33 +85,37 @@
 <section class="section" style="padding-top:24px">
   <div class="container narrow">
     <div class="section-head" data-reveal>
-      <span class="eyebrow">// top xakerlar</span>
-      <h2>Reyting yetakchilari</h2>
+      <span class="eyebrow">// {{ _('top xakerlar') }}</span>
+      <h2>{{ _('Reyting yetakchilari') }}</h2>
     </div>
     <div class="card mini-board" data-reveal>
       {% for r in top %}
       <div class="row">
         <span class="rk">#{{ r.rank }}</span>
-        <a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}{{ r.user.username }}</a>
+        <span class="user-cell">{{ avatar(r.user.username) }}{{ r.user.username }}</span>
         <span class="pts">{{ r.score }} pts</span>
       </div>
       {% else %}
-      <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>Reyting hali bo'sh</h3><p>Birinchi flagni topib, ro'yxatni siz ochib bering.</p></div>
+      <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>{{ _("Reyting hali bo'sh") }}</h3><p>{{ _("Birinchi flagni topib, ro'yxatni siz ochib bering.") }}</p></div>
       {% endfor %}
     </div>
-    <p style="text-align:center;margin-top:18px"><a href="{{ url_for('scoreboard') }}">To'liq reytingni ko'rish →</a></p>
+    <p style="text-align:center;margin-top:18px"><a href="{{ url_for('scoreboard') }}">{{ _("To'liq reytingni ko'rish") }} →</a></p>
   </div>
 </section>
 
 <section class="section">
   <div class="container narrow">
     <div class="card cta-final" data-reveal>
-      <h2>Birinchi flagingiz sizni kutmoqda</h2>
-      <p>Ro'yxatdan o'tish bir daqiqa oladi. Qolgani — sizning mahoratingiz.</p>
+      <span class="pill-live" style="margin-bottom:18px"><i></i>{{ _("Ochiq ro'yxatdan o'tish") }}</span>
+      <h2>{{ _('Birinchi flagingiz sizni kutmoqda') }}</h2>
+      <p>{{ _("Ro'yxatdan o'tish bir daqiqa oladi. Qolgani — sizning mahoratingiz.") }}</p>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">Masalalarga o'tish {{ icon('arrow') }}</a>
+        <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">{{ _("Masalalarga o'tish") }} {{ icon('arrow') }}</a>
       {% else %}
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Hisob yaratish {{ icon('arrow') }}</a>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative">
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">{{ _('Hisob yaratish') }} {{ icon('arrow') }}</a>
+          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">{{ _('Kirish') }}</a>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -141,6 +123,6 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/scene.js') }}?v=3"></script>
-<script src="{{ url_for('static', filename='js/typer.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/scene.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/typer.js') }}?v=4"></script>
 {% endblock %}

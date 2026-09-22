@@ -1,6 +1,6 @@
 import math
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
@@ -85,3 +85,82 @@ def graph_series(rows, limit=10):
             points.append({'t': at.isoformat() + 'Z', 'y': total})
         series.append({'name': r['user'].username, 'points': points})
     return series
+
+
+TIERS = [  # (min score, name, colour)
+    (0, 'Rookie', '#94a3b8'),
+    (200, 'Explorer', '#34d399'),
+    (600, 'Hacker', '#22d3ee'),
+    (1500, 'Elite', '#a78bfa'),
+    (3000, 'Master', '#fbbf24'),
+    (6000, 'Legend', '#ff3b5c'),
+]
+LEVEL_XP = 100
+
+
+def tier_info(score):
+    idx = max(i for i, t in enumerate(TIERS) if score >= t[0])
+    lo, name, color = TIERS[idx]
+    nxt = TIERS[idx + 1] if idx + 1 < len(TIERS) else None
+    progress = 100 if not nxt else int((score - lo) / (nxt[0] - lo) * 100)
+    return {'index': idx + 1, 'name': name, 'color': color, 'next': nxt[1] if nxt else None,
+            'next_at': nxt[0] if nxt else None, 'progress': max(min(progress, 100), 0)}
+
+
+def level_info(score):
+    s = max(score, 0)
+    return {'level': s // LEVEL_XP + 1, 'xp': s % LEVEL_XP, 'need': LEVEL_XP}
+
+
+def first_blood_ids(user_id):
+    """Challenge ids where this user was the first non-admin solver."""
+    first = {}
+    rows = (db.session.query(Solve.challenge_id, Solve.user_id, Solve.created_at)
+            .join(User, User.id == Solve.user_id)
+            .filter(User.is_admin.is_(False), User.is_banned.is_(False))
+            .order_by(Solve.created_at).all())
+    for cid, uid, _at in rows:
+        first.setdefault(cid, uid)
+    return {cid for cid, uid in first.items() if uid == user_id}
+
+
+def profile_stats(user, now):
+    """Everything the dashboard and profile pages show about one user."""
+    events = _events([user.id]).get(user.id, [])
+    score = sum(e[1] for e in events)
+    solves = [e for e in events if e[2] == 'solve']
+    bloods = first_blood_ids(user.id)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_start = (month_start - timedelta(days=1)).replace(day=1)
+
+    def window(a, b):
+        evs = [e for e in events if a <= e[0] < b]
+        return {'points': sum(e[1] for e in evs),
+                'solves': sum(1 for e in evs if e[2] == 'solve'),
+                'bloods': sum(1 for e in evs if e[2] == 'solve' and e[3] in bloods),
+                'hints': sum(1 for e in evs if e[2] == 'hint')}
+    this_m, last_m = window(month_start, now + timedelta(days=1)), window(prev_start, month_start)
+
+    today = now.date()
+    days = [today - timedelta(days=i) for i in range(13, -1, -1)]
+    per_day = {}
+    for e in solves:
+        per_day[e[0].date()] = per_day.get(e[0].date(), 0) + 1
+    activity = [{'date': d.isoformat(), 'count': per_day.get(d, 0)} for d in days]
+    streak, d = 0, today if per_day.get(today) else today - timedelta(days=1)
+    while per_day.get(d):
+        streak += 1
+        d -= timedelta(days=1)
+    best, run, prev = 0, 0, None
+    for day in sorted(per_day):
+        run = run + 1 if prev and (day - prev).days == 1 else 1
+        best, prev = max(best, run), day
+    total = 0
+    series = []
+    for at, delta, _k, _c in events:
+        total += delta
+        series.append({'t': at.isoformat() + 'Z', 'y': total})
+    return {'score': score, 'solves': len(solves), 'bloods': len(bloods), 'this_month': this_m,
+            'last_month': last_m, 'activity': activity, 'streak': streak, 'best_streak': best,
+            'tier': tier_info(score), 'level': level_info(score), 'series': series,
+            'hints': sum(1 for e in events if e[2] == 'hint')}

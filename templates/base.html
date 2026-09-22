@@ -1,59 +1,95 @@
-{% from '_macros.html' import icon, avatar %}<!DOCTYPE html>
-<html lang="uz">
+{% from '_macros.html' import icon, avatar, logo %}<!DOCTYPE html>
+<html lang="{{ lang }}" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#05070f">
-  <meta name="description" content="SPARK CTF — Capture The Flag platformasi: Web, Crypto, Reverse, Forensics, Pwn, OSINT masalalarini yeching va reytingda yuqoriga chiqing.">
+  <meta name="description" content="{{ _('SPARK CTF — Capture The Flag platformasi: Web, Crypto, Reverse, Forensics, Pwn, OSINT masalalarini yeching va reytingda yuqoriga chiqing.') }}">
   <title>{% block title %}SPARK CTF{% endblock %}</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/icon.png') }}">
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=5">
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   {% set ep = request.endpoint or '' %}
+  {% set here = request.full_path.rstrip('?') %}
+  {% macro tools(prefix) -%}
+  <div class="lang-menu">
+    <button class="tool-btn" data-dropdown="{{ prefix }}Lang" aria-haspopup="true" aria-expanded="false" aria-label="{{ _('Til') }}">
+      {{ icon('globe') }} {{ lang|upper }} <span class="chev">{{ icon('chevron') }}</span>
+    </button>
+    <div class="dropdown" id="{{ prefix }}Lang">
+      <a href="{{ url_for('set_lang', code='uz', next=here) }}" class="{{ 'on' if lang == 'uz' }}"><span class="flag">UZ</span> O'zbekcha</a>
+      <a href="{{ url_for('set_lang', code='en', next=here) }}" class="{{ 'on' if lang == 'en' }}"><span class="flag">EN</span> English</a>
+    </div>
+  </div>
+  <button class="tool-btn theme-btn" data-theme-toggle aria-label="{{ _('Kun / tun rejimi') }}" title="{{ _('Kun / tun rejimi') }}">
+    <span class="i-moon">{{ icon('moon') }}</span><span class="i-sun">{{ icon('sun') }}</span>
+  </button>
+  {%- endmacro %}
   <header class="nav">
     <div class="container">
-      <a href="{{ url_for('index') }}" class="brand" aria-label="SPARK CTF bosh sahifa">
-        <img src="{{ url_for('static', filename='img/icon.png') }}" alt="" width="34" height="34">
+      <a href="{{ url_for('index') }}" class="brand" aria-label="SPARK CTF">
+        {{ logo(34) }}
         <span><span class="s">SPARK</span> <span class="c">CTF</span></span>
       </a>
       <nav class="nav-links" id="navLinks">
-        <a href="{{ url_for('challenges') }}" class="{{ 'active' if ep == 'challenges' }}">Masalalar</a>
-        <a href="{{ url_for('scoreboard') }}" class="{{ 'active' if ep == 'scoreboard' }}">Reyting</a>
+        {% if current_user.is_authenticated %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if ep == 'dashboard' }}">Dashboard</a>{% endif %}
+        <a href="{{ url_for('challenges') }}" class="{{ 'active' if ep == 'challenges' }}">{{ _('Masalalar') }}</a>
+        <a href="{{ url_for('scoreboard') }}" class="{{ 'active' if ep == 'scoreboard' }}">{{ _('Reyting') }}</a>
+        <a href="{{ url_for('rules') }}" class="{{ 'active' if ep == 'rules' }}">{{ _('Qoidalar') }}</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('admin_index') }}" class="{{ 'active' if ep.startswith('admin') }}">Admin</a>
         {% endif %}
         {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('register') }}" class="mobile-only">Ro'yxatdan o'tish</a>
+        <a href="{{ url_for('register') }}" class="mobile-only">{{ _("Ro'yxatdan o'tish") }}</a>
         {% endif %}
+        <div class="mobile-tools">{{ tools('m') }}</div>
       </nav>
       <div class="nav-right">
+        <div class="tools">{{ tools('d') }}</div>
         {% if current_user.is_authenticated %}
+          <a href="{{ url_for('vpn') }}" class="tool-btn vpn-btn {{ 'on' if ep == 'vpn' }}" title="VPN">{{ icon('power') }}<span>VPN</span></a>
+          {% if bell is defined %}
+          <div class="bell-menu">
+            <button class="tool-btn bell-btn" data-dropdown="bellDrop" data-bell="{{ bell[0].id if bell else 0 }}" aria-label="{{ _('Bildirishnomalar') }}" aria-haspopup="true" aria-expanded="false">{{ icon('bell') }}<i class="bell-dot"></i></button>
+            <div class="dropdown bell-drop" id="bellDrop">
+              <div class="bell-head"><b>{{ _('Bildirishnomalar') }}</b></div>
+              {% for a in bell %}
+              <a href="{{ url_for('notifications') }}#n{{ a.id }}" class="bell-item"><span class="bi">{{ icon('megaphone') }}</span><span><b>{{ a.title }}</b><small>{{ a.content|truncate(70) }}</small></span></a>
+              {% else %}
+              <div class="bell-empty">{{ icon('bell') }}<span>{{ _("Hozircha bildirishnomalar yo'q") }}</span></div>
+              {% endfor %}
+              <a href="{{ url_for('notifications') }}" class="btn btn-primary btn-sm btn-block bell-all">{{ _("Barchasini ko'rish") }}</a>
+            </div>
+          </div>
+          {% endif %}
           {% if my_score is defined %}<span class="score-pill" data-my-score>{{ my_score }} pts</span>{% endif %}
           <div class="user-menu">
             <button class="user-btn" data-dropdown="userDrop" aria-haspopup="true" aria-expanded="false">
               {{ avatar(current_user.username) }}<span class="uname">{{ current_user.username }}</span>
             </button>
             <div class="dropdown" id="userDrop">
-              <a href="{{ url_for('user_page', username=current_user.username) }}">{{ icon('user') }} Profil</a>
-              <a href="{{ url_for('settings') }}">{{ icon('settings') }} Sozlamalar</a>
+              <a href="{{ url_for('dashboard') }}">{{ icon('grid') }} Dashboard</a>
+              <a href="{{ url_for('user_page', username=current_user.username) }}">{{ icon('user') }} {{ _('Profil') }}</a>
+              <a href="{{ url_for('settings') }}">{{ icon('settings') }} {{ _('Sozlamalar') }}</a>
               <div class="sep"></div>
               <form method="post" action="{{ url_for('logout') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="danger">{{ icon('logout') }} Chiqish</button>
+                <button type="submit" class="danger">{{ icon('logout') }} {{ _('Chiqish') }}</button>
               </form>
             </div>
           </div>
         {% else %}
-          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Kirish</a>
-          <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm guest-reg">Ro'yxatdan o'tish</a>
+          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">{{ _('Kirish') }}</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm guest-reg">{{ _("Ro'yxatdan o'tish") }}</a>
         {% endif %}
-        <button class="burger" data-burger aria-label="Menyu">{{ icon('menu') }}</button>
+        <button class="burger" data-burger aria-label="{{ _('Menyu') }}">{{ icon('menu') }}</button>
       </div>
     </div>
   </header>
@@ -69,15 +105,58 @@
   <main>{% block content %}{% endblock %}</main>
 
   {% block footer %}
-  <footer class="footer">
+  <footer class="site-footer">
     <div class="container">
-      <span>© SPARK CTF · Capture The Flag platformasi</span>
-      <span><a href="{{ url_for('challenges') }}">Masalalar</a> &nbsp;·&nbsp; <a href="{{ url_for('scoreboard') }}">Reyting</a></span>
+      <div class="top">
+        <div class="about">
+          <a href="{{ url_for('index') }}" class="brand">{{ logo(30) }}<span><span class="s">SPARK</span> <span class="c">CTF</span></span></a>
+          <p>{{ _("Kiberxavfsizlik bo'yicha amaliy CTF platformasi. Nazariya emas — amaliyot: flagni toping, ball oling.") }}</p>
+          <div class="socials">
+            <a href="https://t.me/SparkCTF_bot" target="_blank" rel="noopener" aria-label="Telegram">{{ icon('telegram') }}</a>
+            <a href="https://github.com/uchqunaliyev0-svg" target="_blank" rel="noopener" aria-label="GitHub">{{ icon('github') }}</a>
+          </div>
+        </div>
+        <div>
+          <h4>{{ _('Platforma') }}</h4>
+          <ul>
+            <li><a href="{{ url_for('challenges') }}">{{ _('Masalalar') }}</a></li>
+            <li><a href="{{ url_for('scoreboard') }}">{{ _('Reyting') }}</a></li>
+            <li><a href="{{ url_for('index') }}#how">{{ _('Qanday ishlaydi') }}</a></li>
+            <li><a href="{{ url_for('index') }}#categories">{{ _('Kategoriyalar') }}</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>{{ _('Hisob') }}</h4>
+          <ul>
+            {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('user_page', username=current_user.username) }}">{{ _('Profil') }}</a></li>
+            <li><a href="{{ url_for('settings') }}">{{ _('Sozlamalar') }}</a></li>
+            {% else %}
+            <li><a href="{{ url_for('login') }}">{{ _('Kirish') }}</a></li>
+            <li><a href="{{ url_for('register') }}">{{ _("Ro'yxatdan o'tish") }}</a></li>
+            <li><a href="{{ url_for('forgot') }}">{{ _('Parolni tiklash') }}</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        <div>
+          <h4>{{ _('Yordam') }}</h4>
+          <ul>
+            <li><a href="{{ url_for('rules') }}">{{ _('Qoidalar') }}</a></li>
+            <li><a href="https://t.me/SparkCTF_bot" target="_blank" rel="noopener">Telegram bot</a></li>
+            <li><a href="https://t.me/uchqun_aliyev" target="_blank" rel="noopener">{{ _('Aloqa') }}</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="bottom">
+        <span>© {{ year }} SPARK CTF. {{ _('Barcha huquqlar himoyalangan.') }}</span>
+        <span class="status-ok"><i></i>{{ _('Barcha tizimlar ishlamoqda') }}</span>
+      </div>
     </div>
   </footer>
   {% endblock %}
 
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=3"></script>
+  <script type="application/json" id="i18n">{{ js_i18n|tojson }}</script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=4"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

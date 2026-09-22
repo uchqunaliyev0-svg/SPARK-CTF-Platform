@@ -1,0 +1,78 @@
+{% from '_macros.html' import icon, avatar, time %}
+
+{% macro emblem(tier) -%}
+<svg viewBox="0 0 120 120" aria-hidden="true">
+  <defs>
+    <linearGradient id="em{{ tier.index }}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{{ tier.color }}"/><stop offset="1" stop-color="{{ tier.color }}" stop-opacity=".35"/></linearGradient>
+  </defs>
+  <path d="M60 6 104 26v32c0 28-19 46-44 56C35 104 16 86 16 58V26L60 6Z" fill="url(#em{{ tier.index }})" opacity=".18"/>
+  <path d="M60 6 104 26v32c0 28-19 46-44 56C35 104 16 86 16 58V26L60 6Z" fill="none" stroke="{{ tier.color }}" stroke-width="3"/>
+  <path d="M60 20 92 34v24c0 20-13 33-32 41-19-8-32-21-32-41V34l32-14Z" fill="none" stroke="{{ tier.color }}" stroke-opacity=".45" stroke-width="1.5"/>
+  <path d="M64 34 46 62h12l-3 22 19-30H62l2-20Z" fill="{{ tier.color }}"/>
+  {% for i in range(tier.index) %}<circle cx="{{ 60 - (tier.index - 1) * 5 + i * 10 }}" cy="100" r="3" fill="{{ tier.color }}"/>{% endfor %}
+</svg>
+{%- endmacro %}
+
+{% macro profile_card(user, stats, row, players, share=False) -%}
+{% set t = stats.tier %}{% set lv = stats.level %}
+<div class="card p-card" style="--tc: {{ t.color }}">
+  <div class="p-top">
+    <div class="av-ring" style="--p: {{ (lv.xp / lv.need * 100)|round|int }}">
+      {{ avatar(user.username) }}
+      <span class="lvl">LVL {{ lv.level }}</span>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div class="p-name">{{ user.username }}{% if user.is_admin %} <span class="badge b-amber">admin</span>{% endif %}</div>
+      <div class="p-sub"><i class="dot"></i><b style="color:var(--tc)">{{ t.name }}</b> · Tier {{ t.index }} · <span class="i14">{{ icon('clock') }}</span> {{ time(user.created_at) }}</div>
+    </div>
+  </div>
+  <div class="p-stats">
+    <div class="mini-stat" style="--c: var(--cyan)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ '#' ~ row.rank if row else '—' }}</b><span>{{ _('Reyting') }}{% if row %} / {{ players }}{% endif %}</span></div></div>
+    <div class="mini-stat" style="--c: var(--green)"><span class="mi">{{ icon('flag') }}</span><div><b>{{ stats.solves }}</b><span>{{ _('Flaglar') }}</span></div></div>
+    <div class="mini-stat" style="--c: var(--red)"><span class="mi">{{ icon('drop') }}</span><div><b>{{ stats.bloods }}</b><span>First blood</span></div></div>
+  </div>
+  <div class="xp">
+    <div class="t"><span>{{ _('Daraja XP') }} · {{ stats.score }} pts</span><span>{{ lv.xp }}/{{ lv.need }}</span></div>
+    <div class="bar"><i style="width:{{ (lv.xp / lv.need * 100)|round|int }}%"></i></div>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro tier_card(stats) -%}
+{% set t = stats.tier %}
+<div class="card tier-card" style="--tc: {{ t.color }}">
+  <div class="th"><span>TIER {{ t.index }}</span><span class="badge b-green">{{ _('JORIY') }}</span></div>
+  <div class="emblem">{{ emblem(t) }}</div>
+  <div class="tier-name">{{ t.name }}</div>
+  <div class="tn"><span>{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span><span>{% if t.next %}{{ stats.score }}/{{ t.next_at }}{% else %}MAX{% endif %}</span></div>
+  <div class="tier-bar"><i style="width:{{ t.progress }}%"></i></div>
+</div>
+{%- endmacro %}
+
+{% macro cat_tiles(cats) -%}
+<div class="cat-tiles">
+  {% for c in cats %}
+  <div class="card cat-tile" style="--c: {{ c.color }}">
+    <span class="mi">{{ icon(c.name) }}</span><b>{{ c.name }}</b><span class="n">{{ c.solved }}/{{ c.total }}</span>
+    <span class="tb"><i style="width:{{ ((c.solved / c.total * 100)|round|int) if c.total else 0 }}%"></i></span>
+  </div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro diff_rows(diffs) -%}
+{% set DCOL = {'Easy': 'var(--green)', 'Medium': 'var(--amber)', 'Hard': 'var(--red)', 'Insane': 'var(--violet)'} %}
+<div class="diff-rows">
+  {% for d in diffs %}
+  <div class="dr"><span style="color:{{ DCOL[d.name] }};font-weight:600">{{ d.name }}</span><span class="bar"><i style="width:{{ ((d.solved / d.total * 100)|round|int) if d.total else 0 }}%;background:{{ DCOL[d.name] }}"></i></span><b>{{ d.solved }}/{{ d.total }}</b></div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro heatmap(stats) -%}
+<div class="streak-top"><span class="fi">{{ icon('fire') }}</span><div><b>{{ stats.streak }}</b> <span>{{ _('kunlik seriya') }}</span></div></div>
+<div class="heat">
+  {% for d in stats.activity %}<i data-l="{{ 3 if d.count >= 3 else d.count }}" title="{{ d.date }}: {{ d.count }}"></i>{% endfor %}
+</div>
+<div class="heat-foot"><span>{{ _('Oxirgi 14 kun') }}</span><span>{{ _('Eng yaxshi: {n} kun', n=stats.best_streak) }}</span></div>
+{%- endmacro %}

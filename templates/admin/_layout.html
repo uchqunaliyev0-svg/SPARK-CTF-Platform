@@ -1,21 +1,6 @@
-{% extends 'base.html' %}
-{% from '_macros.html' import icon %}
+{% extends 'app_layout.html' %}
 {% block title %}Admin — SPARK CTF{% endblock %}
-{% block content %}
-{% set ep = request.endpoint %}
-<div class="container">
-  <div class="admin">
-    <aside class="card admin-side">
-      <div class="lbl">Boshqaruv</div>
-      <a href="{{ url_for('admin_index') }}" class="{{ 'on' if ep == 'admin_index' }}">{{ icon('grid') }} Umumiy</a>
-      <a href="{{ url_for('admin_challenges') }}" class="{{ 'on' if ep in ['admin_challenges', 'admin_challenge_form'] }}">{{ icon('flag') }} Masalalar</a>
-      <a href="{{ url_for('admin_users') }}" class="{{ 'on' if ep == 'admin_users' }}">{{ icon('users') }} Foydalanuvchilar</a>
-      <a href="{{ url_for('admin_submissions') }}" class="{{ 'on' if ep == 'admin_submissions' }}">{{ icon('list') }} Urinishlar</a>
-      <a href="{{ url_for('admin_announcements') }}" class="{{ 'on' if ep == 'admin_announcements' }}">{{ icon('megaphone') }} E'lonlar</a>
-      <a href="{{ url_for('admin_settings') }}" class="{{ 'on' if ep == 'admin_settings' }}">{{ icon('clock') }} Musobaqa vaqti</a>
-    </aside>
-    <section>{% block admin %}{% endblock %}</section>
-  </div>
-</div>
+{% block app %}
+<div class="app-page admin-page">{% block admin %}{% endblock %}</div>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}?v=3"></script>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}?v=4"></script>{% endblock %}
