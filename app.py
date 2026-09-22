@@ -15,16 +15,18 @@ except ImportError:
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'spark-ctf-dev-key-change-in-prod')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL',
-    'postgresql://postgres.bwiusxkzvrhybnllfhnb:%23qunbek6141@aws-1-ap-south-1.pooler.supabase.com:5432/postgres'
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///local.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'SparkAdmin2026!')
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', '')
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
+
+with app.app_context():
+    db.create_all()
 
 if LIMITER_AVAILABLE:
     limiter = Limiter(
@@ -84,7 +86,8 @@ def register():
         flash("Bu email ro'yxatdan o'tgan.", "error")
         return redirect(url_for('home'))
     hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, email=email, password=hashed_pw)
+    is_admin = bool(ADMIN_USERNAME) and username == ADMIN_USERNAME
+    new_user = User(username=username, email=email, password=hashed_pw, is_admin=is_admin)
     db.session.add(new_user)
     db.session.commit()
     flash("Muvaffaqiyatli ro'yxatdan o'tdingiz! Endi tizimga kiring.", "success")
