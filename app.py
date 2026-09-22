@@ -610,8 +610,7 @@ def challenges():
     start, end = ctf_window()
     if state == 'before' and not current_user.is_admin:
         return render_template('challenges.html', state=state, start=start, end=end, groups=[],
-                               announcements=[], solved=set(), values={}, counts={}, overview=[],
-                               me=None, players=0)
+                               announcements=[], solved=set(), values={}, counts={}, overview=[])
     q = Challenge.query
     if not current_user.is_admin:
         q = q.filter_by(visible=True)
@@ -629,11 +628,9 @@ def challenges():
     by_cat = dict(groups)
     overview = [{'name': n, 'total': len(by_cat.get(n, [])),
                  'solved': sum(1 for c in by_cat.get(n, []) if c.id in solved)} for n in names]
-    rows = scoring.standings()
-    me = next((r for r in rows if r['user'].id == current_user.id), None)
     return render_template('challenges.html', state=state, start=start, end=end, groups=groups,
                            counts=counts, values=values, solved=solved, announcements=anns,
-                           overview=overview, me=me, players=len(rows))
+                           overview=overview)
 
 
 def _challenge_or_404(cid):
