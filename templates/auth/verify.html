@@ -1,20 +1,20 @@
 {% extends 'auth/_layout.html' %}
 {% from '_macros.html' import icon, otp %}
-{% block title %}Emailni tasdiqlash — SPARK CTF{% endblock %}
-{% block visual_title %}Oxirgi qadam qoldi.{% endblock %}
-{% block visual_text %}Emailni tasdiqlash hisobingizni begona qo'llardan himoya qiladi.{% endblock %}
+{% block title %}{{ _('Emailni tasdiqlash') }} — SPARK CTF{% endblock %}
+{% block visual_title %}{{ _('Oxirgi qadam qoldi.') }}{% endblock %}
+{% block visual_text %}{{ _("Emailni tasdiqlash hisobingizni begona qo'llardan himoya qiladi.") }}{% endblock %}
 {% block card %}
 <div class="lock-ico">{{ icon('mail') }}</div>
-<h1>Emailni tasdiqlang</h1>
-<p class="sub"><b style="color:var(--text)">{{ email }}</b> manziliga 6 xonali kod yubordik. Kod 10 daqiqa amal qiladi.</p>
+<h1>{{ _('Emailni tasdiqlang') }}</h1>
+<p class="sub">{{ _('{email} manziliga 6 xonali kod yubordik. Kod 10 daqiqa amal qiladi.', email=email) }}</p>
 <form method="post" action="{{ url_for('verify') }}" data-autosubmit>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {{ otp() }}
-  <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:24px">Tasdiqlash</button>
+  <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:24px">{{ _('Tasdiqlash') }}</button>
 </form>
 <form method="post" action="{{ url_for('verify_resend') }}" style="margin-top:12px">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <button type="submit" class="btn btn-ghost btn-block" data-cooldown="{{ wait }}">Kodni qayta yuborish</button>
+  <button type="submit" class="btn btn-ghost btn-block" data-cooldown="{{ wait }}">{{ _('Kodni qayta yuborish') }}</button>
 </form>
-<p class="alt">Xat kelmadimi? «Spam» papkasini tekshiring.</p>
+<p class="alt">{{ _('Xat kelmadimi? «Spam» papkasini tekshiring.') }}</p>
 {% endblock %}

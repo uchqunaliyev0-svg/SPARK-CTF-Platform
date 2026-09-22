@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import icon %}
+{% block body_class %}app{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+{% set ep = request.endpoint or '' %}
+{% macro item(endpoint, ic, label, active=None) -%}
+<a href="{{ url_for(endpoint, **kwargs) }}" class="sb-item {{ 'on' if (active if active is not none else ep == endpoint) }}" title="{{ label }}">{{ icon(ic) }}<span>{{ label }}</span></a>
+{%- endmacro %}
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <span class="sb-title">{% if ep.startswith('admin') %}Admin{% else %}SPARK CTF{% endif %}</span>
+      <button class="sb-collapse" data-sb-collapse aria-label="{{ _("Panelni yig'ish") }}">{{ icon('chevron-left') }}</button>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-group">{{ _('Platforma') }}</div>
+      {{ item('dashboard', 'grid', 'Dashboard') }}
+      {{ item('challenges', 'flag', _('Masalalar')) }}
+      {{ item('scoreboard', 'trend', _('Reyting')) }}
+      {{ item('vpn', 'shield-lock', 'VPN') }}
+      <div class="sb-group">{{ _('Hisob') }}</div>
+      {{ item('user_page', 'user', _('Profil'), active=(ep == 'user_page' and request.view_args.username|lower == current_user.username|lower), username=current_user.username) }}
+      {{ item('notifications', 'bell', _('Bildirishnomalar')) }}
+      {{ item('settings', 'settings', _('Sozlamalar')) }}
+      {% if current_user.is_admin %}
+      <div class="sb-group">Admin</div>
+      {{ item('admin_index', 'grid', _('Umumiy')) }}
+      {{ item('admin_challenges', 'flag', _('Masalalar boshqaruvi'), active=ep in ['admin_challenges', 'admin_challenge_form']) }}
+      {{ item('admin_users', 'users', _('Foydalanuvchilar')) }}
+      {{ item('admin_submissions', 'list', _('Urinishlar')) }}
+      {{ item('admin_announcements', 'megaphone', _("E'lonlar")) }}
+      {{ item('admin_settings', 'clock', _('Musobaqa vaqti')) }}
+      {% endif %}
+    </nav>
+    <div class="sb-card">
+      <span class="sb-card-ic">{{ icon('shield-lock') }}</span>
+      <b>{{ _('VPN — tez orada') }}</b>
+      <p>{{ _("Masalalar izolyatsiyalangan tarmoqda ishlaydi va faqat VPN orqali ochiladi.") }}</p>
+      <a href="{{ url_for('vpn') }}" class="btn btn-primary btn-sm btn-block">{{ _('Batafsil') }}</a>
+    </div>
+  </aside>
+  <div class="sb-backdrop" data-sb-close></div>
+  <div class="shell-main">
+    {% block app %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

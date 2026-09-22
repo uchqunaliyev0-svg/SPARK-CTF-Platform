@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { $, $$, api, toast, fmtTimes } = window.Spark;
+  const { $, $$, api, toast, fmtTimes, t } = window.Spark;
   const cards = $$('.ch-card');
   const modal = $('#modal');
   let current = null;
@@ -32,15 +32,13 @@
     $('#noMatch')?.classList.toggle('hidden', shown > 0 || !cards.length);
   }
   $('#q')?.addEventListener('input', (e) => { f.q = e.target.value.trim().toLowerCase(); applyFilters(); });
-  $('#diff')?.addEventListener('change', (e) => { f.diff = e.target.value; applyFilters(); });
-  $$('#status button').forEach((b) => b.addEventListener('click', () => {
-    $$('#status button').forEach((x) => x.classList.remove('on'));
-    b.classList.add('on'); f.status = b.dataset.v; applyFilters();
-  }));
-  $$('#cats .chip').forEach((b) => b.addEventListener('click', () => {
-    $$('#cats .chip').forEach((x) => x.classList.remove('on'));
-    b.classList.add('on'); f.cat = b.dataset.v; applyFilters();
-  }));
+  [['#cats', 'cat'], ['#diffs', 'diff'], ['#status', 'status']].forEach(([sel, key]) => {
+    $$(`${sel} .side-item`).forEach((b) => b.addEventListener('click', () => {
+      if (b.disabled) return;
+      $$(`${sel} .side-item`).forEach((x) => x.classList.remove('on'));
+      b.classList.add('on'); f[key] = b.dataset.v; applyFilters();
+    }));
+  });
 
   // ---------- helpers
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -104,17 +102,17 @@
       label.innerHTML = ICON.bulb;
       label.append(` Hint ${i + 1}`);
       label.style.display = 'inline-flex'; label.style.gap = '8px'; label.style.alignItems = 'center';
-      b.append(label, el('span', 'mono', h.unlocked ? '' : (h.cost ? `−${h.cost} pts` : 'bepul')));
+      b.append(label, el('span', 'mono', h.unlocked ? '' : (h.cost ? `−${h.cost} pts` : t('bepul'))));
       w.append(b);
       const body = el('div', 'body' + (h.unlocked ? '' : ' hidden'), h.content || '');
       w.append(body);
       b.addEventListener('click', async () => {
         if (h.unlocked) { body.classList.toggle('hidden'); return; }
-        if (h.cost && !window.confirm(`Bu hint ${h.cost} ball turadi. Ochishni xohlaysizmi?`)) return;
+        if (h.cost && !window.confirm(t('Bu hint {cost} ball turadi. Ochishni xohlaysizmi?', { cost: h.cost }))) return;
         b.disabled = true;
         const res = await api(`/api/hints/${h.id}/unlock`, { method: 'POST' });
         b.disabled = false;
-        if (res.status !== 'ok') { toast(res.message || 'Xatolik', 'error'); return; }
+        if (res.status !== 'ok') { toast(res.message || t('Xatolik yuz berdi.'), 'error'); return; }
         h.unlocked = true; h.content = res.content;
         body.textContent = res.content; body.classList.remove('hidden');
         b.lastChild.textContent = '';
@@ -141,16 +139,16 @@
     history.replaceState(null, '', `#c-${id}`);
     const d = await api(`/api/challenges/${id}`);
     if (!current || current.id !== id) return;
-    if (d._status !== 200) { $('#mDesc').textContent = d.message || 'Yuklab bo\'lmadi.'; return; }
+    if (d._status !== 200) { $('#mDesc').textContent = d.message || t("Yuklab bo'lmadi."); return; }
     current.data = d;
     const meta = $('#mMeta');
     meta.append(el('span', 'badge b-cyan', d.category), el('span', `badge d-${d.difficulty}`, d.difficulty));
     $('#mTitle').textContent = d.title;
     const sub = $('#mSub');
-    const v = el('span'); v.append(el('b', null, String(d.value)), ' ball');
-    const s = el('span'); s.append(el('b', null, String(d.solves)), ' ta yechim');
+    const v = el('span'); v.append(el('b', null, String(d.value)), ` ${t('ball')}`);
+    const s = el('span'); s.append(el('b', null, String(d.solves)), ` ${t('ta yechim')}`);
     sub.append(v, s);
-    if (d.author) { const a = el('span'); a.append('muallif: ', el('b', null, d.author)); sub.append(a); }
+    if (d.author) { const a = el('span'); a.append(`${t('muallif:')} `, el('b', null, d.author)); sub.append(a); }
     $('#mSolveCnt').textContent = `(${d.solves})`;
     linkify($('#mDesc'), d.description);
     d.files.forEach((u) => {
@@ -161,11 +159,11 @@
       $('#mFiles').append(a);
     });
     renderHints(d.hints);
-    $('#mSolvedText').textContent = 'Siz bu masalani yechgansiz!';
+    $('#mSolvedText').textContent = t('Siz bu masalani yechgansiz!');
     $('#mSolved').classList.toggle('hidden', !d.solved);
     const closed = !d.can_submit;
     $('#flagForm').classList.toggle('hidden', d.solved || closed);
-    if (!d.solved && closed) setResult('bad', 'Musobaqa yakunlangan — flag qabul qilinmaydi.');
+    if (!d.solved && closed) setResult('bad', t('Musobaqa yakunlangan — flag qabul qilinmaydi.'));
     if (!d.solved && !closed) setTimeout(() => $('#flagInput').focus(), 120);
   }
 
@@ -176,7 +174,7 @@
     const list = await api(`/api/challenges/${current.id}/solves`);
     box.textContent = '';
     if (!Array.isArray(list) || !list.length) {
-      box.append(el('p', 'muted', 'Hali hech kim yechmagan. Birinchi bo\'ling! 🩸'));
+      box.append(el('p', 'muted', `${t("Hali hech kim yechmagan. Birinchi bo'ling!")} 🩸`));
       return;
     }
     list.forEach((s, i) => {
@@ -193,6 +191,7 @@
   function updateScore(score) {
     const pill = $('[data-my-score]');
     if (pill) pill.textContent = `${score} pts`;
+    const k = $('[data-kpi-score]'); if (k) k.textContent = score;
   }
 
   $('#flagForm')?.addEventListener('submit', async (e) => {
@@ -221,7 +220,7 @@
       refreshProgress();
       confetti(res.first_blood);
     } else {
-      setResult('bad', res.message || 'Xatolik yuz berdi.');
+      setResult('bad', res.message || t('Xatolik yuz berdi.'));
       input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');
       input.select();
     }
@@ -233,8 +232,21 @@
       $('.prog', s).textContent = `${done}/${all}`;
       $('.bar i', s).style.width = `${Math.round((done / all) * 100)}%`;
     });
-    const head = $('.page-head p');
-    if (head) head.textContent = `${$$('.ch-card.solved').length} / ${cards.length} ta masala yechilgan`;
+    const solvedN = $$('.ch-card.solved').length;
+    const head = $('[data-progress-text]');
+    if (head) head.textContent = t('{solved} / {total} ta masala yechilgan', { solved: solvedN, total: cards.length });
+    const k = $('[data-kpi-solved]'); if (k) k.textContent = solvedN;
+    const pct = cards.length ? Math.round((solvedN / cards.length) * 100) : 0;
+    const ring = $('[data-ring]'); if (ring) ring.style.strokeDashoffset = 163.36 * (1 - pct / 100);
+    const rt = $('[data-ring-text]'); if (rt) rt.textContent = `${pct}%`;
+    $$('[data-cat-count]').forEach((n) => {
+      const cs = cards.filter((c) => c.dataset.cat === n.dataset.catCount);
+      const done = cs.filter((c) => c.classList.contains('solved')).length;
+      n.textContent = `${done}/${cs.length}`;
+      const bar = n.parentElement.querySelector('.mini i');
+      if (bar && cs.length) bar.style.width = `${Math.round((done / cs.length) * 100)}%`;
+    });
+    const all = $('#cats .side-item[data-v=""] .n'); if (all) all.textContent = `${solvedN}/${cards.length}`;
   }
 
   cards.forEach((c) => c.addEventListener('click', () => openChallenge(c.dataset.id)));

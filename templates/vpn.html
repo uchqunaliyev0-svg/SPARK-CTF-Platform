@@ -1,0 +1,25 @@
+{% extends 'app_layout.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}VPN — SPARK CTF{% endblock %}
+{% block app %}
+<div class="app-page" style="max-width:1000px">
+  <div class="page-head"><div><span class="eyebrow">// vpn</span><h1>{{ _('VPN ulanish') }}</h1><p>{{ _("Masalalar izolyatsiyalangan tarmoqda ishlaydi va faqat VPN orqali ochiladi.") }}</p></div></div>
+  <div class="card vpn-hero">
+    <div style="position:relative">
+      <span class="vpn-status"><i></i>{{ _('Ulanmagan') }}</span>
+      <h2 style="font-family:var(--display);font-size:26px;margin:14px 0 8px">{{ _('VPN tez orada ishga tushadi') }}</h2>
+      <p class="muted" style="max-width:560px">{{ _("Har bir ishtirokchi uchun shaxsiy WireGuard konfiguratsiyasi beriladi. Masala serverlariga faqat shu tunnel orqali ulanish mumkin bo'ladi — bu adolatli musobaqani ta'minlaydi.") }}</p>
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+        <button class="btn btn-primary" disabled>{{ icon('download2') }} {{ _('Konfiguratsiyani yuklab olish') }}</button>
+        <span class="badge b-amber" style="align-self:center">{{ _('Tez orada') }}</span>
+      </div>
+    </div>
+    <div class="vpn-orb">{{ icon('power') }}</div>
+  </div>
+  <div class="vpn-steps">
+    <div class="card vpn-step"><span class="n">01</span><h3>{{ _("WireGuard o'rnating") }}</h3><p>{{ _('Windows, macOS, Linux, Android yoki iOS uchun rasmiy WireGuard ilovasini o‘rnating.') }}</p></div>
+    <div class="card vpn-step"><span class="n">02</span><h3>{{ _('Konfiguratsiyani yuklang') }}</h3><p>{{ _("Shu sahifadan shaxsiy .conf faylingizni yuklab oling va ilovaga import qiling.") }}</p></div>
+    <div class="card vpn-step"><span class="n">03</span><h3>{{ _('Ulaning va yeching') }}</h3><p>{{ _("Tunnelni yoqing — masala serverlari ochiladi. Holat shu yerda «Ulangan» bo'lib ko'rinadi.") }}</p></div>
+  </div>
+</div>
+{% endblock %}

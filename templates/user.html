@@ -1,62 +1,70 @@
-{% extends 'base.html' %}
-{% from '_macros.html' import icon, avatar, time %}
+{% extends 'app_layout.html' %}
+{% from '_macros.html' import icon, time %}
+{% from '_profile.html' import profile_card, tier_card, cat_tiles, diff_rows, heatmap %}
 {% block title %}{{ user.username }} — SPARK CTF{% endblock %}
-{% block content %}
-<div class="page"><div class="container narrow">
-  <div class="card profile-hero" data-reveal>
-    {{ avatar(user.username, 'lg') }}
-    <div>
-      <h1>{{ user.username }}</h1>
-      <div class="meta">
-        {% if user.is_admin %}<span class="badge b-amber">admin</span>{% endif %}
-        <span><span class="i14">{{ icon('clock') }}</span> Qo'shilgan: {{ time(user.created_at) }}</span>
-      </div>
-    </div>
-    {% if row %}
-    <div class="rk"><b>#{{ row.rank }}</b><span>{{ total_users }} ta orasida</span></div>
-    {% endif %}
+{% block app %}
+<div class="app-page">
+  <div class="page-head">
+    <div><span class="eyebrow">// {{ _('profil') }}</span><h1>{{ user.username }}</h1><p>{{ _("Ishtirokchining natijalari va yechgan masalalari.") }}</p></div>
+    {% if user.id == current_user.id %}<a href="{{ url_for('settings') }}" class="btn btn-ghost">{{ icon('settings') }} {{ _('Sozlamalar') }}</a>{% endif %}
   </div>
 
-  <div class="stats" data-reveal>
-    <div class="card stat"><div class="v" style="color:var(--cyan)" data-count="{{ score if score > 0 else 0 }}">{{ score }}</div><div class="l">Ball</div></div>
-    <div class="card stat"><div class="v" data-count="{{ solves|length }}">{{ solves|length }}</div><div class="l">Topilgan flaglar</div></div>
-    <div class="card stat"><div class="v">{{ ((solves|length / total_challenges * 100)|round|int) if total_challenges else 0 }}%</div><div class="l">Tugallanganlik</div></div>
+  <div class="dash-grid">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      {{ profile_card(user, stats, row, players) }}
+      <div class="card card-pad">{{ heatmap(stats) }}</div>
+    </div>
+    {{ tier_card(stats) }}
   </div>
 
-  <div class="grid-2">
-    <div class="card card-pad" data-reveal>
-      <div class="card-title">{{ icon('grid') }} Kategoriyalar</div>
-      {% for b in breakdown %}
-      <div class="brk">
-        <div class="t"><span>{{ b.category }}</span><b>{{ b.solved }}/{{ b.total }}</b></div>
-        <div class="bar"><i data-w="{{ (b.solved / b.total * 100)|round|int }}%"></i></div>
-      </div>
-      {% else %}
-      <p class="muted">Hozircha masalalar yo'q.</p>
-      {% endfor %}
+  <div class="card-head" style="margin-top:6px"><h3>{{ icon('grid') }} {{ _("Yo'nalishlar bo'yicha") }}</h3></div>
+  {{ cat_tiles(cats) }}
+
+  <div class="row-2">
+    <div class="card card-pad">
+      <div class="card-head"><h3>{{ icon('target') }} {{ _("Qiyinlik bo'yicha") }}</h3></div>
+      {{ diff_rows(diffs) }}
     </div>
-    <div class="card" data-reveal="1">
-      <div class="card-pad" style="padding-bottom:0"><div class="card-title">{{ icon('flag') }} Yechimlar tarixi</div></div>
-      {% if solves %}
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>Masala</th><th>Kategoriya</th><th class="num">Ball</th><th>Vaqt</th></tr></thead>
-          <tbody>
-          {% for s in solves %}
-            <tr>
-              <td style="font-weight:600">{{ s.challenge.title }}</td>
-              <td><span class="badge b-cyan">{{ s.challenge.category }}</span></td>
-              <td class="num" style="color:var(--green)">+{{ values.get(s.challenge_id, 0) }}</td>
-              <td class="muted">{{ time(s.created_at) }}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <div class="card card-pad">
+      <div class="card-head"><h3>{{ icon('trophy') }} {{ _('Ball dinamikasi') }}</h3></div>
+      {% if stats.series %}
+      <div class="chart-sm"><canvas id="myChart" aria-label="{{ _('Ball dinamikasi') }}"></canvas></div>
       {% else %}
-      <div class="empty" style="padding:40px 24px"><div class="ico">{{ icon('flag') }}</div><h3>Hali flag yo'q</h3><p>Birinchi flag hali oldinda.</p></div>
+      <div class="chart-empty">{{ _("Hali ma'lumot yo'q") }}</div>
       {% endif %}
     </div>
   </div>
-</div></div>
+
+  <div class="card">
+    <div class="card-pad" style="padding-bottom:0"><div class="card-head"><h3>{{ icon('flag') }} {{ _('Yechilgan masalalar') }} ({{ solves|length }})</h3></div></div>
+    {% if solves %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>{{ _('Masala') }}</th><th>{{ _('Kategoriya') }}</th><th>{{ _('Qiyinlik') }}</th><th class="num">{{ _('Ball') }}</th><th>{{ _('Vaqt') }}</th></tr></thead>
+        <tbody>
+        {% for s in solves %}
+          {% set col = CATEGORY_META.get(s.challenge.category, ('#22d3ee', ''))[0] %}
+          <tr>
+            <td style="font-weight:600">{{ s.challenge.title }}{% if s.challenge_id in bloods %} <span class="badge b-red" title="First blood">🩸 first blood</span>{% endif %}</td>
+            <td><span class="badge" style="color:{{ col }};border-color:color-mix(in srgb, {{ col }} 35%, transparent);background:color-mix(in srgb, {{ col }} 10%, transparent)">{{ s.challenge.category }}</span></td>
+            <td><span class="badge d-{{ s.challenge.difficulty }}">{{ s.challenge.difficulty }}</span></td>
+            <td class="num" style="color:var(--green)">+{{ values.get(s.challenge_id, 0) }}</td>
+            <td class="muted">{{ time(s.created_at) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty" style="padding:40px 24px"><div class="ico">{{ icon('flag') }}</div><h3>{{ _("Hali flag yo'q") }}</h3><p>{{ _('Birinchi flag hali oldinda.') }}</p></div>
+    {% endif %}
+  </div>
+</div>
+<script type="application/json" id="mySeries">{{ stats.series|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+{% if stats.series %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/profile.js') }}?v=4"></script>
+{% endif %}
 {% endblock %}

@@ -32,8 +32,28 @@
   'alert': '<path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>',
   'clock': '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   'arrow': '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  'sun': '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  'moon': '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>',
+  'globe': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  'chevron': '<path d="m6 9 6 6 6-6"/>',
+  'telegram': '<path d="m21.5 4.5-19 7.3 6.2 2.1 2.3 6.6 3.4-4.2 5 3.7 2.1-15.5Z"/><path d="m8.7 13.9 9.3-6.4"/>',
+  'github': '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>',
+  'book': '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14ZM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+  'target': '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  'power': '<path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0"/>',
+  'bell': '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+  'fire': '<path d="M12 22c4.4 0 7-3 7-7 0-5-4-7-5-11-2 2-3 4-3 6-1-1-2-2-2-4-2 2-4 5-4 9 0 4 2.6 7 7 7Z"/>',
+  'drop': '<path d="M12 2.7 6.3 9a8 8 0 1 0 11.4 0L12 2.7Z"/>',
+  'trend': '<path d="m3 17 6-6 4 4 8-8M15 7h6v6"/>',
+  'chevron-left': '<path d="m15 18-6-6 6-6"/>',
+  'shield-lock': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9a2 2 0 0 1 4 0v2"/>',
+  'download2': '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
 } -%}
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ (p.get(name) or p['flag'])|safe }}</svg>
+{%- endmacro %}
+
+{% macro logo(size=34) -%}
+<svg class="logo-mark" width="{{ size }}" height="{{ size }}" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg{{ size }}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#3b82f6"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg{{ size }})"/><path d="M18.4 5.5 9 17.8h6.1L13.6 26.5 23 14.2h-6.1l1.5-8.7Z" fill="#fff"/></svg>
 {%- endmacro %}
 
 {% macro avatar(name, cls='') -%}
@@ -50,15 +70,26 @@
   <label for="{{ id }}">{{ label }}</label>
   <div class="input-wrap">
     <input class="input" type="password" id="{{ id }}" name="{{ name }}" required autocomplete="{{ autocomplete }}" maxlength="128" {% if strength %}data-strength{% endif %} placeholder="••••••••">
-    <button type="button" class="eye" data-toggle-pw="{{ id }}" aria-label="Parolni ko'rsatish">{{ icon('eye') }}</button>
+    <button type="button" class="eye" data-toggle-pw="{{ id }}" aria-label="{{ _("Parolni ko'rsatish") }}">{{ icon('eye') }}</button>
   </div>
-  {% if strength %}<div class="strength"><i></i><i></i><i></i><i></i></div><div class="strength-label">Kamida 8 belgi, harf va raqam.</div>{% endif %}
+  {% if strength %}<div class="strength"><i></i><i></i><i></i><i></i></div><div class="strength-label">{{ _('Kamida 8 belgi, harf va raqam.') }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro captcha() -%}
+<div class="captcha" data-captcha>
+  <input type="hidden" name="captcha" value="">
+  <button type="button" class="captcha-box" data-captcha-btn aria-live="polite">
+    <span class="cb"><span class="spin"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+    <span class="lbl" data-captcha-label>{{ _('Men robot emasman') }}</span>
+    <span class="cap-brand">{{ icon('shield') }}<small>SPARK Shield</small></span>
+  </button>
 </div>
 {%- endmacro %}
 
 {% macro otp() -%}
 <input type="hidden" name="code" data-otp-value>
 <div class="otp" data-otp>
-  {% for i in range(6) %}<input inputmode="numeric" maxlength="1" autocomplete="{{ 'one-time-code' if i == 0 else 'off' }}" aria-label="Kod raqami {{ i + 1 }}">{% endfor %}
+  {% for i in range(6) %}<input inputmode="numeric" maxlength="1" autocomplete="{{ 'one-time-code' if i == 0 else 'off' }}" aria-label="{{ i + 1 }}">{% endfor %}
 </div>
 {%- endmacro %}

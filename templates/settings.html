@@ -1,32 +1,32 @@
-{% extends 'base.html' %}
+{% extends 'app_layout.html' %}
 {% from '_macros.html' import icon, avatar, password_field, time %}
-{% block title %}Sozlamalar — SPARK CTF{% endblock %}
-{% block content %}
-<div class="page"><div class="container" style="max-width:640px">
-  <div class="page-head"><div><span class="eyebrow">// settings</span><h1>Sozlamalar</h1></div></div>
+{% block title %}{{ _('Sozlamalar') }} — SPARK CTF{% endblock %}
+{% block app %}
+<div class="app-page" style="max-width:720px">
+  <div class="page-head"><div><span class="eyebrow">// settings</span><h1>{{ _('Sozlamalar') }}</h1></div></div>
 
   <div class="card card-pad" style="margin-bottom:18px">
-    <div class="card-title">{{ icon('user') }} Hisob</div>
+    <div class="card-title">{{ icon('user') }} {{ _('Hisob') }}</div>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
       {{ avatar(current_user.username, 'md') }}
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:17px">{{ current_user.username }}</div>
         <div class="muted" style="font-size:14px;word-break:break-all">{{ current_user.email }}</div>
       </div>
-      <span class="badge b-green">{{ icon('check') }} Tasdiqlangan</span>
+      <span class="badge b-green">{{ icon('check') }} {{ _('Tasdiqlangan') }}</span>
     </div>
-    <p class="dim" style="font-size:13px;margin-top:14px">Ro'yxatdan o'tgan: {{ time(current_user.created_at) }}</p>
+    <p class="dim" style="font-size:13px;margin-top:14px">{{ _("Ro'yxatdan o'tgan") }}: {{ time(current_user.created_at) }}</p>
   </div>
 
   <div class="card card-pad">
-    <div class="card-title">{{ icon('lock') }} Parolni o'zgartirish</div>
+    <div class="card-title">{{ icon('lock') }} {{ _("Parolni o'zgartirish") }}</div>
     <form method="post" action="{{ url_for('settings') }}" data-loading data-match="password,password2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      {{ password_field('current_password', 'Joriy parol', 'current_password', autocomplete='current-password') }}
-      {{ password_field('password', 'Yangi parol', 'password', strength=True) }}
-      {{ password_field('password2', 'Yangi parolni takrorlang', 'password2') }}
-      <button type="submit" class="btn btn-primary">Parolni yangilash</button>
+      {{ password_field('current_password', _('Joriy parol'), 'current_password', autocomplete='current-password') }}
+      {{ password_field('password', _('Yangi parol'), 'password', strength=True) }}
+      {{ password_field('password2', _('Yangi parolni takrorlang'), 'password2') }}
+      <button type="submit" class="btn btn-primary">{{ _('Parolni yangilash') }}</button>
     </form>
   </div>
-</div></div>
+</div>
 {% endblock %}

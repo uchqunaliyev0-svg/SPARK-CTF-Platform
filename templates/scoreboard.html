@@ -1,10 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'app_layout.html' %}
 {% from '_macros.html' import icon, avatar, time %}
-{% block title %}Reyting — SPARK CTF{% endblock %}
-{% block content %}
-<div class="page"><div class="container">
+{% block title %}{{ _('Reyting') }} — SPARK CTF{% endblock %}
+{% block app %}
+<div class="app-page">
   <div class="page-head">
-    <div><span class="eyebrow">// scoreboard</span><h1>Reyting</h1><p>{{ rows|length }} ta ishtirokchi · teng ballda avvalroq yechgan yuqorida</p></div>
+    <div><span class="eyebrow">// scoreboard</span><h1>{{ _('Reyting') }}</h1><p>{{ _('{n} ta ishtirokchi · teng ballda avvalroq yechgan yuqorida', n=rows|length) }}</p></div>
   </div>
 
   {% set podium = rows|selectattr('solves')|list %}
@@ -16,14 +16,14 @@
       {{ avatar(r.user.username, 'lg' if idx == 0 else 'md') }}
       <span class="name">{{ r.user.username }}</span>
       <div class="score">{{ r.score }}</div>
-      <div class="sv">{{ r.solves }} ta flag</div>
+      <div class="sv">{{ _('{n} ta flag', n=r.solves) }}</div>
     </a>
     {% else %}<div></div>{% endif %}{% endfor %}
   </div>
 
   <div class="card chart-card" data-reveal>
-    <div class="card-title">{{ icon('trophy') }} Top 10 — ballar dinamikasi</div>
-    <div class="chart-box"><canvas id="chart" aria-label="Top 10 ballar grafigi"></canvas></div>
+    <div class="card-title">{{ icon('trophy') }} {{ _('Top 10 — ballar dinamikasi') }}</div>
+    <div class="chart-box"><canvas id="chart" aria-label="Top 10"></canvas></div>
   </div>
   {% endif %}
 
@@ -31,12 +31,12 @@
     {% if rows %}
     <div class="table-wrap">
       <table class="table">
-        <thead><tr><th style="width:70px">O'rin</th><th>Ishtirokchi</th><th class="num">Flaglar</th><th>Oxirgi yechim</th><th class="num">Ball</th></tr></thead>
+        <thead><tr><th style="width:70px">{{ _("O'rin") }}</th><th>{{ _('Ishtirokchi') }}</th><th class="num">{{ _('Flaglar') }}</th><th>{{ _('Oxirgi yechim') }}</th><th class="num">{{ _('Ball') }}</th></tr></thead>
         <tbody>
         {% for r in rows %}
           <tr class="{{ 'me' if current_user.is_authenticated and r.user.id == current_user.id }}">
             <td><span class="rank r{{ r.rank if r.rank <= 3 and r.solves else '' }}">#{{ r.rank }}</span></td>
-            <td><a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}{{ r.user.username }}{% if current_user.is_authenticated and r.user.id == current_user.id %} <span class="badge b-cyan">siz</span>{% endif %}</a></td>
+            <td><a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}{{ r.user.username }}{% if current_user.is_authenticated and r.user.id == current_user.id %} <span class="badge b-cyan">{{ _('siz') }}</span>{% endif %}</a></td>
             <td class="num">{{ r.solves }}</td>
             <td class="muted">{{ time(r.last) if r.last else '—' }}</td>
             <td class="num" style="color:var(--cyan);font-weight:700">{{ r.score }}</td>
@@ -46,15 +46,15 @@
       </table>
     </div>
     {% else %}
-    <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>Reyting hali bo'sh</h3><p>Birinchi flagni topgan ishtirokchi bu yerda paydo bo'ladi.</p></div>
+    <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>{{ _("Reyting hali bo'sh") }}</h3><p>{{ _("Birinchi flagni topgan ishtirokchi bu yerda paydo bo'ladi.") }}</p></div>
     {% endif %}
   </div>
-</div></div>
+</div>
 <script type="application/json" id="series">{{ series|tojson }}</script>
 {% endblock %}
 {% block scripts %}
 {% if rows|selectattr('solves')|list %}
 <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/scoreboard.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/scoreboard.js') }}?v=4"></script>
 {% endif %}
 {% endblock %}
