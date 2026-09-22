@@ -1,0 +1,21 @@
+{% extends 'admin/_layout.html' %}
+{% from '_macros.html' import icon, time %}
+{% block admin %}
+<h1>E'lonlar</h1>
+<form method="post" class="card card-pad" style="margin-bottom:18px" data-loading>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field"><label for="title">Sarlavha</label><input class="input" id="title" name="title" maxlength="120" required placeholder="Masalan: Yangi Crypto masala qo'shildi"></div>
+  <div class="field"><label for="content">Matn</label><textarea class="input" id="content" name="content" rows="3" required></textarea></div>
+  <button type="submit" class="btn btn-primary">{{ icon('megaphone') }} E'lon qilish</button>
+  <p class="hint dim" style="font-size:12px;margin-top:10px">E'lonlar «Masalalar» sahifasining tepasida ko'rinadi (oxirgi 5 tasi).</p>
+</form>
+{% for a in announcements %}
+<div class="card ann" style="align-items:flex-start">
+  <span class="ico">{{ icon('megaphone') }}</span>
+  <div style="flex:1"><h4>{{ a.title }}</h4><p>{{ a.content }}</p><p class="dim" style="font-size:12px;margin-top:4px">{{ time(a.created_at) }}</p></div>
+  <form method="post" action="{{ url_for('admin_announcement_delete', aid=a.id) }}" data-confirm="E'lon o'chirilsinmi?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger btn-sm">{{ icon('trash') }}</button></form>
+</div>
+{% else %}
+<div class="card empty">Hali e'lonlar yo'q.</div>
+{% endfor %}
+{% endblock %}

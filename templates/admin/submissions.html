@@ -1,0 +1,34 @@
+{% extends 'admin/_layout.html' %}
+{% from '_macros.html' import icon, time %}
+{% block admin %}
+<h1>Urinishlar
+  <div class="seg">
+    <a href="{{ url_for('admin_submissions') }}" class="{{ 'on' if kind == 'all' }}">Hammasi</a>
+    <a href="{{ url_for('admin_submissions', type='correct') }}" class="{{ 'on' if kind == 'correct' }}">To'g'ri</a>
+    <a href="{{ url_for('admin_submissions', type='wrong') }}" class="{{ 'on' if kind == 'wrong' }}">Noto'g'ri</a>
+  </div>
+</h1>
+<div class="card">
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Vaqt</th><th>Foydalanuvchi</th><th>Masala</th><th>Yuborilgan</th><th>Natija</th><th>IP</th></tr></thead>
+    <tbody>
+    {% for a in items %}
+      <tr>
+        <td class="muted" style="font-size:13px;white-space:nowrap">{{ time(a.created_at) }}</td>
+        <td><a href="{{ url_for('user_page', username=a.user.username) }}">{{ a.user.username }}</a></td>
+        <td>{{ a.challenge.title }}</td>
+        <td class="sub-cell" title="{{ a.submission }}">{{ a.submission }}</td>
+        <td>{% if a.correct %}<span class="badge b-green">to'g'ri</span>{% else %}<span class="badge b-red">xato</span>{% endif %}</td>
+        <td class="mono dim" style="font-size:12.5px">{{ a.ip or '—' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">Urinishlar yo'q.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+<div class="pager">
+  {% if page > 1 %}<a class="btn btn-ghost btn-sm" href="{{ url_for('admin_submissions', type=kind, page=page - 1) }}">← Oldingi</a>{% endif %}
+  {% if has_next %}<a class="btn btn-ghost btn-sm" href="{{ url_for('admin_submissions', type=kind, page=page + 1) }}">Keyingi →</a>{% endif %}
+</div>
+{% endblock %}

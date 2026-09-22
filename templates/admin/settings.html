@@ -1,0 +1,27 @@
+{% extends 'admin/_layout.html' %}
+{% from '_macros.html' import icon %}
+{% block admin %}
+<h1>Musobaqa vaqti</h1>
+<form method="post" class="card card-pad" data-time-form style="max-width:620px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <p class="muted" style="margin-bottom:20px;font-size:14px">Vaqtlar brauzeringizning mahalliy vaqt zonasida kiritiladi. Ikkalasi bo'sh bo'lsa — platforma doimiy ochiq.</p>
+  <div class="form-grid">
+    <div class="field">
+      <label for="start_local">Boshlanish</label>
+      <input class="input" type="datetime-local" id="start_local" data-utc="{{ start.isoformat() ~ 'Z' if start else '' }}" data-target="ctf_start">
+      <input type="hidden" name="ctf_start">
+      <div class="hint">Boshlanishgacha masalalar yopiq, landing'da taymer chiqadi.</div>
+    </div>
+    <div class="field">
+      <label for="end_local">Tugash</label>
+      <input class="input" type="datetime-local" id="end_local" data-utc="{{ end.isoformat() ~ 'Z' if end else '' }}" data-target="ctf_end">
+      <input type="hidden" name="ctf_end">
+      <div class="hint">Tugagach flaglar qabul qilinmaydi, reyting muzlaydi.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px">
+    <button type="submit" class="btn btn-primary">Saqlash</button>
+    <button type="button" class="btn btn-ghost" data-clear-times>Tozalash</button>
+  </div>
+</form>
+{% endblock %}

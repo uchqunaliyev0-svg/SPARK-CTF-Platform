@@ -1,0 +1,83 @@
+{% from '_macros.html' import icon, avatar %}<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="theme-color" content="#05070f">
+  <meta name="description" content="SPARK CTF — Capture The Flag platformasi: Web, Crypto, Reverse, Forensics, Pwn, OSINT masalalarini yeching va reytingda yuqoriga chiqing.">
+  <title>{% block title %}SPARK CTF{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/icon.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=3">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% set ep = request.endpoint or '' %}
+  <header class="nav">
+    <div class="container">
+      <a href="{{ url_for('index') }}" class="brand" aria-label="SPARK CTF bosh sahifa">
+        <img src="{{ url_for('static', filename='img/icon.png') }}" alt="" width="34" height="34">
+        <span><span class="s">SPARK</span> <span class="c">CTF</span></span>
+      </a>
+      <nav class="nav-links" id="navLinks">
+        <a href="{{ url_for('challenges') }}" class="{{ 'active' if ep == 'challenges' }}">Masalalar</a>
+        <a href="{{ url_for('scoreboard') }}" class="{{ 'active' if ep == 'scoreboard' }}">Reyting</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('admin_index') }}" class="{{ 'active' if ep.startswith('admin') }}">Admin</a>
+        {% endif %}
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('register') }}" class="mobile-only">Ro'yxatdan o'tish</a>
+        {% endif %}
+      </nav>
+      <div class="nav-right">
+        {% if current_user.is_authenticated %}
+          {% if my_score is defined %}<span class="score-pill" data-my-score>{{ my_score }} pts</span>{% endif %}
+          <div class="user-menu">
+            <button class="user-btn" data-dropdown="userDrop" aria-haspopup="true" aria-expanded="false">
+              {{ avatar(current_user.username) }}<span class="uname">{{ current_user.username }}</span>
+            </button>
+            <div class="dropdown" id="userDrop">
+              <a href="{{ url_for('user_page', username=current_user.username) }}">{{ icon('user') }} Profil</a>
+              <a href="{{ url_for('settings') }}">{{ icon('settings') }} Sozlamalar</a>
+              <div class="sep"></div>
+              <form method="post" action="{{ url_for('logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="danger">{{ icon('logout') }} Chiqish</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Kirish</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm guest-reg">Ro'yxatdan o'tish</a>
+        {% endif %}
+        <button class="burger" data-burger aria-label="Menyu">{{ icon('menu') }}</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="toasts" id="toasts">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="toast {{ cat if cat in ['success', 'error', 'info'] else 'info' }}" data-flash><i></i><div>{{ msg }}</div></div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <main>{% block content %}{% endblock %}</main>
+
+  {% block footer %}
+  <footer class="footer">
+    <div class="container">
+      <span>© SPARK CTF · Capture The Flag platformasi</span>
+      <span><a href="{{ url_for('challenges') }}">Masalalar</a> &nbsp;·&nbsp; <a href="{{ url_for('scoreboard') }}">Reyting</a></span>
+    </div>
+  </footer>
+  {% endblock %}
+
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=3"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

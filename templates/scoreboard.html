@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import icon, avatar, time %}
+{% block title %}Reyting — SPARK CTF{% endblock %}
+{% block content %}
+<div class="page"><div class="container">
+  <div class="page-head">
+    <div><span class="eyebrow">// scoreboard</span><h1>Reyting</h1><p>{{ rows|length }} ta ishtirokchi · teng ballda avvalroq yechgan yuqorida</p></div>
+  </div>
+
+  {% set podium = rows|selectattr('solves')|list %}
+  {% if podium %}
+  <div class="podium">
+    {% for idx in [1, 0, 2] %}{% if podium|length > idx %}{% set r = podium[idx] %}
+    <a class="card pod p{{ idx + 1 }}" href="{{ url_for('user_page', username=r.user.username) }}" data-tilt="6" data-reveal="{{ idx }}">
+      <div class="medal">#{{ idx + 1 }} {{ ['GOLD', 'SILVER', 'BRONZE'][idx] }}</div>
+      {{ avatar(r.user.username, 'lg' if idx == 0 else 'md') }}
+      <span class="name">{{ r.user.username }}</span>
+      <div class="score">{{ r.score }}</div>
+      <div class="sv">{{ r.solves }} ta flag</div>
+    </a>
+    {% else %}<div></div>{% endif %}{% endfor %}
+  </div>
+
+  <div class="card chart-card" data-reveal>
+    <div class="card-title">{{ icon('trophy') }} Top 10 — ballar dinamikasi</div>
+    <div class="chart-box"><canvas id="chart" aria-label="Top 10 ballar grafigi"></canvas></div>
+  </div>
+  {% endif %}
+
+  <div class="card" data-reveal>
+    {% if rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th style="width:70px">O'rin</th><th>Ishtirokchi</th><th class="num">Flaglar</th><th>Oxirgi yechim</th><th class="num">Ball</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr class="{{ 'me' if current_user.is_authenticated and r.user.id == current_user.id }}">
+            <td><span class="rank r{{ r.rank if r.rank <= 3 and r.solves else '' }}">#{{ r.rank }}</span></td>
+            <td><a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}{{ r.user.username }}{% if current_user.is_authenticated and r.user.id == current_user.id %} <span class="badge b-cyan">siz</span>{% endif %}</a></td>
+            <td class="num">{{ r.solves }}</td>
+            <td class="muted">{{ time(r.last) if r.last else '—' }}</td>
+            <td class="num" style="color:var(--cyan);font-weight:700">{{ r.score }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>Reyting hali bo'sh</h3><p>Birinchi flagni topgan ishtirokchi bu yerda paydo bo'ladi.</p></div>
+    {% endif %}
+  </div>
+</div></div>
+<script type="application/json" id="series">{{ series|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+{% if rows|selectattr('solves')|list %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/scoreboard.js') }}?v=3"></script>
+{% endif %}
+{% endblock %}

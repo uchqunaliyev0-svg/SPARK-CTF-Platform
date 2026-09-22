@@ -1,0 +1,39 @@
+{% extends 'admin/_layout.html' %}
+{% from '_macros.html' import icon, avatar, time %}
+{% block admin %}
+<h1>Umumiy ko'rinish <a href="{{ url_for('admin_challenge_form') }}" class="btn btn-primary btn-sm">{{ icon('plus') }} Yangi masala</a></h1>
+
+{% if not mail_enabled %}
+<div class="warn">{{ icon('alert') }}<div><b>Email xizmati sozlanmagan.</b> Hozir yangi foydalanuvchilar email tasdiqlashsiz ro'yxatdan o'tadi va parolni tiklash ishlamaydi. Vercel'da <code>SMTP_USER</code> va <code>SMTP_PASSWORD</code> (Gmail App Password) qo'shing.</div></div>
+{% endif %}
+{% if weak_secret %}
+<div class="warn">{{ icon('alert') }}<div><b>SECRET_KEY o'rnatilmagan.</b> Sessiyalar xavfsizligi uchun Vercel'da uzun tasodifiy <code>SECRET_KEY</code> qo'shing.</div></div>
+{% endif %}
+
+{% set st = ctf_state() %}
+<div class="stats" style="margin-bottom:18px">
+  <div class="card stat"><div class="v">{{ stats.users }}</div><div class="l">Foydalanuvchilar ({{ stats.verified }} tasdiqlangan)</div></div>
+  <div class="card stat"><div class="v">{{ stats.challenges }}</div><div class="l">Masalalar ({{ stats.hidden }} yashirin)</div></div>
+  <div class="card stat"><div class="v" style="color:var(--green)">{{ stats.solves }}</div><div class="l">Jami yechimlar</div></div>
+  <div class="card stat"><div class="v">{{ stats.attempts_24h }}</div><div class="l">Urinishlar (24 soat) · {{ stats.correct_24h }} to'g'ri</div></div>
+</div>
+
+<div class="card card-pad" style="margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <span class="badge {{ {'running': 'b-green', 'before': 'b-amber', 'ended': 'b-red'}[st] }}" style="font-size:13px;padding:6px 12px">{{ {'running': 'Musobaqa faol', 'before': 'Hali boshlanmagan', 'ended': 'Yakunlangan'}[st] }}</span>
+  <span class="muted" style="font-size:14px">Vaqt oralig'ini «Musobaqa vaqti» bo'limida belgilaysiz. Bo'sh qoldirilsa — platforma doimiy ochiq.</span>
+</div>
+
+<div class="card">
+  <div class="card-pad" style="padding-bottom:0"><div class="card-title">{{ icon('flag') }} So'nggi yechimlar</div></div>
+  {% if recent %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Foydalanuvchi</th><th>Masala</th><th>Vaqt</th></tr></thead>
+    <tbody>{% for s in recent %}
+      <tr><td><a class="user-cell" href="{{ url_for('user_page', username=s.user.username) }}">{{ avatar(s.user.username) }}{{ s.user.username }}</a></td>
+      <td>{{ s.challenge.title }} <span class="badge b-cyan">{{ s.challenge.category }}</span></td>
+      <td class="muted">{{ time(s.created_at) }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty" style="padding:36px">Hali yechimlar yo'q.</div>{% endif %}
+</div>
+{% endblock %}

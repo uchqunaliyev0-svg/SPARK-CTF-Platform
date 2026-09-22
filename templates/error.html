@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} — SPARK CTF{% endblock %}
+{% block content %}
+<div class="error-page">
+  <div>
+    <div class="code" data-code="{{ code }}">{{ code }}</div>
+    <p>{% if code == 404 %}Bu sahifa topilmadi. Balki flag boshqa joyda yashiringandir?{% elif code == 403 %}Bu sahifaga kirish taqiqlangan.{% else %}{{ message or 'Nimadir xato ketdi.' }}{% endif %}</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Bosh sahifaga qaytish</a>
+  </div>
+</div>
+{% endblock %}
