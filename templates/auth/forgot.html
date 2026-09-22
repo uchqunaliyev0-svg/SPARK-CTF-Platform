@@ -1,0 +1,19 @@
+{% extends 'auth/_layout.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}Parolni tiklash — SPARK CTF{% endblock %}
+{% block visual_title %}Parolni unutdingizmi?{% endblock %}
+{% block visual_text %}Xavotir olmang — emailingizga tiklash kodini yuboramiz.{% endblock %}
+{% block card %}
+<div class="lock-ico">{{ icon('lock') }}</div>
+<h1>Parolni tiklash</h1>
+<p class="sub">Ro'yxatdan o'tgan emailingizni kiriting — unga 6 xonali tiklash kodi yuboriladi.</p>
+<form method="post" action="{{ url_for('forgot') }}" data-loading>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field">
+    <label for="email">Email</label>
+    <input class="input" id="email" type="email" name="email" required maxlength="120" autocomplete="email" autofocus placeholder="you@mail.com">
+  </div>
+  <button type="submit" class="btn btn-primary btn-block btn-lg">Kod yuborish</button>
+</form>
+<p class="alt"><a href="{{ url_for('login') }}">← Kirish sahifasiga qaytish</a></p>
+{% endblock %}

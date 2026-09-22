@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block footer %}{% endblock %}
+{% block content %}
+<div class="auth">
+  <div class="auth-visual">
+    <canvas class="scene" data-scene="auth" aria-hidden="true"></canvas>
+    <div class="copy">
+      <span class="eyebrow">{% block eyebrow %}// spark ctf{% endblock %}</span>
+      <h2>{% block visual_title %}Har bir flag — yangi mahorat.{% endblock %}</h2>
+      <p>{% block visual_text %}Web, Crypto, Reverse, Forensics, Pwn va OSINT masalalari sizni kutmoqda.{% endblock %}</p>
+    </div>
+  </div>
+  <div class="auth-form">
+    <div class="card auth-card">
+      {% block card %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/scene.js') }}?v=3"></script>
+{% endblock %}

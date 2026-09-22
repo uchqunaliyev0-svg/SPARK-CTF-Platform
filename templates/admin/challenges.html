@@ -1,0 +1,31 @@
+{% extends 'admin/_layout.html' %}
+{% from '_macros.html' import icon %}
+{% block admin %}
+<h1>Masalalar <a href="{{ url_for('admin_challenge_form') }}" class="btn btn-primary btn-sm">{{ icon('plus') }} Yangi masala</a></h1>
+<div class="card">
+  {% if challenges %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Nomi</th><th>Kategoriya</th><th>Daraja</th><th class="num">Ball</th><th class="num">Yechim</th><th>Holat</th><th></th></tr></thead>
+    <tbody>
+    {% for c in challenges %}
+      <tr>
+        <td style="font-weight:600">{{ c.title }}{% if c.dynamic %} <span class="badge b-muted" title="Dinamik ball">dyn</span>{% endif %}{% if c.hints %} <span class="badge b-amber">{{ c.hints|length }} hint</span>{% endif %}</td>
+        <td><span class="badge b-cyan">{{ c.category }}</span></td>
+        <td><span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></td>
+        <td class="num">{{ values[c.id] }}{% if c.dynamic %}<span class="dim">/{{ c.value }}</span>{% endif %}</td>
+        <td class="num">{{ counts.get(c.id, 0) }}</td>
+        <td>{% if c.visible %}<span class="badge b-green">ko'rinadi</span>{% else %}<span class="badge b-muted">yashirin</span>{% endif %}</td>
+        <td><div class="actions" style="justify-content:flex-end">
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_challenge_form', cid=c.id) }}">Tahrirlash</a>
+          <form method="post" action="{{ url_for('admin_challenge_action', cid=c.id, action='toggle') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ghost btn-sm">{{ 'Yashirish' if c.visible else "Ko'rsatish" }}</button></form>
+          <form method="post" action="{{ url_for('admin_challenge_action', cid=c.id, action='delete') }}" data-confirm="«{{ c.title }}» va unga tegishli barcha yechimlar o'chiriladi. Davom etasizmi?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger btn-sm">{{ icon('trash') }}</button></form>
+        </div></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="empty"><div class="ico">{{ icon('flag') }}</div><h3>Masalalar yo'q</h3><p>Birinchi masalani qo'shing.</p><a href="{{ url_for('admin_challenge_form') }}" class="btn btn-primary" style="margin-top:16px">{{ icon('plus') }} Yangi masala</a></div>
+  {% endif %}
+</div>
+{% endblock %}

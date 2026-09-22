@@ -1,0 +1,23 @@
+{% extends 'auth/_layout.html' %}
+{% from '_macros.html' import password_field %}
+{% block title %}Kirish — SPARK CTF{% endblock %}
+{% block visual_title %}Qaytganingizdan xursandmiz.{% endblock %}
+{% block visual_text %}Tizimga kiring va to'xtagan joyingizdan davom eting — flaglar hali ham yashirin.{% endblock %}
+{% block card %}
+<h1>Tizimga kirish</h1>
+<p class="sub">Username yoki email va parolingizni kiriting.</p>
+<form method="post" action="{{ url_for('login', next=request.args.get('next')) }}" data-loading novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field">
+    <label for="identity">Username yoki email</label>
+    <input class="input" id="identity" name="identity" value="{{ ident }}" required autocomplete="username" maxlength="120" autofocus placeholder="hacker yoki you@mail.com">
+  </div>
+  {{ password_field('password', 'Parol', 'password', autocomplete='current-password') }}
+  <div class="auth-row">
+    <label class="check"><input type="checkbox" name="remember" value="1"> Meni eslab qol</label>
+    <a href="{{ url_for('forgot') }}">Parolni unutdingizmi?</a>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block btn-lg">Kirish</button>
+</form>
+<p class="alt">Hisobingiz yo'qmi? <a href="{{ url_for('register') }}">Ro'yxatdan o'ting</a></p>
+{% endblock %}

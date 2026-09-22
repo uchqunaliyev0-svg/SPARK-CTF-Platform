@@ -1,0 +1,25 @@
+{% extends 'auth/_layout.html' %}
+{% from '_macros.html' import password_field %}
+{% block title %}Ro'yxatdan o'tish — SPARK CTF{% endblock %}
+{% block visual_title %}O'yinga qo'shiling.{% endblock %}
+{% block visual_text %}Hisob yarating, emailingizni tasdiqlang va birinchi flagingizni toping.{% endblock %}
+{% block card %}
+<h1>Hisob yaratish</h1>
+<p class="sub">{% if mail_enabled %}Ro'yxatdan o'tgach emailingizga 6 xonali tasdiqlash kodi yuboriladi.{% else %}Bir daqiqada hisob yarating.{% endif %}</p>
+<form method="post" action="{{ url_for('register') }}" data-loading data-match="password,password2" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field">
+    <label for="username">Username</label>
+    <input class="input" id="username" name="username" value="{{ form.username }}" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocomplete="username" autofocus placeholder="h4cker_uz">
+    <div class="hint">3–20 belgi: lotin harflari, raqamlar va _ . Reytingda shu nom ko'rinadi.</div>
+  </div>
+  <div class="field">
+    <label for="email">Email</label>
+    <input class="input" id="email" type="email" name="email" value="{{ form.email }}" required maxlength="120" autocomplete="email" placeholder="you@mail.com">
+  </div>
+  {{ password_field('password', 'Parol', 'password', strength=True) }}
+  {{ password_field('password2', 'Parolni takrorlang', 'password2') }}
+  <button type="submit" class="btn btn-primary btn-block btn-lg">Ro'yxatdan o'tish</button>
+</form>
+<p class="alt">Hisobingiz bormi? <a href="{{ url_for('login') }}">Kirish</a></p>
+{% endblock %}

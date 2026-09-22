@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import icon, avatar, time %}
+{% block title %}{{ user.username }} — SPARK CTF{% endblock %}
+{% block content %}
+<div class="page"><div class="container narrow">
+  <div class="card profile-hero" data-reveal>
+    {{ avatar(user.username, 'lg') }}
+    <div>
+      <h1>{{ user.username }}</h1>
+      <div class="meta">
+        {% if user.is_admin %}<span class="badge b-amber">admin</span>{% endif %}
+        <span><span class="i14">{{ icon('clock') }}</span> Qo'shilgan: {{ time(user.created_at) }}</span>
+      </div>
+    </div>
+    {% if row %}
+    <div class="rk"><b>#{{ row.rank }}</b><span>{{ total_users }} ta orasida</span></div>
+    {% endif %}
+  </div>
+
+  <div class="stats" data-reveal>
+    <div class="card stat"><div class="v" style="color:var(--cyan)" data-count="{{ score if score > 0 else 0 }}">{{ score }}</div><div class="l">Ball</div></div>
+    <div class="card stat"><div class="v" data-count="{{ solves|length }}">{{ solves|length }}</div><div class="l">Topilgan flaglar</div></div>
+    <div class="card stat"><div class="v">{{ ((solves|length / total_challenges * 100)|round|int) if total_challenges else 0 }}%</div><div class="l">Tugallanganlik</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card card-pad" data-reveal>
+      <div class="card-title">{{ icon('grid') }} Kategoriyalar</div>
+      {% for b in breakdown %}
+      <div class="brk">
+        <div class="t"><span>{{ b.category }}</span><b>{{ b.solved }}/{{ b.total }}</b></div>
+        <div class="bar"><i data-w="{{ (b.solved / b.total * 100)|round|int }}%"></i></div>
+      </div>
+      {% else %}
+      <p class="muted">Hozircha masalalar yo'q.</p>
+      {% endfor %}
+    </div>
+    <div class="card" data-reveal="1">
+      <div class="card-pad" style="padding-bottom:0"><div class="card-title">{{ icon('flag') }} Yechimlar tarixi</div></div>
+      {% if solves %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Masala</th><th>Kategoriya</th><th class="num">Ball</th><th>Vaqt</th></tr></thead>
+          <tbody>
+          {% for s in solves %}
+            <tr>
+              <td style="font-weight:600">{{ s.challenge.title }}</td>
+              <td><span class="badge b-cyan">{{ s.challenge.category }}</span></td>
+              <td class="num" style="color:var(--green)">+{{ values.get(s.challenge_id, 0) }}</td>
+              <td class="muted">{{ time(s.created_at) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty" style="padding:40px 24px"><div class="ico">{{ icon('flag') }}</div><h3>Hali flag yo'q</h3><p>Birinchi flag hali oldinda.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div></div>
+{% endblock %}
