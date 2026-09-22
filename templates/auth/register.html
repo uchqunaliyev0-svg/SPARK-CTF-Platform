@@ -18,7 +18,7 @@
     <input class="input" id="email" type="email" name="email" value="{{ form.email }}" required maxlength="120" autocomplete="email" placeholder="you@mail.com">
   </div>
   {{ password_field('password', _('Parol'), 'password', strength=True) }}
-  {{ password_field('password2', _('Parolni takrorlang'), 'password2') }}
+  {{ password_field('password2', _('Parolni takrorlang'), 'password2', placeholder=_('Parolni qayta kiriting')) }}
   {{ captcha() }}
   <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _("Ro'yxatdan o'tish") }}</button>
 </form>

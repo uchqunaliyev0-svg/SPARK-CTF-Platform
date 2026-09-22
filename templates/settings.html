@@ -22,9 +22,9 @@
     <div class="card-title">{{ icon('lock') }} {{ _("Parolni o'zgartirish") }}</div>
     <form method="post" action="{{ url_for('settings') }}" data-loading data-match="password,password2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      {{ password_field('current_password', _('Joriy parol'), 'current_password', autocomplete='current-password') }}
+      {{ password_field('current_password', _('Joriy parol'), 'current_password', autocomplete='current-password', placeholder=_('Hozirgi parolingiz')) }}
       {{ password_field('password', _('Yangi parol'), 'password', strength=True) }}
-      {{ password_field('password2', _('Yangi parolni takrorlang'), 'password2') }}
+      {{ password_field('password2', _('Yangi parolni takrorlang'), 'password2', placeholder=_('Parolni qayta kiriting')) }}
       <button type="submit" class="btn btn-primary">{{ _('Parolni yangilash') }}</button>
     </form>
   </div>
