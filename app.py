@@ -327,9 +327,25 @@ def dashboard():
     recent = (Solve.query.filter_by(user_id=current_user.id).join(Challenge)
               .filter(Challenge.visible.is_(True)).order_by(Solve.created_at.desc()).limit(6).all())
     anns = Announcement.query.order_by(Announcement.created_at.desc()).limit(3).all()
-    return render_template('dashboard.html', row=me, players=len(rows), stats=stats, cats=cats,
-                           diffs=diffs, recent=recent, announcements=anns,
-                           values=scoring.current_values())
+    values = scoring.current_values()
+    counts = scoring.solve_counts()
+    solved = {s.challenge_id for s in Solve.query.filter_by(user_id=current_user.id).all()}
+    suggestions = []
+    if ctf_state() == 'running' or current_user.is_admin:
+        pool = sorted((c for c in Challenge.query.filter_by(visible=True).all() if c.id not in solved),
+                      key=lambda c: (DIFFICULTIES.index(c.difficulty) if c.difficulty in DIFFICULTIES else 9,
+                                     -counts.get(c.id, 0), values.get(c.id, 0)))
+        seen = set()
+        for c in pool:
+            if c.category not in seen:
+                suggestions.append(c)
+                seen.add(c.category)
+            if len(suggestions) == 4:
+                break
+    total = sum(c['total'] for c in cats)
+    return render_template('dashboard.html', row=me, players=len(rows), stats=stats, recent=recent,
+                           announcements=anns, values=values, counts=counts, suggestions=suggestions,
+                           total=total)
 
 
 @app.route('/notifications')

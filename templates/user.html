@@ -1,6 +1,6 @@
 {% extends 'app_layout.html' %}
 {% from '_macros.html' import icon, time %}
-{% from '_profile.html' import profile_card, tier_card, cat_tiles, diff_rows, heatmap %}
+{% from '_profile.html' import profile_card, tier_card, cat_tiles, diff_rows %}
 {% block title %}{{ user.username }} — SPARK CTF{% endblock %}
 {% block app %}
 <div class="app-page">
@@ -12,13 +12,13 @@
   <div class="dash-grid">
     <div style="display:flex;flex-direction:column;gap:18px">
       {{ profile_card(user, stats, row, players) }}
-      <div class="card card-pad">{{ heatmap(stats) }}</div>
+      <div>
+        <div class="card-head"><h3>{{ icon('grid') }} {{ _("Yo'nalishlar bo'yicha") }}</h3></div>
+        {{ cat_tiles(cats) }}
+      </div>
     </div>
     {{ tier_card(stats) }}
   </div>
-
-  <div class="card-head" style="margin-top:6px"><h3>{{ icon('grid') }} {{ _("Yo'nalishlar bo'yicha") }}</h3></div>
-  {{ cat_tiles(cats) }}
 
   <div class="row-2">
     <div class="card card-pad">

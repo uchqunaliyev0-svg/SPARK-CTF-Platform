@@ -1,23 +1,50 @@
 {% extends 'app_layout.html' %}
 {% from '_macros.html' import icon, time %}
-{% from '_profile.html' import profile_card, tier_card, cat_tiles, diff_rows, heatmap %}
+{% from '_profile.html' import heatmap %}
 {% block title %}Dashboard — SPARK CTF{% endblock %}
 {% block app %}
 {% macro delta(a, b) -%}
 {% set d = a - b %}<span class="d {{ 'up' if d > 0 else ('down' if d < 0 else 'eq') }}">{{ '+' if d > 0 }}{{ d }}</span>
 {%- endmacro %}
+{% set t = stats.tier %}{% set lv = stats.level %}
 <div class="app-page">
   <div class="page-head">
-    <div><span class="eyebrow">// dashboard</span><h1>{{ _('Xush kelibsiz, {name}', name=current_user.username) }}</h1><p>{{ _("Natijalaringiz, faolligingiz va yo'nalishlar bo'yicha o'sishingiz.") }}</p></div>
-    <a href="{{ url_for('challenges') }}" class="btn btn-primary">{{ icon('flag') }} {{ _("Masalalarga o'tish") }}</a>
+    <div><span class="eyebrow">// dashboard</span><h1>{{ _('Xush kelibsiz, {name}', name=current_user.username) }}</h1><p>{{ _("Bugun qaysi flagni olamiz?") }}</p></div>
+    <a href="{{ url_for('user_page', username=current_user.username) }}" class="btn btn-ghost">{{ icon('user') }} {{ _('Profilim') }}</a>
   </div>
 
-  <div class="dash-grid">
-    <div style="display:flex;flex-direction:column;gap:18px">
-      {{ profile_card(current_user, stats, row, players) }}
-      <div class="card card-pad">{{ heatmap(stats) }}</div>
+  <div class="kpi-row">
+    <div class="card kpi-card" style="--c: var(--cyan)"><span class="mi">{{ icon('trend') }}</span><div><b>{{ stats.score }}</b><span>{{ _('Ball') }}</span></div></div>
+    <div class="card kpi-card" style="--c: var(--amber)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ '#' ~ row.rank if row else '—' }}</b><span>{{ _("O'rin") }}{% if row %} · {{ players }}{% endif %}</span></div></div>
+    <div class="card kpi-card" style="--c: var(--green)"><span class="mi">{{ icon('flag') }}</span><div><b>{{ stats.solves }}<small>/{{ total }}</small></b><span>{{ _('Yechilgan') }}</span></div></div>
+    <div class="card kpi-card" style="--c: var(--red)"><span class="mi">{{ icon('drop') }}</span><div><b>{{ stats.bloods }}</b><span>First blood</span></div></div>
+  </div>
+
+  <div class="card tier-strip" style="--tc: {{ t.color }}">
+    <span class="lvl-badge">LVL {{ lv.level }}</span>
+    <div class="ts-main">
+      <div class="ts-top"><b style="color:var(--tc)">{{ t.name }}</b><span>Tier {{ t.index }}</span>
+        <span class="ts-next">{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }} · {{ stats.score }}/{{ t.next_at }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span></div>
+      <div class="tier-bar"><i style="width:{{ t.progress }}%"></i></div>
     </div>
-    {{ tier_card(stats) }}
+  </div>
+
+  <div class="card card-pad" style="margin-bottom:18px">
+    <div class="card-head"><h3>{{ icon('target') }} {{ _('Keyingi masalalar') }}</h3><a href="{{ url_for('challenges') }}" class="btn btn-ghost btn-sm">{{ _('Hammasi') }} {{ icon('arrow') }}</a></div>
+    {% if suggestions %}
+    <div class="next-grid">
+      {% for c in suggestions %}
+      {% set col = CATEGORY_META.get(c.category, ('#22d3ee', ''))[0] %}
+      <a href="{{ url_for('challenges') }}#c-{{ c.id }}" class="next-card" style="--c: {{ col }}">
+        <span class="nc-top"><span class="cat-dot">{{ icon(c.category) }} {{ c.category }}</span><span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></span>
+        <b>{{ c.title }}</b>
+        <span class="nc-foot"><span class="mono">{{ values.get(c.id, c.value) }} pts</span><span class="solves">{{ icon('users') }} {{ counts.get(c.id, 0) }}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="chart-empty" style="height:120px">{% if total %}{{ _('Barcha masalalar yechilgan — zo‘r natija! 🏆') }}{% else %}{{ _('Masalalar tez orada ochiladi') }}{% endif %}</div>
+    {% endif %}
   </div>
 
   <div class="row-2">
@@ -31,18 +58,8 @@
         <div class="sc" style="--c: var(--amber)"><span class="mi">{{ icon('bulb') }}</span><div><div class="k">{{ _('Hintlar') }}</div><div class="v">{{ m.hints }} {{ delta(m.hints, l.hints) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.hints }}</div></div></div>
       </div>
     </div>
-    <div class="card card-pad">
-      <div class="card-head"><h3>{{ icon('trophy') }} {{ _('Ball dinamikasi') }}</h3></div>
-      {% if stats.series %}
-      <div class="chart-sm"><canvas id="myChart" aria-label="{{ _('Ball dinamikasi') }}"></canvas></div>
-      {% else %}
-      <div class="chart-empty">{{ _("Hali ma'lumot yo'q — birinchi flagni toping!") }}</div>
-      {% endif %}
-    </div>
+    <div class="card card-pad">{{ heatmap(stats) }}</div>
   </div>
-
-  <div class="card-head" style="margin-top:6px"><h3>{{ icon('grid') }} {{ _("Yo'nalishlar bo'yicha") }}</h3><a href="{{ url_for('challenges') }}" class="btn btn-ghost btn-sm">{{ _('Hammasi') }} {{ icon('arrow') }}</a></div>
-  {{ cat_tiles(cats) }}
 
   <div class="row-2">
     <div class="card card-pad">
@@ -58,12 +75,8 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="chart-empty" style="height:180px">{{ _('Hali yechimlar yo‘q') }}</div>
+      <div class="chart-empty" style="height:160px">{{ _('Hali yechimlar yo‘q') }}</div>
       {% endif %}
-      <div style="margin-top:18px">
-        <div class="side-label">{{ _("Qiyinlik bo'yicha") }}</div>
-        {{ diff_rows(diffs) }}
-      </div>
     </div>
     <div class="card card-pad">
       <div class="card-head"><h3>{{ icon('megaphone') }} {{ _("E'lonlar") }}</h3><a href="{{ url_for('notifications') }}" class="btn btn-ghost btn-sm">{{ _('Hammasi') }}</a></div>
@@ -74,16 +87,9 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="chart-empty" style="height:180px">{{ _("Hozircha e'lonlar yo'q") }}</div>
+      <div class="chart-empty" style="height:160px">{{ _("Hozircha e'lonlar yo'q") }}</div>
       {% endif %}
     </div>
   </div>
 </div>
-<script type="application/json" id="mySeries">{{ stats.series|tojson }}</script>
-{% endblock %}
-{% block scripts %}
-{% if stats.series %}
-<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/profile.js') }}?v=4"></script>
-{% endif %}
 {% endblock %}
