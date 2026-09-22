@@ -4,221 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPARK CTF | Reyting</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-dark: #050505;
-            --bg-panel: #0d1117;
-            --border-color: #30363d;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent-spark: #ff3333;
-            --accent-ctf: #3366ff;
-            --accent-hover: #58a6ff;
-        }
+        :root{--primary:#7B2FF7;--accent:#00C6FF;--success:#A3FF12;--danger:#FF4B4B;--warn:#FFB800;--bg:#0A0A0F;--card-bg:rgba(20,20,32,.5);--border:rgba(123,47,247,.18);--text:#E2E2E2;--muted:#888891;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        nav{height:68px;background:rgba(10,10,15,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:100;}
+        .brand{font-family:'Fira Code',monospace;font-weight:700;font-size:20px;text-decoration:none;letter-spacing:-1px;}
+        .brand .s{color:var(--primary);text-shadow:0 0 18px rgba(123,47,247,.5);}
+        .brand .c{color:var(--accent);}
+        .nav-r{display:flex;align-items:center;gap:20px;}
+        .nav-link{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;transition:.2s;}
+        .nav-link:hover{color:#fff;}
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-        }
+        .container{max-width:860px;margin:0 auto;padding:48px 20px;}
 
-        .navbar {
-            background-color: rgba(13, 17, 23, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+        .page-header{text-align:center;margin-bottom:48px;}
+        .page-header h1{font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+        .page-header p{color:var(--muted);font-size:15px;}
 
-        .branding {
-            font-family: 'Fira Code', monospace;
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-decoration: none;
-        }
-        .branding span.spark { color: var(--accent-spark); }
-        .branding span.ctf { color: var(--accent-ctf); }
+        /* TOP 3 PODIUM */
+        .podium{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:48px;}
+        .pod{text-align:center;flex:1;max-width:160px;}
+        .pod-card{border-radius:16px;padding:20px 12px;border:1px solid var(--border);background:var(--card-bg);backdrop-filter:blur(10px);transition:.3s;}
+        .pod-card:hover{transform:translateY(-4px);}
+        .pod-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:#fff;margin:0 auto 10px;}
+        .pod-rank{font-size:24px;margin-bottom:6px;}
+        .pod-name{font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;word-break:break-all;}
+        .pod-score{font-family:'Fira Code',monospace;font-size:14px;font-weight:700;}
+        .pod-solves{font-size:11px;color:var(--muted);margin-top:3px;}
+        .pod-1 .pod-card{border-color:rgba(255,215,0,.3);box-shadow:0 0 30px rgba(255,215,0,.08);}
+        .pod-1 .pod-avatar{background:linear-gradient(135deg,#FFD700,#FF8C00);}
+        .pod-1 .pod-score{color:#FFD700;}
+        .pod-1{order:2;}
+        .pod-2 .pod-card{border-color:rgba(192,192,192,.3);box-shadow:0 0 20px rgba(192,192,192,.05);}
+        .pod-2 .pod-avatar{background:linear-gradient(135deg,#C0C0C0,#808080);}
+        .pod-2 .pod-score{color:#C0C0C0;}
+        .pod-2{order:1;}
+        .pod-3 .pod-card{border-color:rgba(205,127,50,.3);box-shadow:0 0 20px rgba(205,127,50,.05);}
+        .pod-3 .pod-avatar{background:linear-gradient(135deg,#CD7F32,#8B4513);}
+        .pod-3 .pod-score{color:#CD7F32;}
+        .pod-3{order:3;}
 
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            padding: 0 20px;
-        }
+        /* TABLE */
+        .lb-table{width:100%;border-collapse:separate;border-spacing:0 8px;}
+        .lb-table th{text-align:left;padding:12px 18px;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+        .lb-row{background:var(--card-bg);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:14px;transition:all .25s;cursor:default;}
+        .lb-row:hover{transform:translateX(4px);border-color:rgba(123,47,247,.35);box-shadow:0 4px 20px rgba(123,47,247,.1);}
+        .lb-row.me{border-color:rgba(0,198,255,.3);background:rgba(0,198,255,.04);}
+        .lb-row td{padding:16px 18px;}
+        .lb-row td:first-child{border-radius:14px 0 0 14px;width:60px;}
+        .lb-row td:last-child{border-radius:0 14px 14px 0;}
+        .rank-num{font-family:'Fira Code',monospace;font-weight:700;font-size:16px;color:var(--muted);}
+        .rank-1 .rank-num{color:#FFD700;text-shadow:0 0 12px rgba(255,215,0,.5);font-size:20px;}
+        .rank-2 .rank-num{color:#C0C0C0;text-shadow:0 0 10px rgba(192,192,192,.4);font-size:18px;}
+        .rank-3 .rank-num{color:#CD7F32;text-shadow:0 0 10px rgba(205,127,50,.4);font-size:18px;}
+        .user-cell{display:flex;align-items:center;gap:12px;}
+        .u-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;font-weight:700;font-size:15px;color:#fff;flex-shrink:0;}
+        .u-name{font-weight:700;font-size:15px;color:#fff;}
+        .me-badge{background:rgba(0,198,255,.12);color:var(--accent);font-size:11px;padding:2px 8px;border-radius:8px;border:1px solid rgba(0,198,255,.25);margin-left:6px;}
+        .score-cell{font-family:'Fira Code',monospace;font-weight:700;font-size:16px;color:var(--primary);}
+        .solves-cell{color:var(--muted);font-size:14px;}
+        .bar-wrap{width:100%;background:rgba(255,255,255,.05);border-radius:4px;height:4px;margin-top:4px;}
+        .bar-fill{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width .5s ease;}
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-size: 36px;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 10px;
-        }
-
-        .leaderboard-table th {
-            text-align: left;
-            padding: 15px 20px;
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .leaderboard-row {
-            background-color: rgba(13, 17, 23, 0.6);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-        }
-
-        .leaderboard-row:hover {
-            transform: scale(1.01);
-            background-color: rgba(13, 17, 23, 0.9);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .leaderboard-row td {
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .leaderboard-row td:first-child {
-            border-left: 1px solid var(--border-color);
-            border-top-left-radius: 10px;
-            border-bottom-left-radius: 10px;
-            width: 80px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-        .leaderboard-row td:last-child {
-            border-right: 1px solid var(--border-color);
-            border-top-right-radius: 10px;
-            border-bottom-right-radius: 10px;
-            text-align: right;
-            font-family: 'Fira Code', monospace;
-            font-size: 18px;
-            color: var(--accent-hover);
-            font-weight: bold;
-        }
-
-        .rank-1 td:first-child { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5); font-size: 24px; }
-        .rank-2 td:first-child { color: #c0c0c0; text-shadow: 0 0 10px rgba(192,192,192,0.5); font-size: 22px; }
-        .rank-3 td:first-child { color: #cd7f32; text-shadow: 0 0 10px rgba(205,127,50,0.5); font-size: 22px; }
-
-        .username {
-            font-weight: 600;
-            font-size: 18px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .me-badge {
-            background: rgba(51, 102, 255, 0.2);
-            color: var(--accent-hover);
-            font-size: 12px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            border: 1px solid var(--accent-ctf);
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-muted);
-            text-decoration: none;
-            margin-bottom: 20px;
-            transition: 0.3s;
-        }
-
-        .back-btn:hover {
-            color: #fff;
-        }
+        .empty{text-align:center;padding:60px;color:var(--muted);}
     </style>
 </head>
 <body>
+<nav>
+    <a href="/" class="brand"><span class="s">SPARK</span> <span class="c">CTF</span></a>
+    <div class="nav-r">
+        <a href="/dashboard" class="nav-link">Masalalar</a>
+        <a href="/profile" class="nav-link">Profil</a>
+        <a href="/logout" class="nav-link" style="color:var(--danger);">Chiqish</a>
+    </div>
+</nav>
 
-    <nav class="navbar">
-        <a href="/" class="branding" style="display: flex; align-items: center; gap: 12px;">
-            <img src="/static/img/logo.png" alt="SPARK CTF" style="height: 36px; border-radius: 6px;">
-            <span><span class="spark">SPARK</span> <span class="ctf">CTF</span></span>
-        </a>
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <a href="/profile" style="color: var(--text-muted); text-decoration: none; font-size:14px; font-weight:600; transition:0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Profil</a>
-            <a href="/dashboard" style="color: var(--text-muted); text-decoration: none; font-size:14px; font-weight:600; transition:0.2s;" onmouseover="this.style.color='#e6e6e6'" onmouseout="this.style.color='var(--text-muted)'">Masalalar</a>
-            <a href="/logout" style="color: var(--text-muted); text-decoration: none; font-size:14px; transition:0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Chiqish</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <a href="/dashboard" class="back-btn">← Orqaga</a>
-        
-        <div class="header">
-            <h1>Global Reyting</h1>
-            <p>Eng yuqori ball to'plagan xakerlar ro'yxati</p>
-        </div>
-
-        <table class="leaderboard-table">
-            <thead>
-                <tr>
-                    <th style="text-align: center;">O'rin</th>
-                    <th>Foydalanuvchi</th>
-                    <th style="text-align: right;">Ball</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in top_users %}
-                <tr class="leaderboard-row rank-{{ loop.index }}">
-                    <td>#{{ loop.index }}</td>
-                    <td>
-                        <div class="username">
-                            {{ user.username }}
-                            {% if current_user.is_authenticated and user.id == current_user.id %}
-                            <span class="me-badge">Siz</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                    <td>{{ user.score }} pts</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">Hali hech kim ball to'plamadi. Birinchi bo'ling!</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container">
+    <div class="page-header">
+        <h1>🏆 Global Reyting</h1>
+        <p>Eng yuqori ball to'plagan xakerlar</p>
     </div>
 
+    {% if top_users %}
+    <!-- PODIUM (top 3) -->
+    <div class="podium">
+        {% for user in top_users[:3] %}
+        <div class="pod pod-{{ loop.index }}">
+            <div class="pod-card">
+                <div class="pod-rank">{% if loop.index==1 %}🥇{% elif loop.index==2 %}🥈{% else %}🥉{% endif %}</div>
+                <div class="pod-avatar">{{ user.username[0]|upper }}</div>
+                <div class="pod-name">{{ user.username }}</div>
+                <div class="pod-score">{{ user.score }} pts</div>
+                <div class="pod-solves">{{ solve_counts.get(user.id,0) }} solve</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- FULL TABLE -->
+    <table class="lb-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Foydalanuvchi</th>
+                <th>Yechimlar</th>
+                <th style="text-align:right;">Ball</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in top_users %}
+        <tr class="lb-row rank-{{ loop.index }} {% if current_user.is_authenticated and user.id == current_user.id %}me{% endif %}">
+            <td><span class="rank-num">{{ loop.index }}</span></td>
+            <td>
+                <div class="user-cell">
+                    <div class="u-avatar">{{ user.username[0]|upper }}</div>
+                    <div>
+                        <span class="u-name">{{ user.username }}</span>
+                        {% if current_user.is_authenticated and user.id == current_user.id %}
+                        <span class="me-badge">Siz</span>
+                        {% endif %}
+                        <div class="bar-wrap"><div class="bar-fill" style="width:{{ (user.score / max_score * 100)|int if max_score > 0 else 0 }}%"></div></div>
+                    </div>
+                </div>
+            </td>
+            <td class="solves-cell">{{ solve_counts.get(user.id, 0) }} 🚩</td>
+            <td style="text-align:right;"><span class="score-cell">{{ user.score }}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Hali hech kim ball to'plamadi. Birinchi bo'ling!</div>
+    {% endif %}
+</div>
 </body>
 </html>
