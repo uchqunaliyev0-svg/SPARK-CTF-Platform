@@ -787,6 +787,34 @@ body.sb-collapsed .sb-item.on::before { left: -10px; }
 .chart-empty { height: 240px; display: grid; place-items: center; color: var(--dim); font-family: var(--mono); font-size: 13px; text-align: center; border: 1px dashed var(--line-2); border-radius: 14px; }
 .blood { color: var(--red); }
 
+/* ---------- dashboard v2 ---------- */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+.kpi-card { display: flex; align-items: center; gap: 14px; padding: 18px 20px; }
+.kpi-card .mi { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); flex-shrink: 0; }
+.kpi-card .mi svg { width: 21px; height: 21px; }
+.kpi-card b { display: block; font-family: var(--display); font-size: 26px; line-height: 1.1; letter-spacing: -.02em; }
+.kpi-card b small { font-size: 15px; color: var(--muted); font-weight: 600; }
+.kpi-card span { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.tier-strip { display: flex; align-items: center; gap: 18px; padding: 16px 22px; margin-bottom: 18px; }
+.lvl-badge { font-family: var(--mono); font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 11px; color: var(--tc); border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent); background: color-mix(in srgb, var(--tc) 10%, transparent); white-space: nowrap; }
+.ts-main { flex: 1; min-width: 0; }
+.ts-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; flex-wrap: wrap; }
+.ts-top b { font-family: var(--display); font-size: 17px; letter-spacing: .08em; text-transform: uppercase; }
+.ts-top span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.ts-top .ts-next { margin-left: auto; }
+.next-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.next-card { --c: var(--cyan); display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--fg-rgb), .02); color: var(--text); position: relative; overflow: hidden; transition: .25s; }
+.next-card::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 2px; background: var(--c); border-radius: 0 0 3px 3px; }
+.next-card:hover { color: var(--text); border-color: color-mix(in srgb, var(--c) 50%, transparent); transform: translateY(-3px); box-shadow: 0 16px 36px -18px color-mix(in srgb, var(--c) 55%, transparent); }
+.next-card .nc-top, .next-card .nc-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.next-card .cat-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--c); }
+.next-card .cat-dot svg { width: 14px; height: 14px; }
+.next-card b { font-family: var(--display); font-size: 16px; }
+.next-card .mono { font-weight: 700; color: var(--cyan); }
+.next-card .solves { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); }
+.next-card .solves svg { width: 14px; height: 14px; }
+.dash-grid .cat-tiles { margin-bottom: 0; }
+
 /* ---------- vpn page ---------- */
 .vpn-hero { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; padding: 30px; margin-bottom: 18px; position: relative; overflow: hidden; }
 .vpn-hero::before { content: ''; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 59, 92, .14), transparent 70%); }
@@ -883,8 +911,12 @@ body.sb-collapsed .sb-item.on::before { left: -10px; }
   .vpn-steps { grid-template-columns: 1fr; }
   .board-side .frow { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
+@media (max-width: 900px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 600px) {
   .p-stats { grid-template-columns: 1fr 1fr; }
+  .ts-top .ts-next { margin-left: 0; width: 100%; }
   .sc-grid { grid-template-columns: 1fr; }
   .heat { gap: 4px; }
   .heat i { border-radius: 5px; }

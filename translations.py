@@ -264,6 +264,10 @@ EN = {
 
     # dashboard / profile
     "Xush kelibsiz, {name}": "Welcome back, {name}",
+    "Bugun qaysi flagni olamiz?": "Which flag are we capturing today?",
+    "Profilim": "My profile",
+    "Keyingi masalalar": "Up next",
+    "Barcha masalalar yechilgan — zo‘r natija! 🏆": "Every challenge solved — great job! 🏆",
     "Natijalaringiz, faolligingiz va yo'nalishlar bo'yicha o'sishingiz.": "Your results, activity and progress across categories.",
     "Shaxsiy natijalar": "Personal scorecard",
     "bu oy / o‘tgan oy": "this month vs last",
