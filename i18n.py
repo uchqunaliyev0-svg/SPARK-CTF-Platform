@@ -6,6 +6,7 @@ LANGS = ('uz', 'en')
 
 # Strings the browser scripts need; they are sent to the page in the current language.
 JS_KEYS = [
+    "{s} demoqchimisiz?",
     "Parollar mos kelmadi.", "6 xonali kodni to'liq kiriting.", "Juda zaif", "Zaif", "O'rtacha", "Kuchli",
     "Kamida 8 belgi, harf va raqam.", "Server javobi noto'g'ri.", "Xatolik yuz berdi.", "bepul",
     "Bu hint {cost} ball turadi. Ochishni xohlaysizmi?", "ball", "ta yechim", "muallif:",

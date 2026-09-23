@@ -15,7 +15,7 @@
   </div>
   <div class="field">
     <label for="email">Email</label>
-    <input class="input" id="email" type="email" name="email" value="{{ form.email }}" required maxlength="120" autocomplete="email" placeholder="you@mail.com">
+    <input class="input" id="email" type="email" name="email" value="{{ form.email }}" required maxlength="120" autocomplete="email" placeholder="you@gmail.com" data-email-typo>
   </div>
   {{ password_field('password', _('Parol'), 'password', strength=True) }}
   {{ password_field('password2', _('Parolni takrorlang'), 'password2', placeholder=_('Parolni qayta kiriting')) }}

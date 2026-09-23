@@ -243,5 +243,50 @@
     if (!window.confirm(f.dataset.confirm)) e.preventDefault();
   }));
 
+  // ---------- email typo hint ("x@gmai" -> "x@gmail.com")
+  const TYPOS = {
+    'gmail.com': ['gmai', 'gmail', 'gmial', 'gmal', 'gmaill', 'gamil', 'gnail', 'gmsil', 'gmali', 'gmai.com', 'gmial.com',
+      'gmal.com', 'gmaill.com', 'gamil.com', 'gnail.com', 'gmsil.com', 'gmali.com', 'gmail.co', 'gmail.con', 'gmail.cm',
+      'gmail.om', 'gmail.comm', 'gmail.cim', 'gmail.ru'],
+    'mail.ru': ['mail.r', 'mail.rh', 'mali.ru', 'mial.ru'],
+    'yahoo.com': ['yahoo', 'yaho.com', 'yahoo.co', 'yahoo.con', 'yhoo.com'],
+    'outlook.com': ['outlook', 'outlok.com', 'outlook.co', 'outlook.con', 'otlook.com'],
+    'icloud.com': ['icloud', 'iclod.com', 'icloud.co', 'icloud.con', 'icoud.com'],
+  };
+  const FIX = {};
+  Object.keys(TYPOS).forEach((d) => TYPOS[d].forEach((x) => { FIX[x] = d; }));
+  $$('[data-email-typo]').forEach((input) => {
+    const box = document.createElement('div');
+    box.className = 'hint email-fix';
+    box.hidden = true;
+    input.insertAdjacentElement('afterend', box);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'linkish';
+    box.appendChild(btn);
+    let good = '';
+    btn.addEventListener('pointerdown', (e) => e.preventDefault());
+    btn.addEventListener('click', () => {
+      if (!good) return;
+      input.value = good;
+      good = '';
+      box.hidden = true;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+    });
+    const check = () => {
+      const v = input.value.trim().toLowerCase();
+      const i = v.lastIndexOf('@');
+      const fixed = i > 0 && FIX[v.slice(i + 1)];
+      if (!fixed) { good = ''; box.hidden = true; return; }
+      good = `${v.slice(0, i)}@${fixed}`;
+      btn.textContent = t('{s} demoqchimisiz?', { s: good });
+      box.hidden = false;
+    };
+    input.addEventListener('input', check);
+    input.addEventListener('blur', check);
+    check();
+  });
+
   window.Spark = { $, $$, api, toast, fmtTimes, tilt, reduced, t };
 })();

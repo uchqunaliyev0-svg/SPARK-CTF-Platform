@@ -12,6 +12,26 @@ from models import CaptchaUse, EmailCode, db, utcnow
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{3,20}$')
 EMAIL_RE = re.compile(r'^[^@\s]{1,64}@[^@\s]+\.[A-Za-z]{2,}$')
 
+_DOMAIN_TYPOS = {
+    'gmail.com': ['gmai', 'gmail', 'gmial', 'gmal', 'gmaill', 'gamil', 'gnail', 'gmsil', 'gmali', 'gmai.com',
+                  'gmial.com', 'gmal.com', 'gmaill.com', 'gamil.com', 'gnail.com', 'gmsil.com', 'gmali.com',
+                  'gmail.co', 'gmail.con', 'gmail.cm', 'gmail.om', 'gmail.comm', 'gmail.cim', 'gmail.ru'],
+    'mail.ru': ['mail.r', 'mail.rh', 'mali.ru', 'mial.ru'],
+    'yahoo.com': ['yahoo', 'yaho.com', 'yahoo.co', 'yahoo.con', 'yhoo.com'],
+    'outlook.com': ['outlook', 'outlok.com', 'outlook.co', 'outlook.con', 'otlook.com'],
+    'icloud.com': ['icloud', 'iclod.com', 'icloud.co', 'icloud.con', 'icoud.com'],
+}
+_TYPO_TO_DOMAIN = {t: d for d, ts in _DOMAIN_TYPOS.items() for t in ts}
+
+
+def email_suggestion(email):
+    """Returns a corrected address for common domain typos (e.g. 'x@gmai' -> 'x@gmail.com'), else None."""
+    name, at, domain = (email or '').strip().lower().rpartition('@')
+    if not at or not name:
+        return None
+    fixed = _TYPO_TO_DOMAIN.get(domain)
+    return f'{name}@{fixed}' if fixed else None
+
 CODE_TTL = timedelta(minutes=10)
 CODE_MAX_ATTEMPTS = 5
 RESEND_COOLDOWN = timedelta(seconds=60)
