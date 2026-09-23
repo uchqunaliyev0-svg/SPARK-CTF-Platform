@@ -1003,3 +1003,7 @@ body.sb-collapsed .sb-item:hover::after { content: attr(data-tip); position: abs
 
 .email-fix { margin-top: 6px; }
 .email-fix .linkish { font-size: 13px; }
+
+/* WebGL canvas stays invisible until its first frame is drawn (avoids a white flash on slow GPUs) */
+canvas.scene { opacity: 0; transition: opacity .9s ease; background: transparent; }
+canvas.scene.ready { opacity: 1; }

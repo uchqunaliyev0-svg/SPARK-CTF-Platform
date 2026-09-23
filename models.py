@@ -134,6 +134,14 @@ class Setting(db.Model):
     value = db.Column(db.Text, nullable=True)
 
 
+class RateHit(db.Model):
+    """One row per rate-limited event (failed login, signup, reset request...) keyed by bucket+IP."""
+    __tablename__ = 'rate_hits'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(90), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+
 class CaptchaUse(db.Model):
     __tablename__ = 'captcha_uses'
     sig = db.Column(db.String(64), primary_key=True)

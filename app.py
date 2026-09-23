@@ -18,7 +18,7 @@ import mailer
 from mailer import mail_enabled, send_code, send_test
 from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
                     User, db, utcnow)
-from security import (EMAIL_RE, code_fingerprint, consume_code_link, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
+from security import (EMAIL_RE, rate_hit, rate_limited, code_fingerprint, consume_code_link, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
                       issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
@@ -478,6 +478,9 @@ def register():
             error = _('Bu username band.')
         elif not error and by_email and by_email.is_verified:
             error = _("Bu email bilan allaqachon ro'yxatdan o'tilgan.")
+        if not error and rate_limited('register'):
+            flash(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 'error')
+            return render_template('auth/register.html', form=form), 429
         if not error and not verify_captcha(request.form.get('captcha')):
             error = _("Iltimos, robot emasligingizni tasdiqlang.")
         if error:
@@ -500,6 +503,7 @@ def register():
             db.session.rollback()
             flash(_('Bu username yoki email band.'), 'error')
             return render_template('auth/register.html', form=form), 400
+        rate_hit('register')
         if user.is_verified:
             start_login(user)
             flash(_("Xush kelibsiz! Hisobingiz yaratildi."), 'success')
@@ -518,6 +522,9 @@ def login():
     if request.method == 'POST':
         ident = (request.form.get('identity') or '').strip()
         pw = request.form.get('password') or ''
+        if rate_limited('login_fail'):
+            flash(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 'error')
+            return render_template('auth/login.html', ident=ident), 429
         if not captcha_ok():
             return render_template('auth/login.html', ident=ident), 400
         user = User.query.filter(or_(func.lower(User.username) == ident.lower(),
@@ -529,6 +536,7 @@ def login():
             return render_template('auth/login.html', ident=ident), 429
         valid = bcrypt.check_password_hash(user.password_hash if user else DUMMY_HASH, pw)
         if not user or not valid:
+            rate_hit('login_fail')
             if user:
                 user.failed_logins += 1
                 if user.failed_logins >= MAX_LOGIN_FAILS:
@@ -569,8 +577,12 @@ def verify():
             return redirect(url_for('dashboard'))
         return redirect(url_for('login'))
     if request.method == 'POST':
+        if rate_limited('code_fail'):
+            flash(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 'error')
+            return redirect(url_for('verify'))
         err = consume_code(user, 'verify', request.form.get('code'))
         if err:
+            rate_hit('code_fail')
             flash(err, 'error')
         else:
             user.is_verified = True
@@ -637,8 +649,12 @@ def forgot():
             flash(_("Email xizmati hozircha sozlanmagan. Admin bilan bog'laning."), 'error')
             return render_template('auth/forgot.html'), 503
         email = (request.form.get('email') or '').strip().lower()
+        if rate_limited('forgot'):
+            flash(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 'error')
+            return render_template('auth/forgot.html'), 429
         if not captcha_ok():
             return render_template('auth/forgot.html'), 400
+        rate_hit('forgot')
         user = User.query.filter_by(email=email).first()
         if user and not user.is_banned and not resend_wait_seconds(user, 'reset'):
             note_mail_result(send_code(user.email, user.username, 'reset', issue_code(user, 'reset')), user.email)
@@ -663,8 +679,10 @@ def reset():
         elif not user:
             flash(_("Kod noto'g'ri."), 'error')
         else:
-            err = consume_code(user, 'reset', request.form.get('code'))
+            err = (_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring.") if rate_limited('code_fail')
+                   else consume_code(user, 'reset', request.form.get('code')))
             if err:
+                rate_hit('code_fail')
                 flash(err, 'error')
             else:
                 user.password_hash = bcrypt.generate_password_hash(pw).decode()

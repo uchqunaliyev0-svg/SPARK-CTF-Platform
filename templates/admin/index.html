@@ -10,11 +10,14 @@
 <div class="card card-pad" style="margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
   <span class="badge b-green" style="font-size:13px;padding:6px 12px">Email sozlangan</span>
   <span class="muted" style="font-size:14px"><code>{{ mail.user }}</code> · {{ mail.host }}:{{ mail.port }}</span>
-  <form method="post" action="{{ url_for('admin_mail_test') }}" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap" data-loading>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input class="input" type="email" name="to" placeholder="Qaysi emailga? (boshqa manzil)" style="height:36px;min-width:240px;font-size:14px">
-    <button type="submit" class="btn btn-ghost btn-sm">{{ icon('mail') }} Test xat yuborish</button>
-  </form>
+  <details class="mail-test" style="margin-left:auto">
+    <summary class="muted" style="cursor:pointer;font-size:13px">Tekshirish</summary>
+    <form method="post" action="{{ url_for('admin_mail_test') }}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px" data-loading>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="input" type="email" name="to" placeholder="Qaysi emailga? (bo'sh — o'zingizga)" style="height:36px;min-width:240px;font-size:14px">
+      <button type="submit" class="btn btn-ghost btn-sm">{{ icon('mail') }} Test xat</button>
+    </form>
+  </details>
 </div>
 {% if mail.last_error %}<div class="warn" style="border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)">{{ icon('alert') }}<div><b>Oxirgi email xatosi:</b> {{ mail.last_error }}{% if mail.last_ok %}<br><span class="muted">Oxirgi muvaffaqiyatli: {{ mail.last_ok }}</span>{% endif %}</div></div>
 {% elif mail.last_ok %}<p class="muted" style="margin:-8px 0 18px;font-size:13px">Oxirgi muvaffaqiyatli xat: {{ mail.last_ok }}</p>{% endif %}

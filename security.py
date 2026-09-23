@@ -7,7 +7,7 @@ from datetime import timedelta
 from flask import abort, current_app, request, session
 
 from i18n import _
-from models import CaptchaUse, EmailCode, db, utcnow
+from models import CaptchaUse, EmailCode, RateHit, db, utcnow
 
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{3,20}$')
 EMAIL_RE = re.compile(r'^[^@\s]{1,64}@[^@\s]+\.[A-Za-z]{2,}$')
@@ -181,3 +181,32 @@ def consume_code_link(user, purpose, fingerprint):
     rec.used = True
     db.session.commit()
     return None
+
+
+# (limit, window) per client IP; generous for humans, tight for scripts
+RATE_LIMITS = {
+    'login_fail': (20, timedelta(minutes=15)),
+    'register': (6, timedelta(hours=1)),
+    'forgot': (6, timedelta(minutes=15)),
+    'code_fail': (25, timedelta(minutes=15)),
+}
+
+
+def _rate_key(bucket):
+    return f'{bucket}:{client_ip()}'[:90]
+
+
+def rate_limited(bucket):
+    """True when this IP has used up its allowance for the bucket."""
+    if not current_app.config.get('RATE_LIMIT', True):
+        return False
+    limit, window = RATE_LIMITS[bucket]
+    return RateHit.query.filter(RateHit.key == _rate_key(bucket),
+                                RateHit.created_at >= utcnow() - window).count() >= limit
+
+
+def rate_hit(bucket):
+    db.session.add(RateHit(key=_rate_key(bucket)))
+    if secrets.randbelow(50) == 0:  # opportunistic cleanup
+        RateHit.query.filter(RateHit.created_at < utcnow() - timedelta(days=1)).delete()
+    db.session.commit()
