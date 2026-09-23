@@ -34,6 +34,17 @@
   </div>
 </section>
 
+<section class="tools-section">
+  <p class="tools-label">{{ _("SANOATDA ISHLATILADIGAN HAQIQIY VOSITALARNI O'RGANASIZ") }}</p>
+  <div class="marquee">
+    <div class="marquee-track">
+      {% for ic, name in TOOLS + TOOLS %}
+      <span class="tool-chip">{{ icon(ic) }}{{ name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
 {% if (state == 'before' and start) or (state == 'running' and end) %}
 <section class="section" style="padding-bottom:0">
   <div class="container narrow">

@@ -83,6 +83,7 @@ EN = {
     "ko'rinishida — va ball oling.": "— and earn points.",
     "top xakerlar": "top hackers",
     "Reyting yetakchilari": "Scoreboard leaders",
+    "SANOATDA ISHLATILADIGAN HAQIQIY VOSITALARNI O'RGANASIZ": "LEARN REAL TOOLS USED IN THE INDUSTRY",
     "Reyting hali bo'sh": "The scoreboard is empty",
     "Birinchi flagni topib, ro'yxatni siz ochib bering.": "Capture the first flag and open the board.",
     "To'liq reytingni ko'rish": "View the full scoreboard",
