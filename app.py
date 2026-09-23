@@ -845,13 +845,17 @@ def admin_index():
 @app.route('/admin/mail-test', methods=['POST'])
 @admin_required
 def admin_mail_test():
-    err = send_test(current_user.email)
+    to = (request.form.get('to') or '').strip().lower() or current_user.email
+    if len(to) > 120 or not EMAIL_RE.match(to):
+        flash('Email manzil noto\'g\'ri.', 'error')
+        return redirect(url_for('admin_index'))
+    err = send_test(to)
     mailer.last_error = err or ''
-    note_mail_result(not err, current_user.email)
+    note_mail_result(not err, to)
     if err:
         flash(f'Test xat yuborilmadi: {err}', 'error')
     else:
-        flash(f'Test xat {current_user.email} manziliga yuborildi — inbox va Spam papkasini tekshiring.', 'success')
+        flash(f'Gmail xatni qabul qildi va {to} manziliga yubordi — Inbox va Spam papkasini tekshiring.', 'success')
     return redirect(url_for('admin_index'))
 
 
