@@ -7,6 +7,9 @@
 <div class="lock-ico">{{ icon('mail') }}</div>
 <h1>{{ _('Emailni tasdiqlang') }}</h1>
 <p class="sub">{{ _('{email} manziliga 6 xonali kod yubordik. Kod 10 daqiqa amal qiladi.', email=email) }}</p>
+{% if mail_failed %}
+<div class="warn" style="margin-bottom:16px">{{ icon('alert') }}<div><b>{{ _("Xat yuborilmadi.") }}</b> {{ _("Email xizmatida vaqtinchalik muammo. Bir daqiqadan so'ng «Kodni qayta yuborish» tugmasini bosing yoki keyinroq urinib ko'ring.") }}</div></div>
+{% endif %}
 <form method="post" action="{{ url_for('verify') }}" data-autosubmit>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {{ otp() }}
@@ -17,4 +20,8 @@
   <button type="submit" class="btn btn-ghost btn-block" data-cooldown="{{ wait }}">{{ _('Kodni qayta yuborish') }}</button>
 </form>
 <p class="alt">{{ _('Xat kelmadimi? «Spam» papkasini tekshiring.') }}</p>
+<form method="post" action="{{ url_for('verify_cancel') }}" class="alt" style="margin-top:4px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="linkish">{{ _("Email noto'g'rimi? Qaytadan ro'yxatdan o'tish") }}</button>
+</form>
 {% endblock %}

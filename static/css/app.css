@@ -997,3 +997,6 @@ body.sb-collapsed .sb-item:hover::after { content: attr(data-tip); position: abs
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   [data-reveal] { opacity: 1; transform: none; }
 }
+
+.linkish { background: none; border: 0; padding: 0; color: var(--cyan); font: inherit; font-size: 13px; cursor: pointer; }
+.linkish:hover { text-decoration: underline; }

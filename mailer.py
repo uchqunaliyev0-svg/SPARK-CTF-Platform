@@ -1,6 +1,7 @@
 import os
 import smtplib
 import ssl
+import sys
 from email.message import EmailMessage
 from html import escape
 
@@ -25,6 +26,7 @@ BUTTONS = {
 TAGLINE = 'Capture The Flag platformasi'
 NOTE = "Kod 10 daqiqa amal qiladi. Agar bu so'rovni siz yubormagan bo'lsangiz, xatni e'tiborsiz qoldiring — hech kimga kodni bermang."
 FALLBACK = "Tugma ishlamasa, quyidagi havolani brauzerga nusxalang:"
+last_error = ''
 FOOTER = "Bu xat SPARK CTF platformasida ro'yxatdan o'tganingiz sababli yuborildi."
 
 
@@ -95,7 +97,8 @@ def _deliver(msg):
 
 def describe_error(e):
     if isinstance(e, smtplib.SMTPAuthenticationError):
-        return 'SMTP login rad etildi — SMTP_USER / SMTP_PASSWORD (Gmail App Password) noto\'g\'ri.'
+        return ("Gmail loginni rad etdi (535). App Password aynan SMTP_USER dagi Gmail hisobida yaratilgan "
+                "bo'lishi kerak va 2-bosqichli tekshiruv yoqilgan bo'lishi shart.")
     if isinstance(e, (smtplib.SMTPConnectError, TimeoutError, OSError)) and not isinstance(e, smtplib.SMTPException):
         return f'SMTP serverga ulanib bo\'lmadi ({type(e).__name__}: {e}).'
     return f'{type(e).__name__}: {e}'
@@ -113,7 +116,7 @@ def send_test(to_email):
         _deliver(msg)
         return None
     except Exception as e:
-        print(f'[mail error] {e!r}')
+        print(f'[mail error] test -> {to_email}: {e!r}', file=sys.stderr)
         return describe_error(e)
 
 
@@ -132,9 +135,12 @@ def send_code(to_email, username, purpose, code, link=None):
     text += f"\n{_(NOTE)}"
     msg.set_content(text)
     msg.add_alternative(_html(username, purpose, code, link), subtype='html')
+    global last_error
     try:
         _deliver(msg)
+        last_error = ''
         return True
     except Exception as e:
-        print(f'[mail error] {e!r}')
+        last_error = describe_error(e)
+        print(f'[mail error] {purpose} -> {to_email}: {e!r}', file=sys.stderr)
         return False
