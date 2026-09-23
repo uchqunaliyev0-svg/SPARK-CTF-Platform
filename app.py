@@ -20,6 +20,12 @@ from security import (EMAIL_RE, USERNAME_RE, check_csrf, client_ip, consume_code
                       issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
+TOOLS = [
+    ('terminal', 'Bash'), ('binary', 'Python'), ('branch', 'Git'), ('container', 'Docker'),
+    ('crosshair', 'Nmap'), ('network', 'Wireshark'), ('wrench', 'Burp Suite'),
+    ('radar', 'Metasploit'), ('db', 'SQLmap'), ('debug', 'Ghidra'), ('lockpick', 'John the Ripper'),
+    ('signal', 'Netcat'), ('shield', 'OWASP ZAP'), ('target', 'GDB'),
+]
 CATEGORY_META = {
     'Web': ('#22d3ee', "Veb-ilovalardagi zaifliklar: SQLi, XSS, SSRF, autentifikatsiya xatolari."),
     'Crypto': ('#a78bfa', "Klassik va zamonaviy shifrlar, xesh va kalit almashinuvi xatolarini buzish."),
@@ -293,7 +299,7 @@ def index():
         'solves': Solve.query.count(),
     }
     start, end = ctf_window()
-    return render_template('index.html', top=rows[:5], stats=stats, start=start, end=end)
+    return render_template('index.html', top=rows[:5], stats=stats, start=start, end=end, TOOLS=TOOLS)
 
 
 @app.route('/api/captcha')
