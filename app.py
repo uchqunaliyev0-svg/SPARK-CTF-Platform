@@ -7,6 +7,7 @@ from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, r
                    session, url_for)
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
+from itsdangerous import BadSignature, URLSafeTimedSerializer
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import HTTPException
@@ -21,10 +22,20 @@ from security import (EMAIL_RE, USERNAME_RE, check_csrf, client_ip, consume_code
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
 TOOLS = [
-    ('terminal', 'Bash'), ('binary', 'Python'), ('branch', 'Git'), ('container', 'Docker'),
-    ('crosshair', 'Nmap'), ('network', 'Wireshark'), ('wrench', 'Burp Suite'),
-    ('radar', 'Metasploit'), ('db', 'SQLmap'), ('debug', 'Ghidra'), ('lockpick', 'John the Ripper'),
-    ('signal', 'Netcat'), ('shield', 'OWASP ZAP'), ('target', 'GDB'),
+    ('terminal', 'Bash', 'https://www.gnu.org/software/bash/'),
+    ('binary', 'Python', 'https://www.python.org/'),
+    ('branch', 'Git', 'https://git-scm.com/'),
+    ('container', 'Docker', 'https://www.docker.com/'),
+    ('crosshair', 'Nmap', 'https://nmap.org/'),
+    ('network', 'Wireshark', 'https://www.wireshark.org/'),
+    ('wrench', 'Burp Suite', 'https://portswigger.net/burp'),
+    ('radar', 'Metasploit', 'https://www.metasploit.com/'),
+    ('db', 'SQLmap', 'https://sqlmap.org/'),
+    ('debug', 'Ghidra', 'https://ghidra-sre.org/'),
+    ('lockpick', 'John the Ripper', 'https://www.openwall.com/john/'),
+    ('signal', 'Netcat', 'https://nmap.org/ncat/'),
+    ('shield', 'OWASP ZAP', 'https://www.zaproxy.org/'),
+    ('target', 'GDB', 'https://www.sourceware.org/gdb/'),
 ]
 CATEGORY_META = {
     'Web': ('#22d3ee', "Veb-ilovalardagi zaifliklar: SQLi, XSS, SSRF, autentifikatsiya xatolari."),
@@ -220,7 +231,9 @@ def send_verification(user):
     if wait:
         return wait
     code = issue_code(user, 'verify')
-    if not send_code(user.email, user.username, 'verify', code):
+    token = URLSafeTimedSerializer(app.secret_key, salt='verify-link').dumps({'u': user.id, 'c': code})
+    link = url_for('verify_link', token=token, _external=True, _scheme='https' if IS_PROD else None)
+    if not send_code(user.email, user.username, 'verify', code, link):
         flash(_("Emailga kod yuborib bo'lmadi. Birozdan so'ng qayta yuborib ko'ring."), 'error')
     return 0
 
@@ -516,6 +529,31 @@ def verify():
             return redirect(url_for('dashboard'))
     return render_template('auth/verify.html', email=mask_email(user.email),
                            wait=resend_wait_seconds(user, 'verify'))
+
+
+@app.route('/verify/link/<token>')
+def verify_link(token):
+    try:
+        data = URLSafeTimedSerializer(app.secret_key, salt='verify-link').loads(token, max_age=600)
+    except BadSignature:
+        flash(_("Tasdiqlash havolasi eskirgan yoki noto'g'ri. Yangi kod so'rang."), 'error')
+        return redirect(url_for('verify') if session.get('pending_uid') else url_for('login'))
+    user = db.session.get(User, data.get('u'))
+    if not user:
+        return redirect(url_for('login'))
+    if user.is_verified:
+        flash(_('Email allaqachon tasdiqlangan. Kirishingiz mumkin.'), 'success')
+        return redirect(url_for('login'))
+    err = consume_code(user, 'verify', data.get('c'))
+    if err:
+        session['pending_uid'] = user.id
+        flash(err, 'error')
+        return redirect(url_for('verify'))
+    user.is_verified = True
+    db.session.commit()
+    start_login(user)
+    flash(_('Email tasdiqlandi. Omad, xaker!'), 'success')
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/verify/resend', methods=['POST'])

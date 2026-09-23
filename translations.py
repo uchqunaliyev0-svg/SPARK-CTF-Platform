@@ -356,4 +356,13 @@ EN = {
     "Platformaning o'zida xato topsangiz, undan foydalanmang — adminlarga Telegram orqali xabar bering.": "If you find a flaw in the platform itself, don't exploit it — report it to the admins on Telegram.",
     "Adminlar qarori yakuniy": "Admin decisions are final",
     "Qoidabuzarlik aniqlansa, adminlar ballarni bekor qilish yoki hisobni bloklash huquqiga ega.": "If a rule is broken, admins may revoke points or ban the account.",
+    # verification email
+    "Emailingizni tasdiqlang": "Verify your email",
+    "SPARK CTF ga xush kelibsiz! Hisobingizni faollashtirish uchun quyidagi tugmani bosing yoki saytdagi maydonga kodni kiriting:":
+        "Welcome to SPARK CTF! Click the button below to activate your account, or enter the code on the site:",
+    "Capture The Flag platformasi": "Capture The Flag platform",
+    "Tugma ishlamasa, quyidagi havolani brauzerga nusxalang:": "If the button doesn't work, copy this link into your browser:",
+    "Bu xat SPARK CTF platformasida ro'yxatdan o'tganingiz sababli yuborildi.": "You received this email because you signed up on SPARK CTF.",
+    "Tasdiqlash havolasi eskirgan yoki noto'g'ri. Yangi kod so'rang.": "The verification link is expired or invalid. Request a new code.",
+    "Email allaqachon tasdiqlangan. Kirishingiz mumkin.": "Email is already verified. You can log in.",
 }

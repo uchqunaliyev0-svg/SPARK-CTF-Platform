@@ -38,8 +38,8 @@
   <p class="tools-label">{{ _("SANOATDA ISHLATILADIGAN HAQIQIY VOSITALARNI O'RGANASIZ") }}</p>
   <div class="marquee">
     <div class="marquee-track">
-      {% for ic, name in TOOLS + TOOLS %}
-      <span class="tool-chip">{{ icon(ic) }}{{ name }}</span>
+      {% for ic, name, url in TOOLS + TOOLS %}
+      <a class="tool-chip" href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ icon(ic) }}{{ name }}</a>
       {% endfor %}
     </div>
   </div>
