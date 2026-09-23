@@ -14,7 +14,7 @@ from werkzeug.exceptions import HTTPException
 
 import scoring
 from i18n import LANGS, _, get_lang, js_strings
-from mailer import mail_enabled, send_code
+from mailer import mail_enabled, send_code, send_test
 from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
                     User, db, utcnow)
 from security import (EMAIL_RE, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
@@ -795,7 +795,20 @@ def admin_index():
     }
     recent = Solve.query.order_by(Solve.created_at.desc()).limit(10).all()
     weak_secret = app.config['SECRET_KEY'] == 'spark-ctf-dev-key-change-in-prod'
-    return render_template('admin/index.html', stats=stats, recent=recent, weak_secret=weak_secret)
+    mail = {'user': os.getenv('SMTP_USER', ''), 'host': os.getenv('SMTP_HOST', 'smtp.gmail.com'),
+            'port': os.getenv('SMTP_PORT', '587')}
+    return render_template('admin/index.html', stats=stats, recent=recent, weak_secret=weak_secret, mail=mail)
+
+
+@app.route('/admin/mail-test', methods=['POST'])
+@admin_required
+def admin_mail_test():
+    err = send_test(current_user.email)
+    if err:
+        flash(f'Test xat yuborilmadi: {err}', 'error')
+    else:
+        flash(f'Test xat {current_user.email} manziliga yuborildi — inbox va Spam papkasini tekshiring.', 'success')
+    return redirect(url_for('admin_index'))
 
 
 def _challenge_from_form(ch):
