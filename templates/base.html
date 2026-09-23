@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=8">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=9">
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -156,7 +156,7 @@
   {% endblock %}
 
   <script type="application/json" id="i18n">{{ js_i18n|tojson }}</script>
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=4"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=5"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -116,7 +116,7 @@
   core.traverse((o) => { if (o.isSprite) glows.push(o); });
   function applyTheme() {
     const light = document.documentElement.dataset.theme === 'light';
-    scene.fog.color.set(light ? 0xf5f7fb : 0x05070f);
+    scene.fog.color.set(light ? 0xdfe4ec : 0x05070f);
     scene.fog.density = light ? 0.03 : 0.045;
     glows.forEach((g) => { g.material.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending; g.material.needsUpdate = true; });
     stars.material.opacity = light ? 0.55 : 0.8;
