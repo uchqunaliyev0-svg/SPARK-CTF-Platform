@@ -372,4 +372,5 @@ EN = {
     "Email manzil to'liq emas. {s} demoqchimisiz?": "The email looks incomplete. Did you mean {s}?",
     "Email manzil noto'g'ri. To'liq yozing, masalan: ism@gmail.com": "Invalid email. Type the full address, e.g. name@gmail.com",
     "{s} demoqchimisiz?": "Did you mean {s}?",
+    "Parol yangilandi. Boshqa qurilmalardagi sessiyalar yopildi.": "Password updated. Sessions on other devices were signed out.",
 }
