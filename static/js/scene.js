@@ -13,6 +13,7 @@
     canvas.remove();
     return;
   }
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); canvas.classList.remove('ready'); });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.setClearColor(0x000000, 0);
 
@@ -158,6 +159,7 @@
 
   const clock = new THREE.Clock();
   let intro = 0;
+  let shown = false;
   function frame() {
     const t = clock.getElapsedTime();
     intro = Math.min(intro + 0.012, 1);
@@ -190,6 +192,7 @@
     camera.position.z = 9 + (1 - ease) * 6;
     camera.lookAt(0, 0, 0);
     renderer.render(scene, camera);
+    if (!shown) { shown = true; requestAnimationFrame(() => canvas.classList.add('ready')); }
   }
 
   if (reduced) {

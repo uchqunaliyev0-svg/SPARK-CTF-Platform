@@ -19,6 +19,6 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/scene.js') }}?v=5"></script>
-<script src="{{ url_for('static', filename='js/captcha.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/scene.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/captcha.js') }}?v=6" data-worker="{{ url_for('static', filename='js/pow-worker.js') }}?v=1"></script>
 {% endblock %}
