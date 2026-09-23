@@ -10,7 +10,7 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="field">
     <label for="identity">{{ _('Username yoki email') }}</label>
-    <input class="input" id="identity" name="identity" value="{{ ident }}" required autocomplete="username" maxlength="120" autofocus placeholder="{{ _('hacker yoki you@mail.com') }}">
+    <input class="input" id="identity" data-email-typo name="identity" value="{{ ident }}" required autocomplete="username" maxlength="120" autofocus placeholder="{{ _('hacker yoki you@mail.com') }}">
   </div>
   {{ password_field('password', _('Parol'), 'password', autocomplete='current-password') }}
   <div class="auth-row">

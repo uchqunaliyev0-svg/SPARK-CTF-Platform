@@ -11,7 +11,7 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="field">
     <label for="email">Email</label>
-    <input class="input" id="email" type="email" name="email" required maxlength="120" autocomplete="email" autofocus placeholder="you@mail.com">
+    <input class="input" id="email" type="email" data-email-typo name="email" required maxlength="120" autocomplete="email" autofocus placeholder="you@mail.com">
   </div>
   {{ captcha() }}
   <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _('Kod yuborish') }}</button>

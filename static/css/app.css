@@ -1000,3 +1000,6 @@ body.sb-collapsed .sb-item:hover::after { content: attr(data-tip); position: abs
 
 .linkish { background: none; border: 0; padding: 0; color: var(--cyan); font: inherit; font-size: 13px; cursor: pointer; }
 .linkish:hover { text-decoration: underline; }
+
+.email-fix { margin-top: 6px; }
+.email-fix .linkish { font-size: 13px; }

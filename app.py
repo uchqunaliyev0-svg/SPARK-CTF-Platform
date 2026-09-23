@@ -18,7 +18,7 @@ import mailer
 from mailer import mail_enabled, send_code, send_test
 from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
                     User, db, utcnow)
-from security import (EMAIL_RE, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
+from security import (EMAIL_RE, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
                       issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
@@ -450,8 +450,10 @@ def register():
         error = None
         if not USERNAME_RE.match(form['username']):
             error = _("Username 3–20 belgi: faqat lotin harflari, raqamlar va _ bo'lishi mumkin.")
+        elif email_suggestion(email):
+            error = _("Email manzil to'liq emas. {s} demoqchimisiz?", s=email_suggestion(email))
         elif len(email) > 120 or not EMAIL_RE.match(email):
-            error = _("Email manzil noto'g'ri.")
+            error = _("Email manzil noto'g'ri. To'liq yozing, masalan: ism@gmail.com")
         elif password_problem(pw):
             error = password_problem(pw)
         elif pw != pw2:
@@ -524,7 +526,11 @@ def login():
                     user.failed_logins = 0
                     user.locked_until = now + LOCK_TIME
                 db.session.commit()
-            flash(_("Login yoki parol noto'g'ri."), 'error')
+            hint = email_suggestion(ident) if '@' in ident else None
+            if hint and not user:
+                flash(_("Email manzil to'liq emas. {s} demoqchimisiz?", s=hint), 'error')
+            else:
+                flash(_("Login yoki parol noto'g'ri."), 'error')
             return render_template('auth/login.html', ident=ident), 401
         if user.is_banned:
             flash(_('Hisobingiz bloklangan.'), 'error')

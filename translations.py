@@ -369,4 +369,7 @@ EN = {
     "Email xizmatida vaqtinchalik muammo. Bir daqiqadan so'ng «Kodni qayta yuborish» tugmasini bosing yoki keyinroq urinib ko'ring.":
         "The email service had a temporary problem. Press “Resend code” in a minute or try again later.",
     "Email noto'g'rimi? Qaytadan ro'yxatdan o'tish": "Wrong email? Sign up again",
+    "Email manzil to'liq emas. {s} demoqchimisiz?": "The email looks incomplete. Did you mean {s}?",
+    "Email manzil noto'g'ri. To'liq yozing, masalan: ism@gmail.com": "Invalid email. Type the full address, e.g. name@gmail.com",
+    "{s} demoqchimisiz?": "Did you mean {s}?",
 }
