@@ -15,6 +15,8 @@
     <button type="submit" class="btn btn-ghost btn-sm">{{ icon('mail') }} Test xat yuborish</button>
   </form>
 </div>
+{% if mail.last_error %}<div class="warn" style="border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)">{{ icon('alert') }}<div><b>Oxirgi email xatosi:</b> {{ mail.last_error }}{% if mail.last_ok %}<br><span class="muted">Oxirgi muvaffaqiyatli: {{ mail.last_ok }}</span>{% endif %}</div></div>
+{% elif mail.last_ok %}<p class="muted" style="margin:-8px 0 18px;font-size:13px">Oxirgi muvaffaqiyatli xat: {{ mail.last_ok }}</p>{% endif %}
 {% endif %}
 {% if weak_secret %}
 <div class="warn">{{ icon('alert') }}<div><b>SECRET_KEY o'rnatilmagan.</b> Sessiyalar xavfsizligi uchun Vercel'da uzun tasodifiy <code>SECRET_KEY</code> qo'shing.</div></div>

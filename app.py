@@ -14,6 +14,7 @@ from werkzeug.exceptions import HTTPException
 
 import scoring
 from i18n import LANGS, _, get_lang, js_strings
+import mailer
 from mailer import mail_enabled, send_code, send_test
 from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
                     User, db, utcnow)
@@ -48,6 +49,7 @@ CATEGORY_META = {
 }
 DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Insane']
 MAX_LOGIN_FAILS = 5
+UNVERIFIED_HOLD = timedelta(hours=1)
 LOCK_TIME = timedelta(minutes=15)
 FLAG_WINDOW = timedelta(seconds=60)
 FLAG_MAX_WRONG = 10
@@ -233,9 +235,26 @@ def send_verification(user):
     code = issue_code(user, 'verify')
     token = URLSafeTimedSerializer(app.secret_key, salt='verify-link').dumps({'u': user.id, 'c': code})
     link = url_for('verify_link', token=token, _external=True, _scheme='https' if IS_PROD else None)
-    if not send_code(user.email, user.username, 'verify', code, link):
+    ok = send_code(user.email, user.username, 'verify', code, link)
+    note_mail_result(ok, user.email)
+    if ok:
+        session.pop('mail_failed', None)
+    else:
+        session['mail_failed'] = True
         flash(_("Emailga kod yuborib bo'lmadi. Birozdan so'ng qayta yuborib ko'ring."), 'error')
     return 0
+
+
+def note_mail_result(ok, to_email):
+    stamp = utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    try:
+        if ok:
+            set_setting('mail_last_ok', f'{stamp} — {to_email}')
+        else:
+            set_setting('mail_last_error', f'{stamp} — {to_email}: {mailer.last_error or "?"}')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 # ---------------------------------------------------------------- request hooks
@@ -437,18 +456,32 @@ def register():
             error = password_problem(pw)
         elif pw != pw2:
             error = _('Parollar mos kelmadi.')
-        elif User.query.filter(func.lower(User.username) == form['username'].lower()).first():
+        by_email = User.query.filter_by(email=email).first() if not error else None
+        by_name = (User.query.filter(func.lower(User.username) == form['username'].lower()).first()
+                   if not error else None)
+        # an account that never confirmed its email must not lock the name/email forever
+        stale = utcnow() - UNVERIFIED_HOLD
+        name_free = (not by_name or by_name is by_email and not by_name.is_verified
+                     or not by_name.is_verified and by_name.created_at < stale)
+        if not error and not name_free:
             error = _('Bu username band.')
-        elif User.query.filter_by(email=email).first():
+        elif not error and by_email and by_email.is_verified:
             error = _("Bu email bilan allaqachon ro'yxatdan o'tilgan.")
         if not error and not verify_captcha(request.form.get('captcha')):
             error = _("Iltimos, robot emasligingizni tasdiqlang.")
         if error:
             flash(error, 'error')
             return render_template('auth/register.html', form=form), 400
-        user = User(username=form['username'], email=email,
-                    password_hash=bcrypt.generate_password_hash(pw).decode(),
-                    is_verified=not mail_enabled())
+        if by_name and by_name is not by_email:
+            EmailCode.query.filter_by(user_id=by_name.id).delete()
+            db.session.delete(by_name)
+            db.session.flush()
+        user = by_email or User(email=email)
+        user.username = form['username']
+        user.password_hash = bcrypt.generate_password_hash(pw).decode()
+        user.is_verified = not mail_enabled()
+        user.failed_logins = 0
+        user.locked_until = None
         db.session.add(user)
         try:
             db.session.commit()
@@ -528,7 +561,14 @@ def verify():
             flash(_('Email tasdiqlandi. Omad, xaker!'), 'success')
             return redirect(url_for('dashboard'))
     return render_template('auth/verify.html', email=mask_email(user.email),
-                           wait=resend_wait_seconds(user, 'verify'))
+                           wait=resend_wait_seconds(user, 'verify'), mail_failed=session.get('mail_failed'))
+
+
+@app.route('/verify/cancel', methods=['POST'])
+def verify_cancel():
+    session.pop('pending_uid', None)
+    session.pop('mail_failed', None)
+    return redirect(url_for('register'))
 
 
 @app.route('/verify/link/<token>')
@@ -581,7 +621,7 @@ def forgot():
             return render_template('auth/forgot.html'), 400
         user = User.query.filter_by(email=email).first()
         if user and not user.is_banned and not resend_wait_seconds(user, 'reset'):
-            send_code(user.email, user.username, 'reset', issue_code(user, 'reset'))
+            note_mail_result(send_code(user.email, user.username, 'reset', issue_code(user, 'reset')), user.email)
         session['reset_email'] = email
         flash(_("Agar bu email ro'yxatdan o'tgan bo'lsa, unga tiklash kodi yuborildi."), 'info')
         return redirect(url_for('reset'))
@@ -797,6 +837,8 @@ def admin_index():
     weak_secret = app.config['SECRET_KEY'] == 'spark-ctf-dev-key-change-in-prod'
     mail = {'user': os.getenv('SMTP_USER', ''), 'host': os.getenv('SMTP_HOST', 'smtp.gmail.com'),
             'port': os.getenv('SMTP_PORT', '587')}
+    mail['last_ok'] = get_setting('mail_last_ok')
+    mail['last_error'] = get_setting('mail_last_error')
     return render_template('admin/index.html', stats=stats, recent=recent, weak_secret=weak_secret, mail=mail)
 
 
@@ -804,6 +846,8 @@ def admin_index():
 @admin_required
 def admin_mail_test():
     err = send_test(current_user.email)
+    mailer.last_error = err or ''
+    note_mail_result(not err, current_user.email)
     if err:
         flash(f'Test xat yuborilmadi: {err}', 'error')
     else:

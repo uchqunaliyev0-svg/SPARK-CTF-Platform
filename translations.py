@@ -365,4 +365,8 @@ EN = {
     "Bu xat SPARK CTF platformasida ro'yxatdan o'tganingiz sababli yuborildi.": "You received this email because you signed up on SPARK CTF.",
     "Tasdiqlash havolasi eskirgan yoki noto'g'ri. Yangi kod so'rang.": "The verification link is expired or invalid. Request a new code.",
     "Email allaqachon tasdiqlangan. Kirishingiz mumkin.": "Email is already verified. You can log in.",
+    "Xat yuborilmadi.": "Email not sent.",
+    "Email xizmatida vaqtinchalik muammo. Bir daqiqadan so'ng «Kodni qayta yuborish» tugmasini bosing yoki keyinroq urinib ko'ring.":
+        "The email service had a temporary problem. Press “Resend code” in a minute or try again later.",
+    "Email noto'g'rimi? Qaytadan ro'yxatdan o'tish": "Wrong email? Sign up again",
 }
