@@ -10,7 +10,7 @@
 {% if mail_failed %}
 <div class="warn" style="margin-bottom:16px">{{ icon('alert') }}<div><b>{{ _("Xat yuborilmadi.") }}</b> {{ _("Email xizmatida vaqtinchalik muammo. Bir daqiqadan so'ng «Kodni qayta yuborish» tugmasini bosing yoki keyinroq urinib ko'ring.") }}</div></div>
 {% endif %}
-<form method="post" action="{{ url_for('verify') }}" data-autosubmit>
+<form method="post" action="{{ url_for('verify') }}" data-autosubmit data-loading>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {{ otp() }}
   <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:24px">{{ _('Tasdiqlash') }}</button>

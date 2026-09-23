@@ -192,7 +192,7 @@
     const sync = () => {
       hidden.value = boxes.map((b) => b.value).join('');
       boxes.forEach((b) => b.classList.toggle('filled', !!b.value));
-      if (hidden.value.length === 6 && form.dataset.autosubmit !== undefined) form.requestSubmit();
+      if (hidden.value.length === 6 && form.dataset.autosubmit !== undefined && !form.dataset.sent) form.requestSubmit();
     };
     boxes.forEach((b, i) => {
       b.addEventListener('input', () => {
@@ -232,6 +232,12 @@
   });
 
   // ---------- submit buttons: prevent double submit
+  // one submit per page load for auth/one-shot forms (autosubmit + click/Enter used to double-post)
+  $$('form[data-loading], form[data-autosubmit]').forEach((f) => f.addEventListener('submit', (e) => {
+    if (e.defaultPrevented) return;
+    if (f.dataset.sent) { e.preventDefault(); return; }
+    f.dataset.sent = '1';
+  }));
   $$('form[data-loading]').forEach((f) => f.addEventListener('submit', (e) => {
     if (e.defaultPrevented) return;
     const b = $('button[type="submit"]', f);

@@ -554,7 +554,10 @@ def verify():
     uid = session.get('pending_uid')
     user = db.session.get(User, uid) if uid else None
     if not user or user.is_verified:
-        session.pop('pending_uid', None)
+        # Do not touch the session here: a duplicate submit racing the successful one still
+        # carries the old cookie, and rewriting it would log the user straight back out.
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
         return redirect(url_for('login'))
     if request.method == 'POST':
         err = consume_code(user, 'verify', request.form.get('code'))
@@ -588,6 +591,8 @@ def verify_link(token):
     if not user:
         return redirect(url_for('login'))
     if user.is_verified:
+        if current_user.is_authenticated and current_user.id == user.id:
+            return redirect(url_for('dashboard'))
         flash(_('Email allaqachon tasdiqlangan. Kirishingiz mumkin.'), 'success')
         return redirect(url_for('login'))
     err = consume_code(user, 'verify', data.get('c'))
