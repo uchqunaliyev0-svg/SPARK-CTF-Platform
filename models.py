@@ -1,5 +1,9 @@
 from datetime import datetime, timezone
 
+import hashlib
+import hmac
+
+from flask import current_app
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -22,6 +26,14 @@ class User(UserMixin, db.Model):
     failed_logins = db.Column(db.Integer, default=0, nullable=False)
     locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    def session_stamp(self):
+        """Short HMAC of the password hash: changes whenever the password does."""
+        key = (current_app.config.get('SECRET_KEY') or '').encode()
+        return hmac.new(key, (self.password_hash or '').encode(), hashlib.sha256).hexdigest()[:16]
+
+    def get_id(self):
+        return f'{self.id}:{self.session_stamp()}'
 
 
 class EmailCode(db.Model):

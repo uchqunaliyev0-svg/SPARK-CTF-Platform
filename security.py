@@ -109,8 +109,10 @@ def consume_code(user, purpose, code):
 
 
 def client_ip():
-    fwd = request.headers.get('X-Forwarded-For', '')
-    return (fwd.split(',')[0].strip() if fwd else request.remote_addr or '')[:64]
+    # Vercel sets these itself; a client-supplied X-Forwarded-For is never trusted.
+    ip = (request.headers.get('X-Vercel-Forwarded-For') or request.headers.get('X-Real-IP')
+          or request.remote_addr or '')
+    return ip.split(',')[0].strip()[:64]
 
 
 CAPTCHA_TTL = timedelta(minutes=5)
@@ -161,3 +163,21 @@ def verify_captcha(token):
     db.session.add(CaptchaUse(sig=sig, expires_at=now + CAPTCHA_TTL))
     db.session.commit()
     return True
+
+
+def code_fingerprint(code):
+    """Keyed fingerprint of a code, safe to put in a link (does not reveal the code)."""
+    return _hash_code(code)[:24]
+
+
+def consume_code_link(user, purpose, fingerprint):
+    """Like consume_code, but for a signed link that carries only the code fingerprint."""
+    rec = (EmailCode.query.filter_by(user_id=user.id, purpose=purpose, used=False)
+           .order_by(EmailCode.created_at.desc()).first())
+    if not rec or rec.expires_at < utcnow() or rec.attempts >= CODE_MAX_ATTEMPTS:
+        return _("Kod muddati o'tgan. Yangi kod so'rang.")
+    if not hmac.compare_digest(rec.code_hash[:24], str(fingerprint or '')):
+        return _("Kod muddati o'tgan. Yangi kod so'rang.")
+    rec.used = True
+    db.session.commit()
+    return None

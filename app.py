@@ -18,7 +18,7 @@ import mailer
 from mailer import mail_enabled, send_code, send_test
 from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
                     User, db, utcnow)
-from security import (EMAIL_RE, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
+from security import (EMAIL_RE, code_fingerprint, consume_code_link, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
                       issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
@@ -97,7 +97,13 @@ with app.app_context():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    uid, _sep, stamp = str(user_id).partition(':')
+    if not uid.isdigit() or not stamp:
+        return None
+    user = db.session.get(User, int(uid))
+    if not user or not hmac.compare_digest(stamp, user.session_stamp()):
+        return None  # password changed since this session was issued
+    return user
 
 
 @login_manager.unauthorized_handler
@@ -163,9 +169,12 @@ def ctf_state():
 def maybe_grant_admin(user):
     if not user.is_verified:
         return
-    if (ADMIN_USERNAME and user.username.lower() == ADMIN_USERNAME) or \
-       (ADMIN_EMAIL and user.email == ADMIN_EMAIL):
-        user.is_admin = True
+    # Only a verified ADMIN_EMAIL proves ownership; a username alone could be claimed by anyone.
+    if not ADMIN_EMAIL or user.email != ADMIN_EMAIL:
+        return
+    if ADMIN_USERNAME and user.username.lower() != ADMIN_USERNAME:
+        return
+    user.is_admin = True
 
 
 def safe_next(target):
@@ -233,7 +242,7 @@ def send_verification(user):
     if wait:
         return wait
     code = issue_code(user, 'verify')
-    token = URLSafeTimedSerializer(app.secret_key, salt='verify-link').dumps({'u': user.id, 'c': code})
+    token = URLSafeTimedSerializer(app.secret_key, salt='verify-link').dumps({'u': user.id, 'f': code_fingerprint(code)})
     link = url_for('verify_link', token=token, _external=True, _scheme='https' if IS_PROD else None)
     ok = send_code(user.email, user.username, 'verify', code, link)
     note_mail_result(ok, user.email)
@@ -595,7 +604,7 @@ def verify_link(token):
             return redirect(url_for('dashboard'))
         flash(_('Email allaqachon tasdiqlangan. Kirishingiz mumkin.'), 'success')
         return redirect(url_for('login'))
-    err = consume_code(user, 'verify', data.get('c'))
+    err = consume_code_link(user, 'verify', data.get('f'))
     if err:
         session['pending_uid'] = user.id
         flash(err, 'error')
@@ -691,7 +700,9 @@ def settings():
         else:
             current_user.password_hash = bcrypt.generate_password_hash(pw).decode()
             db.session.commit()
-            flash(_('Parol muvaffaqiyatli yangilandi.'), 'success')
+            # new password -> every other session/remember-cookie is invalid; keep only this one
+            login_user(current_user._get_current_object(), remember=False)
+            flash(_('Parol yangilandi. Boshqa qurilmalardagi sessiyalar yopildi.'), 'success')
             return redirect(url_for('settings'))
     return render_template('settings.html')
 
@@ -1085,4 +1096,4 @@ def admin_settings():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+    app.run(debug=os.getenv('FLASK_DEBUG') == '1', port=8080)
