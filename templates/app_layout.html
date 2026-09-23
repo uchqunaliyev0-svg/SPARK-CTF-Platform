@@ -32,6 +32,20 @@
       {{ item('admin_settings', 'clock', _('Musobaqa vaqti')) }}
       {% endif %}
     </nav>
+    <div class="sb-mobile">
+      {% if my_score is defined %}<span class="score-pill">{{ my_score }} pts</span>{% endif %}
+      <div class="tools">
+        <div class="lang-menu">
+          <button class="tool-btn" data-dropdown="sbLang" aria-haspopup="true" aria-expanded="false">{{ icon('globe') }} {{ lang|upper }}</button>
+          <div class="dropdown" id="sbLang">
+            <a href="{{ url_for('set_lang', code='uz', next=request.full_path.rstrip('?')) }}" class="{{ 'on' if lang == 'uz' }}"><span class="flag">UZ</span> O'zbekcha</a>
+            <a href="{{ url_for('set_lang', code='en', next=request.full_path.rstrip('?')) }}" class="{{ 'on' if lang == 'en' }}"><span class="flag">EN</span> English</a>
+          </div>
+        </div>
+        <button class="tool-btn theme-btn" data-theme-toggle aria-label="{{ _('Kun / tun rejimi') }}"><span class="i-moon">{{ icon('moon') }}</span><span class="i-sun">{{ icon('sun') }}</span></button>
+        <a href="{{ url_for('vpn') }}" class="tool-btn vpn-btn">{{ icon('power') }}<span>VPN</span></a>
+      </div>
+    </div>
   </aside>
   <div class="sb-backdrop" data-sb-close></div>
   <div class="shell-main">
