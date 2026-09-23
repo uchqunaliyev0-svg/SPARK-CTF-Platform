@@ -67,6 +67,56 @@ def _html(username, purpose, code, link):
 </table></td></tr></table></body></html>"""
 
 
+def _smtp_settings():
+    host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+    port = int(os.getenv('SMTP_PORT', '587'))
+    user = (os.getenv('SMTP_USER') or '').strip()
+    password = (os.getenv('SMTP_PASSWORD') or '').replace(' ', '').strip()
+    return host, port, user, password
+
+
+def _deliver(msg):
+    """Hands the message to the SMTP server; raises on any failure."""
+    host, port, user, password = _smtp_settings()
+    msg['From'] = os.getenv('MAIL_FROM') or f"SPARK CTF <{user}>"
+    ctx = ssl.create_default_context()
+    if port == 465:
+        with smtplib.SMTP_SSL(host, port, context=ctx, timeout=15) as s:
+            s.login(user, password)
+            s.send_message(msg)
+    else:
+        with smtplib.SMTP(host, port, timeout=15) as s:
+            s.ehlo()
+            s.starttls(context=ctx)
+            s.ehlo()
+            s.login(user, password)
+            s.send_message(msg)
+
+
+def describe_error(e):
+    if isinstance(e, smtplib.SMTPAuthenticationError):
+        return 'SMTP login rad etildi — SMTP_USER / SMTP_PASSWORD (Gmail App Password) noto\'g\'ri.'
+    if isinstance(e, (smtplib.SMTPConnectError, TimeoutError, OSError)) and not isinstance(e, smtplib.SMTPException):
+        return f'SMTP serverga ulanib bo\'lmadi ({type(e).__name__}: {e}).'
+    return f'{type(e).__name__}: {e}'
+
+
+def send_test(to_email):
+    """Sends a plain test email. Returns None on success, otherwise an error string."""
+    if not mail_enabled():
+        return 'SMTP_USER yoki SMTP_PASSWORD o\'rnatilmagan.'
+    msg = EmailMessage()
+    msg['Subject'] = 'SPARK CTF — test xat'
+    msg['To'] = to_email
+    msg.set_content('SPARK CTF email sozlamalari to\'g\'ri ishlayapti.')
+    try:
+        _deliver(msg)
+        return None
+    except Exception as e:
+        print(f'[mail error] {e!r}')
+        return describe_error(e)
+
+
 def send_code(to_email, username, purpose, code, link=None):
     """Returns True if the email was handed to the SMTP server."""
     if not mail_enabled():
@@ -75,7 +125,6 @@ def send_code(to_email, username, purpose, code, link=None):
     msg = EmailMessage()
     intro = _(INTROS[purpose])
     msg['Subject'] = _(SUBJECTS[purpose])
-    msg['From'] = os.getenv('MAIL_FROM') or f"SPARK CTF <{os.getenv('SMTP_USER')}>"
     msg['To'] = to_email
     text = f"{_(HEADINGS[purpose])}\n\n{_('Salom')}, {username}!\n{intro}\n\n{code}\n"
     if link:
@@ -83,19 +132,9 @@ def send_code(to_email, username, purpose, code, link=None):
     text += f"\n{_(NOTE)}"
     msg.set_content(text)
     msg.add_alternative(_html(username, purpose, code, link), subtype='html')
-    host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
-    port = int(os.getenv('SMTP_PORT', '587'))
     try:
-        if port == 465:
-            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=10) as s:
-                s.login(os.getenv('SMTP_USER'), os.getenv('SMTP_PASSWORD'))
-                s.send_message(msg)
-        else:
-            with smtplib.SMTP(host, port, timeout=10) as s:
-                s.starttls(context=ssl.create_default_context())
-                s.login(os.getenv('SMTP_USER'), os.getenv('SMTP_PASSWORD'))
-                s.send_message(msg)
+        _deliver(msg)
         return True
     except Exception as e:
-        print(f'[mail error] {e}')
+        print(f'[mail error] {e!r}')
         return False
