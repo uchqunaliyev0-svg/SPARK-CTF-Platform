@@ -41,7 +41,8 @@ def _events(user_ids=None):
         value = max(values.get(s.challenge_id, 0) - challenge_debits[(s.user_id, s.challenge_id)], 0)
         events[s.user_id].append((s.created_at, value, 'solve', s.challenge_id))
     hq = db.session.query(HintUnlock.user_id, HintUnlock.created_at, Hint.cost, Hint.challenge_id,
-                          HintDebit.amount, HintDebit.source).join(Hint).outerjoin(
+                          HintDebit.amount, HintDebit.source).select_from(HintUnlock).join(
+                              Hint, Hint.id == HintUnlock.hint_id).outerjoin(
                               HintDebit, db.and_(HintDebit.user_id == HintUnlock.user_id,
                                                  HintDebit.hint_id == HintUnlock.hint_id))
     if user_ids is not None:

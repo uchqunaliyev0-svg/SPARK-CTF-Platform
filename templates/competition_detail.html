@@ -7,10 +7,14 @@
   <div class="row-2">
     <section class="card card-pad"><div class="card-head"><h3>{{ icon('flag') }} {{ _('Musobaqa masalalari') }}</h3></div>
       {% if current_user.is_authenticated and current_user.is_verified and not registration and event.state != 'ended' %}<form method="post" action="{{ url_for('competition_register', competition_id=event.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary">{{ _('Bepul qatnashish') }}</button></form>{% elif registration %}<p class="badge b-green">{{ _('Siz ro‘yxatdan o‘tgansiz') }}</p>{% endif %}
+      {% if event.state == 'upcoming' %}<p>{{ _('Masalalar musobaqa boshlanganda ochiladi.') }}</p>
+      {% elif event.state == 'live' and not registration %}<p>{{ _('Masalalarni ko‘rish uchun avval ro‘yxatdan o‘ting.') }}</p>
+      {% else %}
       {% for item in event.challenges %}
       <div class="lr" style="--c:var(--cyan);margin-top:12px"><span class="mi">{{ icon('flag') }}</span><div class="grow"><b>{{ item.challenge.title }}</b><small>{{ item.challenge.category }} · {{ item.challenge.difficulty }} · {{ item.points }} pts</small><p style="white-space:pre-wrap;margin-top:10px">{{ item.challenge.description }}</p>{% for file_url in item.challenge.file_list %}<a href="{{ file_url }}" target="_blank" rel="noopener noreferrer">{{ _('Faylni yuklab olish') }} {{ loop.index }}</a>{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
         {% if event.state == 'live' and registration %}<form method="post" action="{{ url_for('competition_submit', competition_id=event.id, challenge_id=item.challenge_id) }}" style="display:flex;gap:8px"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input class="input mono" name="flag" placeholder="SPARK{...}" maxlength="255" required><button class="btn btn-primary btn-sm">{{ _('Yuborish') }}</button></form>{% elif event.state == 'ended' %}<a class="btn btn-ghost btn-sm" href="{{ url_for('challenges') }}">{{ _('Practice’da yechish') }}</a>{% endif %}
       </div>{% else %}<p>{{ _('Masalalar hali qo‘shilmagan.') }}</p>{% endfor %}
+      {% endif %}
     </section>
     <section class="card"><div class="card-pad"><div class="card-head"><h3>{{ icon('trophy') }} {{ _('Musobaqa reytingi') }}</h3></div></div>
       {% if standings %}<div class="table-wrap"><table class="table"><thead><tr><th>{{ _('O‘rin') }}</th><th>{{ _('Ishtirokchi') }}</th><th class="num">{{ _('Ball') }}</th></tr></thead><tbody>{% for r in standings %}<tr><td>#{{ r.rank }}</td><td><a class="user-cell" href="{{ url_for('user_page',username=r.user.username) }}">{{ avatar(r.user.username) }}{{ r.user.username }}</a>{% if r.first_blood %} <span class="badge b-red">🩸 first blood</span>{% endif %}</td><td class="num">{{ r.score }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">{{ _('Hozircha natija yo‘q.') }}</div>{% endif %}

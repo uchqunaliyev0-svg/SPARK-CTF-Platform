@@ -27,6 +27,8 @@ EN = {
     "E'lonlar": "Announcements",
     "Musobaqa vaqti": "Event schedule",
     "Musobaqalar": "Competitions",
+    "Masalalar musobaqa boshlanganda ochiladi.": "Challenges unlock when the competition starts.",
+    "Masalalarni ko‘rish uchun avval ro‘yxatdan o‘ting.": "Register to view the challenges.",
     "Musobaqalar boshqaruvi": "Manage competitions",
     "Turnirlar": "Tournaments",
     "Faollik tajribasi": "Activity XP",

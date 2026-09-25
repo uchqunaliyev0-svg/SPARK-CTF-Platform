@@ -127,17 +127,24 @@
     };
     requestAnimationFrame(step);
   };
+  const revealedOnce = new WeakSet();
   const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
     entries.forEach((en) => {
-      if (!en.isIntersecting) return;
-      en.target.classList.add('in');
-      $$('[data-count]', en.target).forEach(countUp);
-      $$('.bar i[data-w]', en.target).forEach((b) => { b.style.width = b.dataset.w; });
-      io.unobserve(en.target);
+      if (en.isIntersecting) {
+        en.target.classList.add('in');
+        if (!revealedOnce.has(en.target)) {
+          $$('[data-count]', en.target).forEach(countUp);
+          $$('.bar i[data-w]', en.target).forEach((b) => { b.style.width = b.dataset.w; });
+          revealedOnce.add(en.target);
+        }
+      } else if (en.boundingClientRect.top > window.innerHeight * .88) {
+        // Re-arm sections after scrolling back up, so the next downward visit reveals them again.
+        en.target.classList.remove('in');
+      }
     });
-  }, { threshold: 0.15 }) : null;
+  }, { threshold: 0.18, rootMargin: '0px 0px -12% 0px' }) : null;
   $$('[data-reveal]').forEach((el, i) => {
-    el.style.transitionDelay = `${(parseInt(el.dataset.reveal, 10) || 0) * 80}ms`;
+    el.style.transitionDelay = `${(parseInt(el.dataset.reveal, 10) || 0) * 120}ms`;
     io ? io.observe(el) : el.classList.add('in');
   });
 
