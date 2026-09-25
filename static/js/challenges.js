@@ -108,7 +108,7 @@
       w.append(body);
       b.addEventListener('click', async () => {
         if (h.unlocked) { body.classList.toggle('hidden'); return; }
-        if (h.cost && !window.confirm(t('Bu hint {cost} ball turadi. Ochishni xohlaysizmi?', { cost: h.cost }))) return;
+        if (h.cost && !window.confirm(t('Bu hint {cost} ball turadi. Avval umumiy balldan, yetmasa masala mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
         b.disabled = true;
         const res = await api(`/api/hints/${h.id}/unlock`, { method: 'POST' });
         b.disabled = false;
@@ -218,7 +218,7 @@
       $('[data-val]', c).firstChild.textContent = res.value;
       updateScore(res.score);
       refreshProgress();
-      confetti(res.first_blood);
+      confetti();
     } else {
       setResult('bad', res.message || t('Xatolik yuz berdi.'));
       input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');

@@ -14,11 +14,6 @@
     if (b) b.closest('.hint-row').remove();
   });
 
-  // ---------- dynamic scoring fields
-  const dyn = $('[data-dynamic-toggle]');
-  const syncDyn = () => $$('[data-dynamic]').forEach((f) => f.classList.toggle('hidden', !dyn.checked));
-  if (dyn) { dyn.addEventListener('change', syncDyn); syncDyn(); }
-
   // ---------- CTF window: local <-> UTC
   const pad = (n) => String(n).padStart(2, '0');
   const toLocalInput = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -38,4 +33,10 @@
     });
     $('[data-clear-times]', form).addEventListener('click', () => { locals.forEach((i) => { i.value = ''; }); });
   }
+  const eventForm = $('[data-event-form]');
+  if (eventForm) eventForm.addEventListener('submit', () => {
+    $$('input[type="datetime-local"]', eventForm).forEach((inp) => {
+      eventForm.elements[inp.dataset.target].value = inp.value ? new Date(inp.value).toISOString() : '';
+    });
+  });
 })();

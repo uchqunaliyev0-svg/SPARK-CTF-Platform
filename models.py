@@ -134,6 +134,94 @@ class Setting(db.Model):
     value = db.Column(db.Text, nullable=True)
 
 
+class Competition(db.Model):
+    __tablename__ = 'competitions'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(160), nullable=False)
+    description = db.Column(db.Text, nullable=False, default='')
+    starts_at = db.Column(db.DateTime, nullable=False, index=True)
+    ends_at = db.Column(db.DateTime, nullable=False, index=True)
+    prize = db.Column(db.String(240), nullable=True)
+    published = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    challenges = db.relationship('CompetitionChallenge', backref='competition',
+                                  cascade='all, delete-orphan', order_by='CompetitionChallenge.position')
+    registrations = db.relationship('CompetitionRegistration', backref='competition',
+                                    cascade='all, delete-orphan')
+
+    @property
+    def state(self):
+        now = utcnow()
+        if now < self.starts_at:
+            return 'upcoming'
+        if now < self.ends_at:
+            return 'live'
+        return 'ended'
+
+
+class CompetitionChallenge(db.Model):
+    __tablename__ = 'competition_challenges'
+    __table_args__ = (db.UniqueConstraint('competition_id', 'challenge_id'),)
+    id = db.Column(db.Integer, primary_key=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id', ondelete='CASCADE'), nullable=False, index=True)
+    points = db.Column(db.Integer, nullable=False)
+    position = db.Column(db.Integer, default=0, nullable=False)
+    challenge = db.relationship('Challenge')
+
+
+class CompetitionRegistration(db.Model):
+    __tablename__ = 'competition_registrations'
+    __table_args__ = (db.UniqueConstraint('competition_id', 'user_id'),)
+    id = db.Column(db.Integer, primary_key=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    participated = db.Column(db.Boolean, default=False, nullable=False)
+    placement = db.Column(db.Integer, nullable=True)
+    profile_visible = db.Column(db.Boolean, default=True, nullable=False)
+    registered_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    user = db.relationship('User')
+
+
+class CompetitionSolve(db.Model):
+    __tablename__ = 'competition_solves'
+    __table_args__ = (db.UniqueConstraint('competition_id', 'user_id', 'challenge_id'),)
+    id = db.Column(db.Integer, primary_key=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id', ondelete='CASCADE'), nullable=False, index=True)
+    points = db.Column(db.Integer, nullable=False)
+    first_blood = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+    user = db.relationship('User')
+    challenge = db.relationship('Challenge')
+
+
+class CompetitionAttempt(db.Model):
+    __tablename__ = 'competition_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id', ondelete='CASCADE'), nullable=False)
+    correct = db.Column(db.Boolean, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+
+class HintDebit(db.Model):
+    """Immutable snapshot of the source and amount used to unlock a paid hint."""
+    __tablename__ = 'hint_debits'
+    __table_args__ = (db.UniqueConstraint('user_id', 'hint_id'),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    hint_id = db.Column(db.Integer, db.ForeignKey('hints.id', ondelete='CASCADE'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id', ondelete='CASCADE'), nullable=False, index=True)
+    amount = db.Column(db.Integer, nullable=False)
+    source = db.Column(db.String(16), nullable=False)  # balance or challenge reward
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
 class RateHit(db.Model):
     """One row per rate-limited event (failed login, signup, reset request...) keyed by bucket+IP."""
     __tablename__ = 'rate_hits'

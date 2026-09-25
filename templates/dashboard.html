@@ -17,14 +17,14 @@
     <div class="card kpi-card" style="--c: var(--cyan)"><span class="mi">{{ icon('trend') }}</span><div><b>{{ stats.score }}</b><span>{{ _('Ball') }}</span></div></div>
     <div class="card kpi-card" style="--c: var(--amber)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ '#' ~ row.rank if row else '—' }}</b><span>{{ _("O'rin") }}{% if row %} · {{ players }}{% endif %}</span></div></div>
     <div class="card kpi-card" style="--c: var(--green)"><span class="mi">{{ icon('flag') }}</span><div><b>{{ stats.solves }}<small>/{{ total }}</small></b><span>{{ _('Yechilgan') }}</span></div></div>
-    <div class="card kpi-card" style="--c: var(--red)"><span class="mi">{{ icon('drop') }}</span><div><b>{{ stats.bloods }}</b><span>First blood</span></div></div>
+    <div class="card kpi-card" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ stats.events }}</b><span>{{ _('Turnirlar') }}</span></div></div>
   </div>
 
   <div class="card tier-strip" style="--tc: {{ t.color }}">
     <span class="lvl-badge">LVL {{ lv.level }}</span>
     <div class="ts-main">
       <div class="ts-top"><b style="color:var(--tc)">{{ t.name }}</b><span>Tier {{ t.index }}</span>
-        <span class="ts-next">{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }} · {{ stats.score }}/{{ t.next_at }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span></div>
+        <span class="ts-next">{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }} · {{ stats.xp }}/{{ t.next_at }} XP{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span></div>
       <div class="tier-bar"><i style="width:{{ t.progress }}%"></i></div>
     </div>
   </div>
@@ -54,7 +54,7 @@
       <div class="sc-grid">
         <div class="sc" style="--c: var(--green)"><span class="mi">{{ icon('trend') }}</span><div><div class="k">{{ _('Ball') }}</div><div class="v">{{ m.points }} {{ delta(m.points, l.points) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.points }}</div></div></div>
         <div class="sc" style="--c: var(--cyan)"><span class="mi">{{ icon('flag') }}</span><div><div class="k">{{ _('Yechimlar') }}</div><div class="v">{{ m.solves }} {{ delta(m.solves, l.solves) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.solves }}</div></div></div>
-        <div class="sc" style="--c: var(--red)"><span class="mi">{{ icon('drop') }}</span><div><div class="k">First blood</div><div class="v">{{ m.bloods }} {{ delta(m.bloods, l.bloods) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.bloods }}</div></div></div>
+        <div class="sc" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><div class="k">{{ _('Turnirlar') }}</div><div class="v">{{ stats.events }}</div><div class="l">{{ _('Qatnashgan jami') }}</div></div></div>
         <div class="sc" style="--c: var(--amber)"><span class="mi">{{ icon('bulb') }}</span><div><div class="k">{{ _('Hintlar') }}</div><div class="v">{{ m.hints }} {{ delta(m.hints, l.hints) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.hints }}</div></div></div>
       </div>
     </div>

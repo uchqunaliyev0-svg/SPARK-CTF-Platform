@@ -1,0 +1,9 @@
+{% extends 'admin/_layout.html' %}
+{% from '_macros.html' import icon %}
+{% block admin %}
+<h1>{{ _('Yangi musobaqa') }} <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_competitions') }}">← {{ _('Ro‘yxatga') }}</a></h1>
+<form method="post" class="card card-pad" data-event-form><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="form-grid"><div class="field full"><label>{{ _('Nomi') }}</label><input class="input" name="title" maxlength="160" required value="{{ request.form.get('title','') }}"></div><div class="field full"><label>{{ _('Tavsif') }}</label><textarea class="input" name="description" rows="4">{{ request.form.get('description','') }}</textarea></div>
+<div class="field"><label>{{ _('Boshlanishi') }} ({{ _('mahalliy vaqt') }})</label><input class="input" type="datetime-local" data-target="starts_at" required></div><input type="hidden" name="starts_at"><div class="field"><label>{{ _('Tugashi') }} ({{ _('mahalliy vaqt') }})</label><input class="input" type="datetime-local" data-target="ends_at" required></div><input type="hidden" name="ends_at"><div class="field full"><label>{{ _('Sovrin') }}</label><input class="input" name="prize" maxlength="240"></div></div>
+<div class="field" style="margin-top:18px"><label>{{ _('Musobaqa masalalari') }}</label><p class="hint">{{ _('Tanlangan masalalar musobaqa tugagach practice’da ochiladi.') }}</p>{% for challenge in challenges %}<label class="check" style="display:flex;margin:10px 0"><input type="checkbox" name="challenge_ids" value="{{ challenge.id }}"> {{ challenge.title }} · {{ challenge.category }} · {{ challenge.difficulty }} · {{ challenge.value }} pts</label>{% else %}<p>{{ _('Avval yashirin, hali yechilmagan masalalar tayyorlang.') }}</p>{% endfor %}</div><button class="btn btn-primary" type="submit">{{ _('Qoralama yaratish') }}</button></form>
+{% endblock %}

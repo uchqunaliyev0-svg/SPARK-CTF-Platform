@@ -29,10 +29,10 @@
   <div class="p-stats">
     <div class="mini-stat" style="--c: var(--cyan)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ '#' ~ row.rank if row else '—' }}</b><span>{{ _('Reyting') }}{% if row %} / {{ players }}{% endif %}</span></div></div>
     <div class="mini-stat" style="--c: var(--green)"><span class="mi">{{ icon('flag') }}</span><div><b>{{ stats.solves }}</b><span>{{ _('Flaglar') }}</span></div></div>
-    <div class="mini-stat" style="--c: var(--red)"><span class="mi">{{ icon('drop') }}</span><div><b>{{ stats.bloods }}</b><span>First blood</span></div></div>
+    <div class="mini-stat" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ stats.events }}</b><span>{{ _('Musobaqalarda qatnashgan') }}</span></div></div>
   </div>
   <div class="xp">
-    <div class="t"><span>{{ _('Daraja XP') }} · {{ stats.score }} pts</span><span>{{ lv.xp }}/{{ lv.need }}</span></div>
+    <div class="t"><span>{{ _('Faollik tajribasi') }} · {{ stats.xp }} XP</span><span>{{ lv.xp }}/{{ lv.need }}</span></div>
     <div class="bar"><i style="width:{{ (lv.xp / lv.need * 100)|round|int }}%"></i></div>
   </div>
 </div>
@@ -44,7 +44,7 @@
   <div class="th"><span>TIER {{ t.index }}</span><span class="badge b-green">{{ _('JORIY') }}</span></div>
   <div class="emblem">{{ emblem(t) }}</div>
   <div class="tier-name">{{ t.name }}</div>
-  <div class="tn"><span>{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span><span>{% if t.next %}{{ stats.score }}/{{ t.next_at }}{% else %}MAX{% endif %}</span></div>
+  <div class="tn"><span>{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span><span>{% if t.next %}{{ stats.xp }}/{{ t.next_at }}{% else %}MAX{% endif %}</span></div>
   <div class="tier-bar"><i style="width:{{ t.progress }}%"></i></div>
 </div>
 {%- endmacro %}

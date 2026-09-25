@@ -1,0 +1,18 @@
+{% extends 'app_layout.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}{{ _('Musobaqalar') }} — SPARK CTF{% endblock %}
+{% block app %}
+<div class="app-page">
+  <div class="page-head"><div><span class="eyebrow">// events</span><h1>{{ _('Musobaqalar') }}</h1><p>{{ _('Sovrinli musobaqalarda qatnashing. Musobaqa tugagach masalalar practice bo‘limida ochiladi.') }}</p></div></div>
+  {% if competitions %}<div class="next-grid">
+    {% for event in competitions %}
+    {% set color = 'var(--green)' if event.state == 'live' else ('var(--muted)' if event.state == 'ended' else 'var(--cyan)') %}
+    <a class="card next-card" href="{{ url_for('competition_detail', competition_id=event.id) }}" style="--c:{{ color }}">
+      <span class="nc-top"><span class="badge" style="color:{{ color }};border-color:{{ color }}">{{ {'upcoming':_('Kutilmoqda'),'live':_('Jonli'),'ended':_('Yakunlangan')}[event.state] }}</span><span>{{ event.starts_at.strftime('%Y-%m-%d %H:%M') }} UTC</span></span>
+      <b>{{ event.title }}</b><span>{{ event.description|truncate(150) }}</span>
+      <span class="nc-foot"><span>{{ event.challenges|length }} {{ _('masala') }}</span><span>{{ _('Sovrin') }}: {{ event.prize or _('e’lon qilinadi') }}</span></span>
+    </a>
+    {% endfor %}
+  </div>{% else %}<div class="card empty"><div class="ico">{{ icon('trophy') }}</div><h3>{{ _('Hozircha e’lon qilingan musobaqa yo‘q') }}</h3><p>{{ _('Yangi tadbirlar shu yerda paydo bo‘ladi. Practice masalalari esa doim ochiq.') }}</p><a class="btn btn-primary" href="{{ url_for('challenges') }}">{{ _('Masalalarni yechish') }}</a></div>{% endif %}
+</div>
+{% endblock %}

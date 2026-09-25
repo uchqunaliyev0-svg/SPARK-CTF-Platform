@@ -1,6 +1,6 @@
 import hmac
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, request,
@@ -16,8 +16,9 @@ import scoring
 from i18n import LANGS, _, get_lang, js_strings
 import mailer
 from mailer import mail_enabled, send_code, send_test
-from models import (Announcement, Attempt, Challenge, EmailCode, Hint, HintUnlock, Setting, Solve,
-                    User, db, utcnow)
+from models import (Announcement, Attempt, Challenge, Competition, CompetitionAttempt,
+                    CompetitionChallenge, CompetitionRegistration, CompetitionSolve, EmailCode,
+                    Hint, HintDebit, HintUnlock, Setting, Solve, User, db, utcnow)
 from security import (EMAIL_RE, rate_hit, rate_limited, code_fingerprint, consume_code_link, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
                       issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
 
@@ -147,23 +148,25 @@ def parse_iso(v):
     if not v:
         return None
     try:
-        return datetime.fromisoformat(v.replace('Z', '+00:00')).replace(tzinfo=None)
+        parsed = datetime.fromisoformat(v.replace('Z', '+00:00'))
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None) if parsed.tzinfo else parsed
     except ValueError:
         return None
 
 
-def ctf_window():
-    return parse_iso(get_setting('ctf_start')), parse_iso(get_setting('ctf_end'))
-
-
-def ctf_state():
-    start, end = ctf_window()
+def practice_challenges_query(include_hidden=False):
+    """Always-on practice set, plus event challenges after their event ends."""
+    if include_hidden:
+        return Challenge.query
     now = utcnow()
-    if start and now < start:
-        return 'before'
-    if end and now >= end:
-        return 'ended'
-    return 'running'
+    released_ids = (db.session.query(CompetitionChallenge.challenge_id)
+                    .join(Competition, Competition.id == CompetitionChallenge.competition_id)
+                    .filter(Competition.published.is_(True), Competition.ends_at <= now))
+    reserved_ids = (db.session.query(CompetitionChallenge.challenge_id)
+                    .join(Competition, Competition.id == CompetitionChallenge.competition_id)
+                    .filter(Competition.ends_at > now))
+    return (Challenge.query.filter(or_(Challenge.visible.is_(True), Challenge.id.in_(released_ids)))
+            .filter(~Challenge.id.in_(reserved_ids)))
 
 
 def maybe_grant_admin(user):
@@ -301,7 +304,7 @@ def security_headers(resp):
 @app.context_processor
 def inject():
     ctx = {'csrf_token': csrf_token, 'CATEGORIES': CATEGORIES, 'DIFFICULTIES': DIFFICULTIES,
-           'CATEGORY_META': CATEGORY_META, 'ctf_state': ctf_state, 'mail_enabled': mail_enabled(),
+           'CATEGORY_META': CATEGORY_META, 'mail_enabled': mail_enabled(),
            'lang': get_lang(), 'js_i18n': js_strings(), 'year': utcnow().year}
     if current_user.is_authenticated and current_user.is_verified:
         if 'my_score' not in g:
@@ -336,11 +339,128 @@ def index():
     rows = scoring.standings()
     stats = {
         'users': len(rows),
-        'challenges': Challenge.query.filter_by(visible=True).count(),
+        'challenges': practice_challenges_query().count(),
         'solves': Solve.query.count(),
     }
-    start, end = ctf_window()
-    return render_template('index.html', top=rows[:5], stats=stats, start=start, end=end, TOOLS=TOOLS)
+    upcoming = (Competition.query.filter(Competition.published.is_(True),
+                                         Competition.ends_at > utcnow())
+                .order_by(Competition.starts_at).first())
+    return render_template('index.html', top=rows[:5], stats=stats, upcoming=upcoming, TOOLS=TOOLS)
+
+
+@app.route('/competitions')
+@verified_required
+def competitions():
+    events = (Competition.query.filter_by(published=True)
+              .order_by(Competition.starts_at.desc()).all())
+    return render_template('competitions.html', competitions=events, now=utcnow())
+
+
+@app.route('/competitions/<int:competition_id>')
+@verified_required
+def competition_detail(competition_id):
+    event = Competition.query.filter_by(id=competition_id, published=True).first_or_404()
+    rows = (db.session.query(CompetitionSolve.user_id, func.sum(CompetitionSolve.points).label('score'),
+                             func.min(CompetitionSolve.created_at).label('first_solve'))
+            .filter(CompetitionSolve.competition_id == event.id)
+            .group_by(CompetitionSolve.user_id).order_by(func.sum(CompetitionSolve.points).desc(),
+                                                          func.min(CompetitionSolve.created_at)).all())
+    blood_ids = {uid for (uid,) in db.session.query(CompetitionSolve.user_id)
+                 .filter_by(competition_id=event.id, first_blood=True).all()}
+    standings = []
+    placements_changed = False
+    for row in rows:
+        player = db.session.get(User, row.user_id)
+        if player and not player.is_banned and not player.is_admin:
+            rank = len(standings) + 1
+            standings.append({'user': player, 'score': row.score, 'rank': rank,
+                              'first_blood': player.id in blood_ids})
+            if event.state == 'ended':
+                reg = CompetitionRegistration.query.filter_by(competition_id=event.id,
+                                                               user_id=player.id).first()
+                if reg and reg.placement != rank:
+                    reg.placement = rank
+                    placements_changed = True
+    if placements_changed:
+        db.session.commit()
+    registration = (CompetitionRegistration.query.filter_by(
+        competition_id=event.id, user_id=current_user.id).first()
+        if current_user.is_authenticated else None)
+    return render_template('competition_detail.html', event=event, standings=standings,
+                           registration=registration, now=utcnow())
+
+
+@app.route('/competitions/<int:competition_id>/register', methods=['POST'])
+@verified_required
+def competition_register(competition_id):
+    event = Competition.query.filter_by(id=competition_id, published=True).first_or_404()
+    if event.state == 'ended':
+        flash(_('Bu musobaqaga ro\'yxatdan o\'tish yopilgan.'), 'error')
+    else:
+        reg = CompetitionRegistration.query.filter_by(
+            competition_id=event.id, user_id=current_user.id).first()
+        if not reg:
+            db.session.add(CompetitionRegistration(competition_id=event.id, user_id=current_user.id))
+            db.session.commit()
+            flash(_('Musobaqaga ro\'yxatdan o\'tdingiz.'), 'success')
+        else:
+            flash(_('Siz bu musobaqaga allaqachon ro\'yxatdan o\'tgansiz.'), 'info')
+    return redirect(url_for('competition_detail', competition_id=event.id))
+
+
+@app.route('/competitions/<int:competition_id>/submit/<int:challenge_id>', methods=['POST'])
+@verified_required
+def competition_submit(competition_id, challenge_id):
+    event = Competition.query.filter_by(id=competition_id, published=True).first_or_404()
+    if event.state != 'live':
+        flash(_('Flaglar faqat musobaqa davomida qabul qilinadi.'), 'error')
+        return redirect(url_for('competition_detail', competition_id=event.id))
+    registration = CompetitionRegistration.query.filter_by(
+        competition_id=event.id, user_id=current_user.id).first()
+    link = CompetitionChallenge.query.filter_by(
+        competition_id=event.id, challenge_id=challenge_id).first()
+    if not registration or not link:
+        abort(403)
+    if CompetitionSolve.query.filter_by(competition_id=event.id, user_id=current_user.id,
+                                       challenge_id=challenge_id).first():
+        flash(_('Bu musobaqa masalasini allaqachon yechgansiz.'), 'info')
+        return redirect(url_for('competition_detail', competition_id=event.id))
+    since = utcnow() - FLAG_WINDOW
+    wrong = CompetitionAttempt.query.filter_by(competition_id=event.id, user_id=current_user.id,
+                                                correct=False).filter(
+        CompetitionAttempt.created_at >= since).count()
+    if wrong >= FLAG_MAX_WRONG:
+        flash(_('Juda ko\'p urinish. Bir daqiqa kuting.'), 'error')
+        return redirect(url_for('competition_detail', competition_id=event.id))
+    challenge = link.challenge
+    submitted = (request.form.get('flag') or '').strip()
+    if not submitted or len(submitted) > 255:
+        flash(_('Flagni to\'g\'ri kiriting.'), 'error')
+        return redirect(url_for('competition_detail', competition_id=event.id))
+    a, b = submitted, challenge.flag.strip()
+    if challenge.case_insensitive:
+        a, b = a.lower(), b.lower()
+    correct = bool(submitted) and len(submitted) <= 255 and hmac.compare_digest(a.encode(), b.encode())
+    db.session.add(CompetitionAttempt(competition_id=event.id, user_id=current_user.id,
+                                      challenge_id=challenge.id, correct=correct))
+    registration.participated = True
+    if not correct:
+        db.session.commit()
+        flash(_('Noto\'g\'ri flag. Yana urinib ko\'ring.'), 'error')
+        return redirect(url_for('competition_detail', competition_id=event.id))
+    first_blood = CompetitionSolve.query.filter_by(competition_id=event.id,
+                                                    challenge_id=challenge.id).count() == 0
+    db.session.add(CompetitionSolve(competition_id=event.id, user_id=current_user.id,
+                                    challenge_id=challenge.id, points=link.points,
+                                    first_blood=first_blood))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash(_('Bu masalani allaqachon yechgansiz.'), 'info')
+        return redirect(url_for('competition_detail', competition_id=event.id))
+    flash(_('Birinchi flag! First blood!') if first_blood else _('To\'g\'ri flag! Musobaqa ballari alohida hisoblanadi.'), 'success')
+    return redirect(url_for('competition_detail', competition_id=event.id))
 
 
 @app.route('/api/captcha')
@@ -349,7 +469,7 @@ def api_captcha():
 
 
 def _category_progress(user_id):
-    chs = Challenge.query.filter_by(visible=True).all()
+    chs = practice_challenges_query().all()
     solved = {s.challenge_id for s in Solve.query.filter_by(user_id=user_id).all()}
     names = CATEGORIES + sorted({c.category for c in chs} - set(CATEGORIES))
     out = []
@@ -378,17 +498,16 @@ def dashboard():
     counts = scoring.solve_counts()
     solved = {s.challenge_id for s in Solve.query.filter_by(user_id=current_user.id).all()}
     suggestions = []
-    if ctf_state() == 'running' or current_user.is_admin:
-        pool = sorted((c for c in Challenge.query.filter_by(visible=True).all() if c.id not in solved),
-                      key=lambda c: (DIFFICULTIES.index(c.difficulty) if c.difficulty in DIFFICULTIES else 9,
-                                     -counts.get(c.id, 0), values.get(c.id, 0)))
-        seen = set()
-        for c in pool:
-            if c.category not in seen:
-                suggestions.append(c)
-                seen.add(c.category)
-            if len(suggestions) == 4:
-                break
+    pool = sorted((c for c in practice_challenges_query().all() if c.id not in solved),
+                  key=lambda c: (DIFFICULTIES.index(c.difficulty) if c.difficulty in DIFFICULTIES else 9,
+                                 -counts.get(c.id, 0), values.get(c.id, 0)))
+    seen = set()
+    for c in pool:
+        if c.category not in seen:
+            suggestions.append(c)
+            seen.add(c.category)
+        if len(suggestions) == 4:
+            break
     total = sum(c['total'] for c in cats)
     return render_template('dashboard.html', row=me, players=len(rows), stats=stats, recent=recent,
                            announcements=anns, values=values, counts=counts, suggestions=suggestions,
@@ -425,6 +544,8 @@ def rules():
 @verified_required
 def scoreboard():
     rows = scoring.standings()
+    for row in rows:
+        row['tier'] = scoring.tier_info(scoring.activity_xp(row['user']))
     return render_template('scoreboard.html', rows=rows, series=scoring.graph_series(rows))
 
 
@@ -438,11 +559,55 @@ def user_page(username):
     me = next((r for r in rows if r['user'].id == user.id), None)
     stats = scoring.profile_stats(user, utcnow())
     cats, diffs = _category_progress(user.id)
+    practice_ids = [c.id for c in practice_challenges_query().all()]
     solves = (Solve.query.filter_by(user_id=user.id).join(Challenge)
-              .filter(Challenge.visible.is_(True)).order_by(Solve.created_at.desc()).all())
+              .filter(Challenge.id.in_(practice_ids)).order_by(Solve.created_at.desc()).all())
+    event_query = (CompetitionRegistration.query.join(Competition)
+                   .filter(CompetitionRegistration.user_id == user.id,
+                           CompetitionRegistration.participated.is_(True),
+                           Competition.published.is_(True)))
+    if not (current_user.is_authenticated and current_user.id == user.id):
+        event_query = event_query.filter(CompetitionRegistration.profile_visible.is_(True))
+    event_results = event_query.order_by(Competition.starts_at.desc()).all()
+    event_stats = {}
+    for result in event_results:
+        contest_rows = (db.session.query(CompetitionSolve.user_id,
+                                         func.sum(CompetitionSolve.points).label('points'),
+                                         func.min(CompetitionSolve.created_at).label('first_solve'))
+                        .filter(CompetitionSolve.competition_id == result.competition_id)
+                        .group_by(CompetitionSolve.user_id)
+                        .order_by(func.sum(CompetitionSolve.points).desc(),
+                                  func.min(CompetitionSolve.created_at)).all())
+        eligible = []
+        for row in contest_rows:
+            player = db.session.get(User, row.user_id)
+            if player and not player.is_banned and not player.is_admin:
+                eligible.append(row)
+        placement = next((i for i, row in enumerate(eligible, 1) if row.user_id == user.id), None)
+        event_stats[result.competition_id] = {
+            'solves': CompetitionSolve.query.filter_by(competition_id=result.competition_id,
+                                                       user_id=user.id).count(),
+            'points': db.session.query(func.coalesce(func.sum(CompetitionSolve.points), 0)).filter(
+                CompetitionSolve.competition_id == result.competition_id,
+                CompetitionSolve.user_id == user.id).scalar(),
+            'first_bloods': CompetitionSolve.query.filter_by(competition_id=result.competition_id,
+                                                              user_id=user.id, first_blood=True).count(),
+            'placement': placement if result.competition.state == 'ended' else None,
+        }
     return render_template('user.html', user=user, row=me, players=len(rows), stats=stats,
                            cats=cats, diffs=diffs, solves=solves, values=scoring.current_values(),
-                           bloods=scoring.first_blood_ids(user.id))
+                           event_results=event_results, event_stats=event_stats)
+
+
+@app.route('/profile/competitions/<int:competition_id>/visibility', methods=['POST'])
+@verified_required
+def competition_profile_visibility(competition_id):
+    registration = CompetitionRegistration.query.filter_by(
+        competition_id=competition_id, user_id=current_user.id, participated=True).first_or_404()
+    registration.profile_visible = not registration.profile_visible
+    db.session.commit()
+    flash(_('Musobaqa natijasi profil uchun yangilandi.'), 'success')
+    return redirect(url_for('user_page', username=current_user.username))
 
 
 # ---------------------------------------------------------------- auth
@@ -730,14 +895,7 @@ def settings():
 @app.route('/challenges')
 @verified_required
 def challenges():
-    state = ctf_state()
-    start, end = ctf_window()
-    if state == 'before' and not current_user.is_admin:
-        return render_template('challenges.html', state=state, start=start, end=end, groups=[],
-                               announcements=[], solved=set(), values={}, counts={}, overview=[])
-    q = Challenge.query
-    if not current_user.is_admin:
-        q = q.filter_by(visible=True)
+    q = practice_challenges_query(include_hidden=current_user.is_admin)
     chs = q.order_by(Challenge.value, Challenge.id).all()
     counts = scoring.solve_counts()
     values = scoring.current_values(chs, counts)
@@ -748,21 +906,23 @@ def challenges():
         groups.setdefault(c.category, []).append(c)
     groups = sorted(groups.items(), key=lambda kv: (order.get(kv[0], 99), kv[0]))
     anns = Announcement.query.order_by(Announcement.created_at.desc()).limit(5).all()
+    released_ids = {row[0] for row in db.session.query(CompetitionChallenge.challenge_id)
+                    .join(Competition, Competition.id == CompetitionChallenge.competition_id)
+                    .filter(Competition.published.is_(True), Competition.ends_at <= utcnow()).all()}
     names = CATEGORIES + sorted(k for k, _v in groups if k not in CATEGORIES)
     by_cat = dict(groups)
     overview = [{'name': n, 'total': len(by_cat.get(n, [])),
                  'solved': sum(1 for c in by_cat.get(n, []) if c.id in solved)} for n in names]
-    return render_template('challenges.html', state=state, start=start, end=end, groups=groups,
+    return render_template('challenges.html', state='practice', groups=groups,
                            counts=counts, values=values, solved=solved, announcements=anns,
-                           overview=overview)
+                           overview=overview, released_ids=released_ids)
 
 
 def _challenge_or_404(cid):
     ch = db.session.get(Challenge, cid)
-    if not ch or (not ch.visible and not current_user.is_admin):
+    visible = practice_challenges_query(include_hidden=current_user.is_admin).filter(Challenge.id == cid).first()
+    if not ch or not visible:
         abort(404, description=_('Masala topilmadi.'))
-    if ctf_state() == 'before' and not current_user.is_admin:
-        abort(403, description=_('Musobaqa hali boshlanmagan.'))
     return ch
 
 
@@ -780,7 +940,7 @@ def api_challenge(cid):
         'solves': counts.get(ch.id, 0), 'files': ch.file_list, 'solved': solved,
         'hints': [{'id': h.id, 'cost': h.cost, 'unlocked': h.id in unlocked,
                    'content': h.content if h.id in unlocked else None} for h in ch.hints],
-        'can_submit': ctf_state() == 'running' or current_user.is_admin,
+        'can_submit': True,
     })
 
 
@@ -798,9 +958,6 @@ def api_challenge_solves(cid):
 @verified_required
 def api_submit(cid):
     ch = _challenge_or_404(cid)
-    state = ctf_state()
-    if state != 'running' and not current_user.is_admin:
-        return api_error(_('Musobaqa yakunlangan — flag qabul qilinmaydi.'), 403)
     if Solve.query.filter_by(user_id=current_user.id, challenge_id=ch.id).first():
         return api_error(_('Bu masalani allaqachon yechgansiz.'), 400)
     since = utcnow() - FLAG_WINDOW
@@ -830,11 +987,9 @@ def api_submit(cid):
         db.session.rollback()
         return api_error(_('Bu masalani allaqachon yechgansiz.'), 400)
     counts = scoring.solve_counts()
-    first = counts.get(ch.id, 0) == 1 and not current_user.is_admin
-    return jsonify({'status': 'correct', 'first_blood': first,
-                    'value': scoring.challenge_value(ch, counts.get(ch.id, 0)),
+    return jsonify({'status': 'correct', 'value': scoring.challenge_value(ch, counts.get(ch.id, 0)),
                     'score': scoring.user_score(current_user),
-                    'message': _("First blood! 🩸 Siz birinchi bo'ldingiz!") if first else _("To'g'ri flag! Tabriklaymiz.")})
+                    'message': _("To'g'ri flag! Tabriklaymiz.")})
 
 
 @app.route('/api/hints/<int:hid>/unlock', methods=['POST'])
@@ -846,16 +1001,26 @@ def api_unlock_hint(hid):
     _challenge_or_404(hint.challenge_id)
     if HintUnlock.query.filter_by(user_id=current_user.id, hint_id=hint.id).first():
         return jsonify({'status': 'ok', 'content': hint.content})
-    if ctf_state() != 'running' and not current_user.is_admin:
-        return api_error(_('Musobaqa yakunlangan.'), 403)
+    source = 'balance'
     if hint.cost and scoring.user_score(current_user) < hint.cost:
-        return api_error(_("Bu hint uchun kamida {cost} ball kerak.", cost=hint.cost), 400)
+        spent = (db.session.query(func.coalesce(func.sum(HintDebit.amount), 0))
+                 .filter(HintDebit.user_id == current_user.id,
+                         HintDebit.challenge_id == hint.challenge_id,
+                         HintDebit.source == 'challenge reward').scalar())
+        remaining_reward = max(hint.challenge.value - spent, 0)
+        if remaining_reward < hint.cost:
+            return api_error(_("Umumiy balingiz ham, shu masalaning qolgan bali ham hint uchun yetarli emas."), 400)
+        source = 'challenge reward'
     db.session.add(HintUnlock(user_id=current_user.id, hint_id=hint.id))
+    if hint.cost:
+        db.session.add(HintDebit(user_id=current_user.id, hint_id=hint.id,
+                                 challenge_id=hint.challenge_id, amount=hint.cost, source=source))
     try:
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-    return jsonify({'status': 'ok', 'content': hint.content, 'score': scoring.user_score(current_user)})
+    return jsonify({'status': 'ok', 'content': hint.content, 'score': scoring.user_score(current_user),
+                    'charge_source': source})
 
 
 # ---------------------------------------------------------------- admin
@@ -923,15 +1088,8 @@ def _challenge_from_form(ch):
         errors.append(_("Flag 1–255 belgi bo'lishi kerak."))
     if not 1 <= value <= 10000:
         errors.append(_("Ball 1–10000 oralig'ida bo'lsin."))
-    dynamic = bool(f.get('dynamic'))
+    dynamic = False
     minimum = decay = None
-    if dynamic:
-        try:
-            minimum, decay = int(f.get('minimum') or 0), int(f.get('decay') or 0)
-        except ValueError:
-            minimum = decay = -1
-        if not 0 <= minimum <= value or decay < 1:
-            errors.append(_("Dinamik ball: minimum 0..boshlang'ich ball, decay ≥ 1 bo'lsin."))
     files = [l.strip() for l in (f.get('files') or '').splitlines() if l.strip()]
     if any(not (u.startswith('https://') or u.startswith('http://')) for u in files):
         errors.append(_('Fayl havolalari http(s):// bilan boshlanishi kerak.'))
@@ -1000,6 +1158,9 @@ def admin_challenge_action(cid, action):
         ch.visible = not ch.visible
         flash(_("«{title}» ko'rinadigan qilindi.", title=ch.title) if ch.visible else _("«{title}» yashirildi.", title=ch.title), 'success')
     elif action == 'delete':
+        if CompetitionChallenge.query.filter_by(challenge_id=ch.id).first():
+            flash(_('Musobaqaga biriktirilgan masalani o‘chirmang; avval tadbirni boshqaring.'), 'error')
+            return redirect(url_for('admin_challenges'))
         Attempt.query.filter_by(challenge_id=ch.id).delete()
         Solve.query.filter_by(challenge_id=ch.id).delete()
         for h in ch.hints:
@@ -1068,6 +1229,78 @@ def admin_submissions():
                            has_next=len(items) > 50)
 
 
+@app.route('/admin/competitions')
+@admin_required
+def admin_competitions():
+    events = Competition.query.order_by(Competition.starts_at.desc()).all()
+    return render_template('admin/competitions.html', competitions=events)
+
+
+@app.route('/admin/competitions/new', methods=['GET', 'POST'])
+@admin_required
+def admin_competition_new():
+    linked_ids = db.session.query(CompetitionChallenge.challenge_id)
+    solved_ids = db.session.query(Solve.challenge_id)
+    available = (Challenge.query.filter_by(visible=False)
+                 .filter(~Challenge.id.in_(linked_ids), ~Challenge.id.in_(solved_ids))
+                 .order_by(Challenge.category, Challenge.title).all())
+    if request.method == 'POST':
+        title = (request.form.get('title') or '').strip()
+        description = (request.form.get('description') or '').strip()
+        prize = (request.form.get('prize') or '').strip()
+        starts_at = parse_iso(request.form.get('starts_at'))
+        ends_at = parse_iso(request.form.get('ends_at'))
+        ids = {int(v) for v in request.form.getlist('challenge_ids') if v.isdigit()}
+        selected = [c for c in available if c.id in ids]
+        errors = []
+        if not title or len(title) > 160:
+            errors.append(_('Musobaqa nomi 1–160 belgi bo\'lsin.'))
+        if not starts_at or not ends_at or ends_at <= starts_at:
+            errors.append(_('Boshlanish va tugash vaqtini to\'g\'ri kiriting.'))
+        if not selected:
+            errors.append(_('Musobaqaga kamida bitta yashirin masala tanlang.'))
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+        else:
+            event = Competition(title=title, description=description, prize=prize or None,
+                                starts_at=starts_at, ends_at=ends_at, published=False)
+            db.session.add(event)
+            db.session.flush()
+            for position, challenge in enumerate(selected):
+                db.session.add(CompetitionChallenge(competition=event, challenge=challenge,
+                                                    points=challenge.value, position=position))
+            db.session.commit()
+            flash(_('Musobaqa qoralama sifatida yaratildi.'), 'success')
+            return redirect(url_for('admin_competitions'))
+    return render_template('admin/competition_form.html', challenges=available)
+
+
+@app.route('/admin/competitions/<int:competition_id>/<action>', methods=['POST'])
+@admin_required
+def admin_competition_action(competition_id, action):
+    event = db.session.get(Competition, competition_id) or abort(404)
+    if action == 'publish':
+        if event.state != 'upcoming':
+            flash(_('Boshlangan musobaqa holatini endi o‘zgartirib bo‘lmaydi.'), 'error')
+        elif not event.challenges:
+            flash(_('Musobaqani e\'lon qilish uchun kamida bitta masala kerak.'), 'error')
+        else:
+            event.published = not event.published
+            db.session.commit()
+            flash(_('Musobaqa e\'lon qilindi.' if event.published else 'Musobaqa yashirildi.'), 'success')
+    elif action == 'delete':
+        if event.state != 'upcoming' or event.registrations or CompetitionAttempt.query.filter_by(competition_id=event.id).first():
+            flash(_('Boshlangan yoki qatnashchisi bor musobaqa tarixi saqlanadi.'), 'error')
+            return redirect(url_for('admin_competitions'))
+        db.session.delete(event)
+        db.session.commit()
+        flash(_('Musobaqa o\'chirildi.'), 'success')
+    else:
+        abort(404)
+    return redirect(url_for('admin_competitions'))
+
+
 @app.route('/admin/announcements', methods=['GET', 'POST'])
 @admin_required
 def admin_announcements():
@@ -1098,19 +1331,7 @@ def admin_announcement_delete(aid):
 @app.route('/admin/settings', methods=['GET', 'POST'])
 @admin_required
 def admin_settings():
-    if request.method == 'POST':
-        start = parse_iso(request.form.get('ctf_start'))
-        end = parse_iso(request.form.get('ctf_end'))
-        if start and end and end <= start:
-            flash(_("Tugash vaqti boshlanishdan keyin bo'lishi kerak."), 'error')
-        else:
-            set_setting('ctf_start', start.isoformat() if start else None)
-            set_setting('ctf_end', end.isoformat() if end else None)
-            db.session.commit()
-            flash(_('Sozlamalar saqlandi.'), 'success')
-            return redirect(url_for('admin_settings'))
-    start, end = ctf_window()
-    return render_template('admin/settings.html', start=start, end=end)
+    return redirect(url_for('admin_competitions'))
 
 
 if __name__ == '__main__':

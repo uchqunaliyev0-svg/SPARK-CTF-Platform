@@ -5,19 +5,6 @@
 {% set DCOL = {'Easy': 'var(--green)', 'Medium': 'var(--amber)', 'Hard': 'var(--red)', 'Insane': 'var(--violet)'} %}
 <div class="app-page">
 
-{% if state == 'before' and not current_user.is_admin %}
-  <div class="card state-card">
-    <span class="eyebrow">// {{ _('musobaqa') }}</span>
-    <h2>{{ _('Musobaqa hali boshlanmadi') }}</h2>
-    <p>{{ _('Masalalar boshlanish vaqtida avtomatik ochiladi. Tayyorlaning!') }}</p>
-    {% if start %}
-    <div class="countdown" data-countdown="{{ start.isoformat() }}Z" data-reload>
-      <div><b data-d>0</b><span>{{ _('kun') }}</span></div><div><b data-h>00</b><span>{{ _('soat') }}</span></div>
-      <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
-    </div>
-    {% endif %}
-  </div>
-{% else %}
   {% set total = namespace(n=0, s=0) %}
   {% for o in overview %}{% set total.n = total.n + o.total %}{% set total.s = total.s + o.solved %}{% endfor %}
 
@@ -27,14 +14,7 @@
       <h1>{{ _('Masalalar') }}</h1>
       <p data-progress-text>{{ _('{solved} / {total} ta masala yechilgan', solved=total.s, total=total.n) }}</p>
     </div>
-    {% if state == 'ended' %}
-      <span class="badge b-red" style="font-size:13px;padding:8px 14px">{{ _('Musobaqa yakunlangan — flag qabul qilinmaydi.') }}</span>
-    {% elif end %}
-      <div class="countdown" data-countdown="{{ end.isoformat() }}Z" title="{{ _('Musobaqa tugashiga') }}">
-        <div><b data-d>0</b><span>{{ _('kun') }}</span></div><div><b data-h>00</b><span>{{ _('soat') }}</span></div>
-        <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
-      </div>
-    {% endif %}
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('competitions') }}">{{ icon('trophy') }} {{ _('Musobaqalar') }}</a>
   </div>
 
   {% for a in announcements %}
@@ -96,12 +76,12 @@
         </div>
         <div class="ch-grid">
           {% for c in items %}
-          <button type="button" class="card ch-card{% if c.id in solved %} solved{% endif %}{% if not c.visible %} is-hidden{% endif %}" data-tilt="7"
+          <button type="button" class="card ch-card{% if c.id in solved %} solved{% endif %}{% if not c.visible and c.id not in released_ids %} is-hidden{% endif %}" data-tilt="7"
                   data-id="{{ c.id }}" data-title="{{ c.title|lower }}" data-cat="{{ c.category }}" data-diff="{{ c.difficulty }}">
             <span class="tick">{{ icon('check') }}</span>
             <div class="top">
               <span class="cat-dot">{{ icon(cat) }} {{ cat }}</span>
-              <span style="display:flex;gap:6px">{% if not c.visible %}<span class="badge b-muted">{{ _('yashirin') }}</span>{% endif %}<span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></span>
+              <span style="display:flex;gap:6px">{% if not c.visible and c.id not in released_ids %}<span class="badge b-muted">{{ _('yashirin') }}</span>{% endif %}<span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></span>
             </div>
             <h3>{{ c.title }}</h3>
             <div class="bottom">
@@ -132,7 +112,6 @@
     {% endif %}
     </div>
   </div>
-{% endif %}
 </div>
 
 <div class="modal-bg" id="modal" aria-hidden="true">

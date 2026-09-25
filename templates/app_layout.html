@@ -17,6 +17,7 @@
       <div class="sb-group">{{ _('Platforma') }}</div>
       {{ item('dashboard', 'grid', 'Dashboard') }}
       {{ item('challenges', 'flag', _('Masalalar')) }}
+      {{ item('competitions', 'trophy', _('Musobaqalar')) }}
       {{ item('scoreboard', 'trend', _('Reyting')) }}
       <div class="sb-group">{{ _('Hisob') }}</div>
       {{ item('user_page', 'user', _('Profil'), active=(ep == 'user_page' and request.view_args.username|lower == current_user.username|lower), username=current_user.username) }}
@@ -29,7 +30,7 @@
       {{ item('admin_users', 'users', _('Foydalanuvchilar')) }}
       {{ item('admin_submissions', 'list', _('Urinishlar')) }}
       {{ item('admin_announcements', 'megaphone', _("E'lonlar")) }}
-      {{ item('admin_settings', 'clock', _('Musobaqa vaqti')) }}
+      {{ item('admin_competitions', 'trophy', _('Musobaqalar boshqaruvi'), active=ep in ['admin_competitions', 'admin_competition_new']) }}
       {% endif %}
     </nav>
     <div class="sb-mobile">

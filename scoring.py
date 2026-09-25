@@ -1,19 +1,15 @@
-import math
 from collections import defaultdict
 from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
-from models import Challenge, Hint, HintUnlock, Solve, User, db
+from models import (Challenge, CompetitionRegistration, CompetitionSolve, Hint, HintDebit,
+                    HintUnlock, Solve, User, db, utcnow)
 
 
 def challenge_value(ch, solve_count):
-    """CTFd-style quadratic decay; the first solver always gets the full value."""
-    if not ch.dynamic or not ch.decay or ch.minimum is None:
-        return ch.value
-    n = max(solve_count - 1, 0)
-    v = ((ch.minimum - ch.value) / (ch.decay ** 2)) * (n ** 2) + ch.value
-    return max(int(math.ceil(v)), ch.minimum)
+    """Practice challenge rewards are fixed and never decay with solve count."""
+    return ch.value
 
 
 def solve_counts(include_hidden_users=False):
@@ -36,14 +32,24 @@ def _events(user_ids=None):
     sq = Solve.query
     if user_ids is not None:
         sq = sq.filter(Solve.user_id.in_(user_ids))
+    challenge_debits = defaultdict(int)
+    for debit in HintDebit.query.filter_by(source='challenge reward').all():
+        challenge_debits[(debit.user_id, debit.challenge_id)] += debit.amount
+    if user_ids is not None:
+        challenge_debits = defaultdict(int, {k: v for k, v in challenge_debits.items() if k[0] in user_ids})
     for s in sq.all():
-        events[s.user_id].append((s.created_at, values.get(s.challenge_id, 0), 'solve', s.challenge_id))
-    hq = db.session.query(HintUnlock.user_id, HintUnlock.created_at, Hint.cost, Hint.challenge_id).join(Hint)
+        value = max(values.get(s.challenge_id, 0) - challenge_debits[(s.user_id, s.challenge_id)], 0)
+        events[s.user_id].append((s.created_at, value, 'solve', s.challenge_id))
+    hq = db.session.query(HintUnlock.user_id, HintUnlock.created_at, Hint.cost, Hint.challenge_id,
+                          HintDebit.amount, HintDebit.source).join(Hint).outerjoin(
+                              HintDebit, db.and_(HintDebit.user_id == HintUnlock.user_id,
+                                                 HintDebit.hint_id == HintUnlock.hint_id))
     if user_ids is not None:
         hq = hq.filter(HintUnlock.user_id.in_(user_ids))
-    for uid, at, cost, cid in hq.all():
-        if cost:
-            events[uid].append((at, -cost, 'hint', cid))
+    for uid, at, cost, cid, amount, source in hq.all():
+        debit = amount if amount is not None else cost
+        if debit and source != 'challenge reward':
+            events[uid].append((at, -debit, 'hint', cid))
     for evs in events.values():
         evs.sort(key=lambda e: e[0])
     return events
@@ -87,41 +93,62 @@ def graph_series(rows, limit=10):
     return series
 
 
-TIERS = [  # (min score, name, colour)
-    (0, 'Rookie', '#94a3b8'),
-    (200, 'Explorer', '#34d399'),
+TIERS = [  # (minimum activity XP, display name, colour)
+    (0, 'Yangi boshlovchi', '#94a3b8'),
+    (200, 'Tadqiqotchi', '#34d399'),
     (600, 'Hacker', '#22d3ee'),
-    (1500, 'Elite', '#a78bfa'),
-    (3000, 'Master', '#fbbf24'),
-    (6000, 'Legend', '#ff3b5c'),
+    (1500, 'Mutaxassis', '#a78bfa'),
+    (3000, 'Usta', '#fbbf24'),
+    (6000, 'Afsona', '#ff3b5c'),
 ]
 LEVEL_XP = 100
 
 
-def tier_info(score):
-    idx = max(i for i, t in enumerate(TIERS) if score >= t[0])
+def activity_xp(user):
+    """Rank progress is based on solved challenge difficulty and verified events, not score."""
+    xp_by_difficulty = {'Easy': 25, 'Medium': 50, 'Hard': 100, 'Insane': 150}
+    xp = sum(xp_by_difficulty.get(d, 25) for (d,) in
+             db.session.query(Challenge.difficulty).join(Solve, Solve.challenge_id == Challenge.id)
+             .filter(Solve.user_id == user.id).all())
+    registrations = CompetitionRegistration.query.filter_by(user_id=user.id, participated=True).all()
+    for registration in registrations:
+        xp += 100
+        placement = registration.placement
+        if placement is None and registration.competition.ends_at <= utcnow():
+            results = (db.session.query(CompetitionSolve.user_id,
+                                        func.sum(CompetitionSolve.points).label('points'),
+                                        func.min(CompetitionSolve.created_at).label('first_solve'))
+                       .filter(CompetitionSolve.competition_id == registration.competition_id)
+                       .group_by(CompetitionSolve.user_id)
+                       .order_by(func.sum(CompetitionSolve.points).desc(),
+                                 func.min(CompetitionSolve.created_at)).all())
+            eligible = []
+            for row in results:
+                player = db.session.get(User, row.user_id)
+                if player and not player.is_banned and not player.is_admin:
+                    eligible.append(row.user_id)
+            placement = next((rank for rank, uid in enumerate(eligible, 1) if uid == user.id), None)
+        if placement == 1:
+            xp += 150
+        elif placement == 2:
+            xp += 100
+        elif placement == 3:
+            xp += 50
+    return xp
+
+
+def tier_info(xp):
+    idx = max(i for i, t in enumerate(TIERS) if xp >= t[0])
     lo, name, color = TIERS[idx]
     nxt = TIERS[idx + 1] if idx + 1 < len(TIERS) else None
-    progress = 100 if not nxt else int((score - lo) / (nxt[0] - lo) * 100)
+    progress = 100 if not nxt else int((xp - lo) / (nxt[0] - lo) * 100)
     return {'index': idx + 1, 'name': name, 'color': color, 'next': nxt[1] if nxt else None,
             'next_at': nxt[0] if nxt else None, 'progress': max(min(progress, 100), 0)}
 
 
-def level_info(score):
-    s = max(score, 0)
+def level_info(xp):
+    s = max(xp, 0)
     return {'level': s // LEVEL_XP + 1, 'xp': s % LEVEL_XP, 'need': LEVEL_XP}
-
-
-def first_blood_ids(user_id):
-    """Challenge ids where this user was the first non-admin solver."""
-    first = {}
-    rows = (db.session.query(Solve.challenge_id, Solve.user_id, Solve.created_at)
-            .join(User, User.id == Solve.user_id)
-            .filter(User.is_admin.is_(False), User.is_banned.is_(False))
-            .order_by(Solve.created_at).all())
-    for cid, uid, _at in rows:
-        first.setdefault(cid, uid)
-    return {cid for cid, uid in first.items() if uid == user_id}
 
 
 def profile_stats(user, now):
@@ -129,7 +156,7 @@ def profile_stats(user, now):
     events = _events([user.id]).get(user.id, [])
     score = sum(e[1] for e in events)
     solves = [e for e in events if e[2] == 'solve']
-    bloods = first_blood_ids(user.id)
+    xp = activity_xp(user)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     prev_start = (month_start - timedelta(days=1)).replace(day=1)
 
@@ -137,7 +164,6 @@ def profile_stats(user, now):
         evs = [e for e in events if a <= e[0] < b]
         return {'points': sum(e[1] for e in evs),
                 'solves': sum(1 for e in evs if e[2] == 'solve'),
-                'bloods': sum(1 for e in evs if e[2] == 'solve' and e[3] in bloods),
                 'hints': sum(1 for e in evs if e[2] == 'hint')}
     this_m, last_m = window(month_start, now + timedelta(days=1)), window(prev_start, month_start)
 
@@ -160,7 +186,8 @@ def profile_stats(user, now):
     for at, delta, _k, _c in events:
         total += delta
         series.append({'t': at.isoformat() + 'Z', 'y': total})
-    return {'score': score, 'solves': len(solves), 'bloods': len(bloods), 'this_month': this_m,
+    event_count = CompetitionRegistration.query.filter_by(user_id=user.id, participated=True).count()
+    return {'score': score, 'solves': len(solves), 'xp': xp, 'events': event_count, 'this_month': this_m,
             'last_month': last_m, 'activity': activity, 'streak': streak, 'best_streak': best,
-            'tier': tier_info(score), 'level': level_info(score), 'series': series,
+            'tier': tier_info(xp), 'level': level_info(xp), 'series': series,
             'hints': sum(1 for e in events if e[2] == 'hint')}

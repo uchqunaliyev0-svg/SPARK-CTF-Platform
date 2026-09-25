@@ -45,7 +45,7 @@
         {% for s in solves %}
           {% set col = CATEGORY_META.get(s.challenge.category, ('#22d3ee', ''))[0] %}
           <tr>
-            <td style="font-weight:600">{{ s.challenge.title }}{% if s.challenge_id in bloods %} <span class="badge b-red" title="First blood">🩸 first blood</span>{% endif %}</td>
+            <td style="font-weight:600">{{ s.challenge.title }}</td>
             <td><span class="badge" style="color:{{ col }};border-color:color-mix(in srgb, {{ col }} 35%, transparent);background:color-mix(in srgb, {{ col }} 10%, transparent)">{{ s.challenge.category }}</span></td>
             <td><span class="badge d-{{ s.challenge.difficulty }}">{{ s.challenge.difficulty }}</span></td>
             <td class="num" style="color:var(--green)">+{{ values.get(s.challenge_id, 0) }}</td>
@@ -58,6 +58,12 @@
     {% else %}
     <div class="empty" style="padding:40px 24px"><div class="ico">{{ icon('flag') }}</div><h3>{{ _("Hali flag yo'q") }}</h3><p>{{ _('Birinchi flag hali oldinda.') }}</p></div>
     {% endif %}
+  </div>
+  <div class="card" style="margin-top:18px"><div class="card-pad" style="padding-bottom:0"><div class="card-head"><h3>{{ icon('trophy') }} {{ _('Rasmiy musobaqa natijalari') }}</h3></div></div>
+    {% if event_results %}<div class="list-rows">{% for result in event_results %}{% set es = event_stats[result.competition_id] %}
+      <div class="lr" style="--c:var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div class="grow"><b><a href="{{ url_for('competition_detail', competition_id=result.competition_id) }}">{{ result.competition.title }}</a></b><small>{{ result.competition.starts_at.strftime('%Y-%m-%d') }} · {{ es.solves }} {{ _('masala') }} · {{ es.points }} pts{% if es.placement %} · #{{ es.placement }}{% endif %}{% if es.first_bloods %} · {{ es.first_bloods }} first blood{% endif %}</small></div>
+        {% if current_user.is_authenticated and user.id == current_user.id %}<form method="post" action="{{ url_for('competition_profile_visibility', competition_id=result.competition_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ghost btn-sm">{{ _('Profilimda ko‘rsatish') if not result.profile_visible else _('Profilimda yashirish') }}</button></form>{% endif %}
+      </div>{% endfor %}</div>{% else %}<div class="empty" style="padding:28px">{{ _('Hozircha ko‘rsatiladigan rasmiy natija yo‘q.') }}</div>{% endif %}
   </div>
 </div>
 <script type="application/json" id="mySeries">{{ stats.series|tojson }}</script>

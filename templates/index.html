@@ -2,12 +2,11 @@
 {% from '_macros.html' import icon, avatar %}
 {% block title %}SPARK CTF — Capture The Flag{% endblock %}
 {% block content %}
-{% set state = ctf_state() %}
 <section class="hero">
   <canvas class="scene" data-scene="hero" aria-hidden="true"></canvas>
   <div class="container">
     <div class="hero-copy">
-      <span class="pill-live"><i></i>{% if state == 'before' %}{{ _('Tez orada boshlanadi') }}{% elif state == 'ended' %}{{ _('Musobaqa yakunlangan') }}{% else %}{{ _('Platforma faol') }}{% endif %}</span>
+      <span class="pill-live"><i></i>{{ _('Doimiy mashq platformasi') }}</span>
       <h1>{{ _('Xakerlik mahoratingizni') }} <span class="grad">{{ _('sinovdan') }}</span> {{ _("o'tkazing.") }} <span class="red">{{ _('Flagni') }}</span> {{ _('toping.') }}</h1>
       <p class="lead">{{ _("SPARK CTF — kiberxavfsizlik bo'yicha amaliy masalalar platformasi. Zaifliklarni toping, shifrlarni buzing, izlarni tahlil qiling va reytingda yuqoriga chiqing.") }}</p>
       <div class="hero-cta">
@@ -45,16 +44,14 @@
   </div>
 </section>
 
-{% if (state == 'before' and start) or (state == 'running' and end) %}
+{% if upcoming %}
 <section class="section" style="padding-bottom:0">
   <div class="container narrow">
     <div class="card cta-final" data-reveal>
-      <span class="eyebrow">// {{ 'start' if state == 'before' else 'live' }}</span>
-      <h2>{{ _('Musobaqa boshlanishiga') if state == 'before' else _('Musobaqa tugashiga') }}</h2>
-      <div class="countdown" data-countdown="{{ (start if state == 'before' else end).isoformat() }}Z" {% if state == 'before' %}data-reload{% endif %}>
-        <div><b data-d>0</b><span>{{ _('kun') }}</span></div><div><b data-h>00</b><span>{{ _('soat') }}</span></div>
-        <div><b data-m>00</b><span>{{ _('daqiqa') }}</span></div><div><b data-s>00</b><span>{{ _('soniya') }}</span></div>
-      </div>
+      <span class="eyebrow">// {{ _('navbatdagi musobaqa') }}</span>
+      <h2>{{ upcoming.title }}</h2><p>{{ upcoming.description }}</p>
+      <p>{{ _('Boshlanish vaqti') }}: {{ upcoming.starts_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
+      <a class="btn btn-primary" href="{{ url_for('competition_detail', competition_id=upcoming.id) }}">{{ _('Batafsil') }} {{ icon('arrow') }}</a>
     </div>
   </div>
 </section>

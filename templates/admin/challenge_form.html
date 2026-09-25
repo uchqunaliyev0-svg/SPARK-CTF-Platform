@@ -24,9 +24,7 @@
       <label class="check"><input type="checkbox" name="case_insensitive" value="1" {{ 'checked' if (f.case_insensitive if f else ch.case_insensitive) }}> Katta-kichik harf farqlanmasin</label>
       <label class="check"><input type="checkbox" name="visible" value="1" {{ 'checked' if (f.visible if f else ch.visible) }}> Ishtirokchilarga ko'rinadi</label>
     </div>
-    <div class="field full"><label class="check"><input type="checkbox" name="dynamic" value="1" data-dynamic-toggle {{ 'checked' if (f.dynamic if f else ch.dynamic) }}> Dinamik ball (ko'p yechilgan sari ball kamayadi)</label></div>
-    <div class="field" data-dynamic><label for="minimum">Minimal ball</label><input class="input" id="minimum" name="minimum" type="number" min="0" value="{{ f.minimum if f else ch.minimum or 50 }}"></div>
-    <div class="field" data-dynamic><label for="decay">Decay (nechta yechimda minimumga tushadi)</label><input class="input" id="decay" name="decay" type="number" min="1" value="{{ f.decay if f else ch.decay or 20 }}"></div>
+    <div class="field full"><div class="hint">Practice masalalarining balli doimiy: yechuvchilar soni ko'payganda kamaymaydi.</div></div>
     <div class="field full"><label for="files">Fayl havolalari (har qatorda bitta)</label><textarea class="input mono" id="files" name="files" rows="3" placeholder="https://github.com/.../task.zip">{{ f.files if f else ch.files or '' }}</textarea><div class="hint">Fayllarni GitHub Releases, Google Drive va h.k.ga joylab, havolasini qo'ying.</div></div>
   </div>
 
@@ -45,7 +43,7 @@
     </div>
     <template id="hintTpl"><div class="hint-row"><input type="hidden" name="hint_id" value=""><textarea class="input" name="hint_content" rows="1" placeholder="Hint matni"></textarea><input class="input" name="hint_cost" type="number" min="0" value="0" title="Narxi (ball)"><button type="button" class="icon-btn" data-remove-hint aria-label="O'chirish">{{ icon('trash') }}</button></div></template>
     <button type="button" class="btn btn-ghost btn-sm" data-add-hint>{{ icon('plus') }} Hint qo'shish</button>
-    <div class="hint">Narx 0 bo'lsa — bepul. Narxli hint ochilganda ishtirokchi balidan ayriladi.</div>
+    <div class="hint">Narx 0 bo'lsa bepul. Avval umumiy practice balidan olinadi; yetmasa, shu masalaning olinadigan balidan ayriladi.</div>
   </div>
 
   <div style="display:flex;gap:10px;margin-top:8px">

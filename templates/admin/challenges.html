@@ -9,10 +9,10 @@
     <tbody>
     {% for c in challenges %}
       <tr>
-        <td style="font-weight:600">{{ c.title }}{% if c.dynamic %} <span class="badge b-muted" title="Dinamik ball">dyn</span>{% endif %}{% if c.hints %} <span class="badge b-amber">{{ c.hints|length }} hint</span>{% endif %}</td>
+        <td style="font-weight:600">{{ c.title }}{% if c.hints %} <span class="badge b-amber">{{ c.hints|length }} hint</span>{% endif %}</td>
         <td><span class="badge b-cyan">{{ c.category }}</span></td>
         <td><span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></td>
-        <td class="num">{{ values[c.id] }}{% if c.dynamic %}<span class="dim">/{{ c.value }}</span>{% endif %}</td>
+        <td class="num">{{ values[c.id] }}</td>
         <td class="num">{{ counts.get(c.id, 0) }}</td>
         <td>{% if c.visible %}<span class="badge b-green">ko'rinadi</span>{% else %}<span class="badge b-muted">yashirin</span>{% endif %}</td>
         <td><div class="actions" style="justify-content:flex-end">
