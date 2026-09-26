@@ -3,7 +3,7 @@
 {% block title %}{{ _('Sertifikat') }} {{ cert.code }} — SPARK CTF{% endblock %}
 {% block body_class %}cert-page{% endblock %}
 {% block content %}
-{% set medal = {1: ('var(--gold)', _('1-o‘rinni egalladi')), 2: ('var(--silver)', _('2-o‘rinni egalladi')), 3: ('var(--bronze)', _('3-o‘rinni egalladi'))}[cert.placement] %}
+{% set medal = {1: ('#fcd34d', _('1-o‘rin'), _('G‘olib')), 2: ('#cbd5e1', _('2-o‘rin'), _('Sovrindor')), 3: ('#f59e0b', _('3-o‘rin'), _('Sovrindor'))}[cert.placement] %}
 <div class="container cert-wrap">
   <div class="cert-bar no-print">
     {% if cert.revoked %}
@@ -15,29 +15,45 @@
   </div>
 
   <article class="cert{% if cert.revoked %} revoked{% endif %}" style="--m: {{ medal[0] }}">
-    <header class="cert-head">
-      <span class="cert-brand">{{ logo(40) }}<span><b>SPARK</b> CTF</span></span>
-      <span class="cert-code">№ {{ cert.code }}</span>
-    </header>
-    <div class="cert-body">
-      <span class="cert-kicker" style="margin-top:8px">{{ _('Natija sertifikati') }}</span>
-      <p class="cert-lead">{{ _('Ushbu sertifikat bilan tasdiqlanadiki') }}</p>
-      <h1 class="cert-name">{{ cert.user.username }}</h1>
-      <p class="cert-lead">{{ _('quyidagi rasmiy onlayn CTF musobaqasida') }}</p>
-      <h2 class="cert-event">{{ event.title }}</h2>
-      <div class="cert-place"><span class="cert-medal">{{ icon('award') }}</span>{{ medal[1] }}</div>
-      <dl class="cert-facts">
-        <div><dt>{{ _('Ball') }}</dt><dd>{{ cert.points }}</dd></div>
-        <div><dt>{{ _('Yechilgan topshiriqlar') }}</dt><dd>{{ cert.solves }}</dd></div>
-        <div><dt>{{ _('Ishtirokchilar') }}</dt><dd>{{ cert.players }}</dd></div>
-        <div><dt>{{ _('Sana') }}</dt><dd>{{ event.starts_at.strftime('%d.%m.%Y') }}</dd></div>
-      </dl>
+    <aside class="cert-rail"><span>SPARK CTF · {{ _('RASMIY MUSOBAQA NATIJASI') }} · {{ cert.code }}</span></aside>
+    <div class="cert-sheet">
+      <img class="cert-mark" src="{{ url_for('static', filename='img/logo.png') }}" alt="" aria-hidden="true">
+      <header class="cert-head">
+        <div class="cert-brand">{{ logo(40) }}<div><b>SPARK CTF</b><small>{{ _('Capture The Flag platformasi') }}</small></div></div>
+        <span class="cert-code">№ {{ cert.code }}</span>
+      </header>
+
+      <div class="cert-body">
+        <span class="cert-chip">{{ _('SERTIFIKAT') }}</span>
+        <h1 class="cert-title">{{ event.title }}</h1>
+        <div class="cert-sub">{{ medal[1] }} · {{ medal[2] }}</div>
+
+        <div class="cert-kick">{{ _('USHBU SERTIFIKAT TASDIQLAYDIKI') }}</div>
+        <h2 class="cert-name">{{ cert.user.username }}</h2>
+        <p class="cert-line">{{ _('{event} rasmiy onlayn CTF musobaqasida <b>{players} ishtirokchi</b> orasida <b>{place}</b>ni egalladi.', event=event.title|e, players=players_total, place=medal[1])|safe }}</p>
+        <p class="cert-motto">{{ _('Har bir flag — yangi mahorat.') }}</p>
+      </div>
+
+      <footer class="cert-foot">
+        <dl class="cert-facts">
+          <div><dt>{{ _('Ball') }}</dt><dd>{{ cert.points }}</dd></div>
+          <div><dt>{{ _('Topshiriqlar') }}</dt><dd>{{ cert.solves }}</dd></div>
+          <div><dt>{{ _('Davomiylik') }}</dt><dd>{{ ((event.ends_at - event.starts_at).total_seconds() / 3600)|round(1) }} {{ _('soat') }}</dd></div>
+          <div><dt>{{ _('Sana') }}</dt><dd>{{ event.starts_at.strftime('%d.%m.%Y') }}</dd></div>
+        </dl>
+        <div class="cert-sign"><i></i><b>SPARK CTF</b>{{ _('Tashkiliy qo‘mita') }}</div>
+        <svg class="cert-seal" viewBox="0 0 100 100" aria-hidden="true">
+          <defs><path id="sealArc" d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0"/></defs>
+          <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="50" cy="50" r="27" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>
+          <text font-family="JetBrains Mono, monospace" font-size="8.5" letter-spacing="2.2" fill="currentColor"><textPath href="#sealArc">SPARK CTF · {{ _('TASDIQLANGAN') }} · {{ event.starts_at.year }} ·</textPath></text>
+          <path d="M53 33 41 53h8l-2 15 13-21h-8l1-14Z" fill="currentColor"/>
+        </svg>
+        <div class="cert-qr"><span class="qr">{{ qr|safe }}</span>{{ _('tekshirish') }}</div>
+      </footer>
     </div>
-    <footer class="cert-foot">
-      <p>{{ _('Format: onlayn, jamoasiz (individual), {h} soat. Natija musobaqa davomidagi to‘g‘ri flaglar asosida avtomatik hisoblangan.', h=((event.ends_at - event.starts_at).total_seconds() / 3600)|round(1)) }}</p>
-      <p class="cert-verify">{{ _('Tekshirish') }}: <span class="mono">{{ url }}</span></p>
-    </footer>
   </article>
+  <p class="dim no-print" style="font-size:12.5px;margin-top:14px;text-align:center">{{ _('Tekshirish') }}: <span class="mono">{{ url }}</span></p>
 </div>
 {% endblock %}
 {% block footer %}{% endblock %}

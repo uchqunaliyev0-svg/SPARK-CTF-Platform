@@ -596,4 +596,17 @@ EN = {
     "mahalliy vaqt": "local time",
     "navbatdagi musobaqa": "next competition",
     "qoralama": "draft",
+    # certificate v2
+    "RASMIY MUSOBAQA NATIJASI": "OFFICIAL COMPETITION RESULT",
+    "SERTIFIKAT": "CERTIFICATE",
+    "G‘olib": "Winner",
+    "USHBU SERTIFIKAT TASDIQLAYDIKI": "THIS CERTIFIES THAT",
+    "{event} rasmiy onlayn CTF musobaqasida <b>{players} ishtirokchi</b> orasida <b>{place}</b>ni egalladi.": "took <b>{place}</b> among <b>{players} players</b> in the official online CTF competition {event}.",
+    "Davomiylik": "Duration",
+    "Tashkiliy qo‘mita": "Organising committee",
+    "TASDIQLANGAN": "VERIFIED",
+    "tekshirish": "verify",
+    "1-o‘rin": "1st place",
+    "2-o‘rin": "2nd place",
+    "3-o‘rin": "3rd place",
 }

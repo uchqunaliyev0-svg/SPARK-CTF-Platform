@@ -15,6 +15,7 @@ from werkzeug.exceptions import HTTPException
 
 import achievements
 import scoring
+import segno
 from i18n import LANGS, _, get_lang, js_strings
 import mailer
 import notify
@@ -656,9 +657,10 @@ def certificate(code):
     cert = Certificate.query.filter_by(code=code.strip().upper()).first()
     if not cert or not cert.competition.published:
         abort(404, description=_('Sertifikat topilmadi.'))
-    return render_template('certificate.html', cert=cert, event=cert.competition,
-                           url=url_for('certificate', code=cert.code, _external=True,
-                                       _scheme='https' if IS_PROD else request.scheme))
+    url = url_for('certificate', code=cert.code, _external=True, _scheme='https' if IS_PROD else request.scheme)
+    qr = segno.make(url, error='m').svg_inline(scale=1, dark='#0b0f1c', light=None, border=0)
+    return render_template('certificate.html', cert=cert, event=cert.competition, url=url, qr=qr,
+                           players_total=cert.players)
 
 
 @app.route('/profile/competitions/<int:competition_id>/visibility', methods=['POST'])
