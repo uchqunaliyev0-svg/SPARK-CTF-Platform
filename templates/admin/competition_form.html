@@ -19,12 +19,12 @@
 <div class="field" style="margin-top:18px"><label>{{ _('Musobaqa masalalari va ballari') }}</label><p class="hint">{{ _('Tanlangan masalalar musobaqa tugagach practice’da ochiladi.') }}</p>
   {% for challenge in challenges %}
   <div class="pick-row"><label class="check"><input type="checkbox" name="challenge_ids" value="{{ challenge.id }}" {% if challenge.id in linked or (f and challenge.id|string in f.getlist('challenge_ids')) %}checked{% endif %}> {{ challenge.title }} <span class="muted">· {{ challenge.category }} · {{ challenge.difficulty }}</span></label>
-    <input class="input mono" type="number" min="1" max="10000" name="points_{{ challenge.id }}" value="{{ f.get('points_' ~ challenge.id, linked.get(challenge.id, challenge.value)) }}" aria-label="{{ _('Ball') }}"><span class="muted">pts</span></div>
+    <input class="input mono" type="number" min="1" max="10000" name="points_{{ challenge.id }}" value="{{ f.get('points_' ~ challenge.id, linked.get(challenge.id, challenge.value)) }}" aria-label="{{ _('Ball') }}"><span class="muted">{{ _('ball') }}</span></div>
   {% else %}<p>{{ _('Avval yashirin, hali yechilmagan masalalar tayyorlang.') }}</p>{% endfor %}
 </div>
 {% elif event %}
 <div class="field" style="margin-top:18px"><label>{{ _('Musobaqa masalalari') }}</label>
-  {% for link in event.challenges %}<div class="pick-row"><span>{{ link.challenge.title }} <span class="muted">· {{ link.challenge.category }}</span></span><span class="mono">{{ link.points }} pts</span></div>{% endfor %}
+  {% for link in event.challenges %}<div class="pick-row"><span>{{ link.challenge.title }} <span class="muted">· {{ link.challenge.category }}</span></span><span class="mono">{{ link.points }} {{ _('ball') }}</span></div>{% endfor %}
 </div>
 {% endif %}
 <button class="btn btn-primary" type="submit" style="margin-top:12px">{{ _('Saqlash') if event else _('Qoralama yaratish') }}</button></form>

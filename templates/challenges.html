@@ -1,5 +1,5 @@
 {% extends 'app_layout.html' %}
-{% from '_macros.html' import icon, time %}
+{% from '_macros.html' import icon, time, coin %}
 {% block title %}{{ _('Masalalar') }} — SPARK CTF{% endblock %}
 {% block app %}
 {% set DCOL = {'Easy': 'var(--green)', 'Medium': 'var(--amber)', 'Hard': 'var(--red)', 'Insane': 'var(--violet)'} %}
@@ -13,7 +13,7 @@
     <div>
       <span class="eyebrow">// challenges</span>
       <h1>{{ _('Masalalar') }}</h1>
-      <p class="ch-stats"><b data-progress-num>{{ total.s }}</b>/{{ total.n }} {{ _('yechilgan') }} · <b>{{ overview|selectattr('total')|list|length }}</b> {{ _('bo‘lim') }} · <b>{{ pts.n }}</b> {{ _('ball') }}</p>
+      <p class="ch-stats"><b data-progress-num>{{ total.s }}</b>/{{ total.n }} {{ _('yechilgan') }} · <b>{{ overview|selectattr('total')|list|length }}</b> {{ _('bo‘lim') }} · {{ coin(pts.n) }}</p>
     </div>
   </div>
 
@@ -41,7 +41,7 @@
       <span class="cc-body">
         <span class="cc-top"><b>{{ o.name }}</b><span class="cc-count">{{ o.total }}</span></span>
         {% if meta[1] %}<span class="cc-desc">{{ _(meta[1]) }}</span>{% endif %}
-        <span class="cc-foot"><span class="mono" data-cat-count="{{ o.name }}">{{ o.solved }}/{{ o.total }}</span> {{ _('yechilgan') }}<span class="cc-pts">{{ o.points }} {{ _('ball') }}</span></span>
+        <span class="cc-foot"><span class="mono" data-cat-count="{{ o.name }}">{{ o.solved }}/{{ o.total }}</span> {{ _('yechilgan') }}<span class="cc-pts">{{ coin(o.points) }}</span></span>
         <span class="cc-bar"><i style="width:{{ ((o.solved / o.total * 100)|round|int) if o.total else 0 }}%"></i></span>
       </span>
     </button>
@@ -70,7 +70,7 @@
           </div>
           <h3>{{ c.title }}</h3>
           <div class="bottom">
-            <span class="val" data-val>{{ values[c.id] }}<small>pts</small></span>
+            <span class="val" data-val>{{ coin(values[c.id]) }}</span>
             <span class="solves" title="{{ _('Yechganlar') }}">{{ icon('users') }} <span data-solves>{{ counts.get(c.id, 0) }}</span></span>
           </div>
         </button>
@@ -128,5 +128,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/challenges.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/challenges.js') }}?v=6"></script>
 {% endblock %}

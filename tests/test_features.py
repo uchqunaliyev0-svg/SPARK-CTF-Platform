@@ -13,7 +13,7 @@ from app import app, db
 import achievements
 import scoring
 import vpn
-from models import (Certificate, Challenge, Competition, CompetitionChallenge, CompetitionRegistration,
+from models import (Announcement, Certificate, Challenge, Competition, CompetitionChallenge, CompetitionRegistration,
                     CompetitionSolve, Solve, User, VpnPeer, utcnow)
 
 
@@ -219,6 +219,32 @@ class PagesTest(Base):
                 self.assertEqual(self.client.get(path).status_code, 200)
         page = self.client.get('/challenges').data.decode()
         self.assertIn('data-open-cat="Crypto"', page)
+
+
+class NotificationBadgeTest(Base):
+    def test_unread_count_in_sidebar_clears_after_visit(self):
+        u = user('reader')
+        db.session.add_all([u, Announcement(title='One', content='1'), Announcement(title='Two', content='2')])
+        db.session.commit()
+        self.login(u)
+        page = self.client.get('/dashboard').data.decode()
+        self.assertIn('<i class="sb-count">2</i>', page)
+        self.assertNotIn('bell-btn', page)
+        notes = self.client.get('/notifications').data.decode()
+        self.assertEqual(notes.count('b-red'), 2)            # both marked "new" on this visit
+        self.assertNotIn('sb-count', self.client.get('/dashboard').data.decode())
+        db.session.add(Announcement(title='Three', content='3'))
+        db.session.commit()
+        self.assertIn('<i class="sb-count">1</i>', self.client.get('/dashboard').data.decode())
+
+    def test_score_pill_shows_coin(self):
+        u = user('coiner')
+        db.session.add(u)
+        db.session.commit()
+        self.login(u)
+        page = self.client.get('/dashboard').data.decode()
+        self.assertIn('coin-pill', page)
+        self.assertNotIn(' pts<', page)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 {% extends 'app_layout.html' %}
-{% from '_macros.html' import icon, avatar, time %}
+{% from '_macros.html' import icon, avatar, time, coin %}
 {% block title %}{{ _('Reyting') }} — SPARK CTF{% endblock %}
 {% block app %}
 {% macro mini_badges(list) -%}
@@ -24,7 +24,7 @@
       <span class="lb-ring">{{ avatar(r.user.username) }}</span>
       <span class="lb-place">{{ idx + 1 }}</span>
       <span class="lb-name">{{ r.user.username }}{% if idx == 0 %} <span class="lb-crown">{{ icon('crown') }}</span>{% endif %}</span>
-      <span class="lb-score">{{ r.score }}</span>
+      <span class="lb-score">{{ coin(r.score) }}</span>
       <span class="lb-sub">{{ _('{n} ta flag', n=r.solves) }}</span>
     </a>
     {% else %}<div></div>{% endif %}{% endfor %}
@@ -35,13 +35,13 @@
     {% if rows %}
     <div class="table-wrap">
       <table class="table lb-table">
-        <thead><tr><th style="width:64px">#</th><th>{{ _('Ishtirokchi') }}</th><th class="num">{{ _('Ball') }}</th><th class="num hide-sm">{{ _('Flaglar') }}</th><th class="num hide-sm">{{ _('Oxirgi yechim') }}</th></tr></thead>
+        <thead><tr><th style="width:64px">#</th><th>{{ _('Ishtirokchi') }}</th><th class="num">Spark</th><th class="num hide-sm">{{ _('Flaglar') }}</th><th class="num hide-sm">{{ _('Oxirgi yechim') }}</th></tr></thead>
         <tbody>
         {% for r in rows %}
           <tr class="{{ 'me' if current_user.is_authenticated and r.user.id == current_user.id }}">
             <td><span class="rank r{{ r.rank if r.rank <= 3 and r.solves else '' }}">{{ r.rank }}</span></td>
             <td><a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}<span class="lb-who"><b>{{ r.user.username }}</b><small style="color:{{ r.tier.color }}">{{ _(r.tier.name) }}</small></span>{{ mini_badges(r.badges) }}</a></td>
-            <td class="num lb-pts">{{ r.score }}</td>
+            <td class="num lb-pts">{{ coin(r.score) }}</td>
             <td class="num muted hide-sm">{{ r.solves }}</td>
             <td class="num muted hide-sm">{{ time(r.last) if r.last else '—' }}</td>
           </tr>

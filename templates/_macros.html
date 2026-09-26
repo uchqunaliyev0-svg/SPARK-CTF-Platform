@@ -132,3 +132,8 @@
 </div>
 {% endif %}
 {%- endmacro %}
+
+{# Platform currency. Practice rewards are "Spark"; competition points are shown as plain numbers. #}
+{% macro coin(n, cls='', sign='') -%}
+<span class="coin {{ cls }}" title="Spark"><svg class="coin-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#f59e0b"/><circle cx="12" cy="12" r="8.6" fill="#fbbf24" stroke="#fde68a" stroke-width="1"/><path d="M13.4 5.6 8 13h3.4l-1 5.4L16 11h-3.4l.8-5.4Z" fill="#7c2d12"/></svg><b>{{ sign }}{{ n }}</b></span>
+{%- endmacro %}

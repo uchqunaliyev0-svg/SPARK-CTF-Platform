@@ -4,7 +4,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, request,
+from flask import (Flask, abort, flash, jsonify, redirect, render_template, request,
                    session, url_for)
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
@@ -145,6 +145,20 @@ def hue(name):
 def get_setting(key):
     s = db.session.get(Setting, key)
     return s.value if s else None
+
+
+def _seen_key(user):
+    return f'ann_seen:{user.id}'
+
+
+def last_seen_announcement(user):
+    value = get_setting(_seen_key(user)) or ''
+    return int(value) if value.isdigit() else 0
+
+
+def unread_announcements(user):
+    """Announcements newer than the last one this user saw on the notifications page."""
+    return Announcement.query.filter(Announcement.id > last_seen_announcement(user)).count()
 
 
 def set_setting(key, value):
@@ -324,15 +338,18 @@ def inject():
     ctx = {'csrf_token': csrf_token, 'CATEGORIES': CATEGORIES, 'DIFFICULTIES': DIFFICULTIES,
            'google_login': google_enabled(), 'telegram_login': telegram_enabled(),
            'telegram_channel': notify.channel_enabled(),
+           'XP': {'difficulty': scoring.XP_BY_DIFFICULTY, 'event': scoring.XP_PER_EVENT,
+                  'place': scoring.XP_BY_PLACEMENT},
            'telegram_bot_id': telegram_bot_id(),
            'CATEGORY_META': CATEGORY_META, 'mail_enabled': mail_enabled(),
            'lang': get_lang(), 'js_i18n': js_strings(), 'year': utcnow().year}
     if current_user.is_authenticated and current_user.is_verified:
-        if 'my_score' not in g:
-            g.my_score = scoring.user_score(current_user)
-            g.bell = Announcement.query.order_by(Announcement.created_at.desc()).limit(5).all()
-        ctx['my_score'] = g.my_score
-        ctx['bell'] = g.bell
+        # cached per request: templates that include other templates run this more than once
+        cached = getattr(request, '_spark_user_ctx', None)
+        if cached is None:
+            cached = request._spark_user_ctx = {'my_score': scoring.user_score(current_user),
+                                                'unread': unread_announcements(current_user)}
+        ctx.update(cached)
     return ctx
 
 
@@ -366,7 +383,11 @@ def index():
     upcoming = (Competition.query.filter(Competition.published.is_(True),
                                          Competition.ends_at > utcnow())
                 .order_by(Competition.starts_at).first())
-    return render_template('index.html', top=rows[:5], stats=stats, upcoming=upcoming, TOOLS=TOOLS)
+    top = [r for r in rows if r['solves']][:5]
+    xp = scoring.activity_xp_bulk([r['user'] for r in top])
+    for r in top:
+        r['tier'] = scoring.tier_info(xp[r['user'].id])
+    return render_template('index.html', top=top, stats=stats, upcoming=upcoming, TOOLS=TOOLS)
 
 
 @app.route('/competitions')
@@ -528,7 +549,12 @@ def dashboard():
 @verified_required
 def notifications():
     anns = Announcement.query.order_by(Announcement.created_at.desc()).all()
-    return render_template('notifications.html', announcements=anns)
+    seen = last_seen_announcement(current_user)
+    new_ids = {a.id for a in anns if a.id > seen}
+    if new_ids:
+        set_setting(_seen_key(current_user), str(max(new_ids)))
+        db.session.commit()
+    return render_template('notifications.html', announcements=anns, new_ids=new_ids)
 
 
 @app.route('/vpn')

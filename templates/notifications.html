@@ -5,9 +5,9 @@
 <div class="app-page" style="max-width:860px">
   <div class="page-head"><div><span class="eyebrow">// notifications</span><h1>{{ _('Bildirishnomalar') }}</h1><p>{{ _("Platforma e'lonlari va yangiliklar.") }}</p></div></div>
   {% for a in announcements %}
-  <div class="card ann" id="n{{ a.id }}" style="align-items:flex-start">
+  <div class="card ann{% if a.id in new_ids %} is-new{% endif %}" id="n{{ a.id }}" style="align-items:flex-start">
     <span class="ico">{{ icon('megaphone') }}</span>
-    <div style="flex:1"><h4>{{ a.title }}</h4><p>{{ a.content }}</p><p class="dim" style="font-size:12px;margin-top:6px">{{ time(a.created_at) }}</p></div>
+    <div style="flex:1"><h4>{{ a.title }}{% if a.id in new_ids %} <span class="badge b-red">{{ _('yangi') }}</span>{% endif %}</h4><p>{{ a.content }}</p><p class="dim" style="font-size:12px;margin-top:6px">{{ time(a.created_at) }}</p></div>
   </div>
   {% else %}
   <div class="card empty"><div class="ico">{{ icon('bell') }}</div><h3>{{ _("Hozircha bildirishnomalar yo'q") }}</h3><p>{{ _("Yangi e'lonlar shu yerda paydo bo'ladi.") }}</p></div>

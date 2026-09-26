@@ -70,12 +70,6 @@
     if (isApp && window.innerWidth <= 1000) document.body.classList.toggle('sb-open');
     else $('#navLinks').classList.toggle('open');
   });
-  const bell = $('[data-bell]');
-  if (bell) {
-    const latest = parseInt(bell.dataset.bell, 10) || 0;
-    if (latest > (parseInt(store.get('spark_bell'), 10) || 0)) bell.classList.add('unread');
-    bell.addEventListener('click', () => { bell.classList.remove('unread'); store.set('spark_bell', String(latest)); });
-  }
   $$('[data-dropdown]').forEach((btn) => {
     const dd = document.getElementById(btn.dataset.dropdown);
     btn.addEventListener('click', (e) => {
@@ -304,5 +298,18 @@
     check();
   });
 
-  window.Spark = { $, $$, api, toast, fmtTimes, tilt, reduced, t };
+  // Spark coin (same markup as the coin() Jinja macro)
+  const COIN_SVG = '<svg class="coin-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#f59e0b"/><circle cx="12" cy="12" r="8.6" fill="#fbbf24" stroke="#fde68a" stroke-width="1"/><path d="M13.4 5.6 8 13h3.4l-1 5.4L16 11h-3.4l.8-5.4Z" fill="#7c2d12"/></svg>';
+  function coin(n, sign = '') {
+    const s = document.createElement('span');
+    s.className = 'coin';
+    s.title = 'Spark';
+    s.innerHTML = COIN_SVG;
+    const b = document.createElement('b');
+    b.textContent = `${sign}${n}`;
+    s.append(b);
+    return s;
+  }
+
+  window.Spark = { $, $$, api, toast, fmtTimes, tilt, reduced, t, coin };
 })();

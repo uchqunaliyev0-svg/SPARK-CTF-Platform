@@ -120,13 +120,13 @@
       label.innerHTML = ICON.bulb;
       label.append(` Hint ${i + 1}`);
       label.style.display = 'inline-flex'; label.style.gap = '8px'; label.style.alignItems = 'center';
-      b.append(label, el('span', 'mono', h.unlocked ? '' : (h.cost ? `−${h.cost} pts` : t('bepul'))));
+      b.append(label, h.unlocked ? el('span') : (h.cost ? window.Spark.coin(h.cost, '−') : el('span', 'mono', t('bepul'))));
       w.append(b);
       const body = el('div', 'body' + (h.unlocked ? '' : ' hidden'), h.content || '');
       w.append(body);
       b.addEventListener('click', async () => {
         if (h.unlocked) { body.classList.toggle('hidden'); return; }
-        if (h.cost && !window.confirm(t('Bu hint {cost} ball turadi. Avval umumiy balldan, yetmasa masala mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
+        if (h.cost && !window.confirm(t('Bu hint {cost} Spark turadi. Avval balansingizdan, yetmasa shu masala mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
         b.disabled = true;
         const res = await api(`/api/hints/${h.id}/unlock`, { method: 'POST' });
         b.disabled = false;
@@ -163,7 +163,7 @@
     meta.append(el('span', 'badge b-cyan', d.category), el('span', `badge d-${d.difficulty}`, d.difficulty));
     $('#mTitle').textContent = d.title;
     const sub = $('#mSub');
-    const v = el('span'); v.append(el('b', null, String(d.value)), ` ${t('ball')}`);
+    const v = el('span'); v.append(window.Spark.coin(d.value));
     const s = el('span'); s.append(el('b', null, String(d.solves)), ` ${t('ta yechim')}`);
     sub.append(v, s);
     if (d.author) { const a = el('span'); a.append(`${t('muallif:')} `, el('b', null, d.author)); sub.append(a); }
@@ -208,7 +208,7 @@
 
   function updateScore(score) {
     const pill = $('[data-my-score]');
-    if (pill) pill.textContent = `${score} pts`;
+    const pb = pill && $('.coin b', pill); if (pb) pb.textContent = score;
     const k = $('[data-kpi-score]'); if (k) k.textContent = score;
   }
 
@@ -233,7 +233,7 @@
       const c = current.card;
       c.classList.add('solved');
       const sv = $('[data-solves]', c); sv.textContent = parseInt(sv.textContent, 10) + 1;
-      $('[data-val]', c).firstChild.textContent = res.value;
+      const cv = $('[data-val] .coin b', c); if (cv) cv.textContent = res.value;
       updateScore(res.score);
       refreshProgress();
       confetti();
