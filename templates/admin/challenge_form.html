@@ -2,7 +2,7 @@
 {% from '_macros.html' import icon %}
 {% block admin %}
 {% set f = request.form if request.method == 'POST' else None %}
-<h1>{{ 'Yangi masala' if is_new else 'Masalani tahrirlash' }} <a href="{{ url_for('admin_challenges') }}" class="btn btn-ghost btn-sm">← Ro'yxatga</a></h1>
+<h1>{{ 'Yangi topshiriq' if is_new else 'Topshiriqni tahrirlash' }} <a href="{{ url_for('admin_challenges') }}" class="btn btn-ghost btn-sm">← Ro'yxatga</a></h1>
 <form method="post" class="card card-pad" data-challenge-form>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-grid">
@@ -25,7 +25,7 @@
       <label class="check"><input type="checkbox" name="visible" value="1" {{ 'checked' if (f.visible if f else ch.visible) }}> Ishtirokchilarga ko'rinadi</label>
       {% if telegram_channel and not (ch.id and ch.visible) %}<label class="check"><input type="checkbox" name="notify" value="1" checked> {{ _('Ko‘rinadigan bo‘lsa, Telegram kanalga e’lon qilish') }}</label>{% endif %}
     </div>
-    <div class="field full"><div class="hint">Practice masalalarining balli doimiy: yechuvchilar soni ko'payganda kamaymaydi.</div></div>
+    <div class="field full"><div class="hint">Mashq topshiriqlarining mukofoti doimiy: yechganlar ko'payganda kamaymaydi.</div></div>
     <div class="field full"><label for="files">Fayl havolalari (har qatorda bitta)</label><textarea class="input mono" id="files" name="files" rows="3" placeholder="https://github.com/.../task.zip">{{ f.files if f else ch.files or '' }}</textarea><div class="hint">Fayllarni GitHub Releases, Google Drive va h.k.ga joylab, havolasini qo'ying.</div></div>
   </div>
 
@@ -44,7 +44,7 @@
     </div>
     <template id="hintTpl"><div class="hint-row"><input type="hidden" name="hint_id" value=""><textarea class="input" name="hint_content" rows="1" placeholder="Hint matni"></textarea><input class="input" name="hint_cost" type="number" min="0" value="0" title="Narxi (ball)"><button type="button" class="icon-btn" data-remove-hint aria-label="O'chirish">{{ icon('trash') }}</button></div></template>
     <button type="button" class="btn btn-ghost btn-sm" data-add-hint>{{ icon('plus') }} Hint qo'shish</button>
-    <div class="hint">Narx 0 bo'lsa bepul. Avval umumiy practice balidan olinadi; yetmasa, shu masalaning olinadigan balidan ayriladi.</div>
+    <div class="hint">Narx 0 bo'lsa bepul. Avval Spark balansidan olinadi; yetmasa, shu topshiriq mukofotidan ayriladi.</div>
   </div>
 
   <div style="display:flex;gap:10px;margin-top:8px">

@@ -1,7 +1,7 @@
 {% extends 'app_layout.html' %}
 {% from '_macros.html' import icon, time, coin %}
 {% from '_profile.html' import heatmap %}
-{% block title %}Dashboard — SPARK CTF{% endblock %}
+{% block title %}{{ _('Boshqaruv paneli') }} — SPARK CTF{% endblock %}
 {% block app %}
 {% macro delta(a, b) -%}
 {% set d = a - b %}<span class="d {{ 'up' if d > 0 else ('down' if d < 0 else 'eq') }}">{{ '+' if d > 0 }}{{ d }}</span>
@@ -16,7 +16,7 @@
     <div class="card kpi-card" style="--c: var(--cyan)"><span class="mi">{{ icon('trend') }}</span><div><b>{{ coin(stats.score) }}</b><span>Spark</span></div></div>
     <div class="card kpi-card" style="--c: var(--amber)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ '#' ~ row.rank if row else '—' }}</b><span>{{ _("O'rin") }}{% if row %} · {{ players }}{% endif %}</span></div></div>
     <div class="card kpi-card" style="--c: var(--green)"><span class="mi">{{ icon('flag') }}</span><div><b>{{ stats.solves }}<small>/{{ total }}</small></b><span>{{ _('Yechilgan') }}</span></div></div>
-    <div class="card kpi-card" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ stats.events }}</b><span>{{ _('Turnirlar') }}</span></div></div>
+    <div class="card kpi-card" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ stats.events }}</b><span>{{ _('Musobaqalar') }}</span></div></div>
   </div>
 
   <div class="card tier-strip" style="--tc: {{ t.color }}">
@@ -29,7 +29,7 @@
   </div>
 
   <div class="card card-pad" style="margin-bottom:18px">
-    <div class="card-head"><h3>{{ icon('target') }} {{ _('Keyingi masalalar') }}</h3><a href="{{ url_for('challenges') }}" class="btn btn-ghost btn-sm">{{ _('Hammasi') }} {{ icon('arrow') }}</a></div>
+    <div class="card-head"><h3>{{ icon('target') }} {{ _('Siz uchun tavsiya') }}</h3><a href="{{ url_for('challenges') }}" class="btn btn-ghost btn-sm">{{ _('Hammasi') }} {{ icon('arrow') }}</a></div>
     {% if suggestions %}
     <div class="next-grid">
       {% for c in suggestions %}
@@ -42,7 +42,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="chart-empty" style="height:120px">{% if total %}{{ _('Barcha masalalar yechilgan — zo‘r natija! 🏆') }}{% else %}{{ _('Masalalar tez orada ochiladi') }}{% endif %}</div>
+    <div class="chart-empty" style="height:120px">{% if total %}{{ _('Barcha topshiriqlar yechilgan — zo‘r natija! 🏆') }}{% else %}{{ _('Topshiriqlar tez orada ochiladi') }}{% endif %}</div>
     {% endif %}
   </div>
 

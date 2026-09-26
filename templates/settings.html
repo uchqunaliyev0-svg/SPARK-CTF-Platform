@@ -6,7 +6,7 @@
   <div class="page-head"><div><span class="eyebrow">// settings</span><h1>{{ _('Sozlamalar') }}</h1></div></div>
 
   <div class="card card-pad" style="margin-bottom:18px">
-    <div class="card-title">{{ icon('user') }} {{ _('Hisob') }}</div>
+    <div class="card-title">{{ icon('user') }} {{ _('Akkaunt') }}</div>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
       {{ avatar(current_user.username, 'md') }}
       <div style="flex:1;min-width:0">
@@ -20,13 +20,13 @@
 
   {% if google_login or telegram_login or current_user.social_accounts %}
   <div class="card card-pad" style="margin-bottom:18px">
-    <div class="card-title">{{ icon('link') }} {{ _('Ulangan hisoblar') }}</div>
+    <div class="card-title">{{ icon('link') }} {{ _('Ulangan akkauntlar') }}</div>
     {% set linked = current_user.social_accounts|map(attribute='provider')|list %}
     {% for acc in current_user.social_accounts %}
     <div class="lr-inline"><span class="badge b-green">{{ icon('check') }} {{ acc.provider|capitalize }}</span><span class="muted">{{ acc.display or '' }}</span></div>
     {% endfor %}
     {% if (google_login and 'google' not in linked) or (telegram_login and 'telegram' not in linked) %}
-    <p class="dim" style="font-size:13px;margin-top:10px">{{ _('Keyingi safar bir bosishda kirish uchun hisobingizni ulang.') }}</p>
+    <p class="dim" style="font-size:13px;margin-top:10px">{{ _('Keyingi safar bir bosishda kirish uchun akkauntingizni ulang.') }}</p>
     {{ social_buttons(google_login and 'google' not in linked, telegram_login and 'telegram' not in linked, telegram_bot_id, csrf_token(), label=_('ulash')) }}
     {% endif %}
   </div>

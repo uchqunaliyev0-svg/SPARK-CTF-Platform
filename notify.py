@@ -45,7 +45,7 @@ def post(html_text, link_path=None, link_label='Ochish'):
 
 
 def new_challenge(ch):
-    return post(f'🚩 <b>Yangi masala: {escape(ch.title)}</b>\n'
+    return post(f'🚩 <b>Yangi topshiriq: {escape(ch.title)}</b>\n'
                 f'{escape(ch.category)} · {escape(ch.difficulty)} · {ch.value} ball',
                 f'/challenges#c-{ch.id}', 'Yechish')
 

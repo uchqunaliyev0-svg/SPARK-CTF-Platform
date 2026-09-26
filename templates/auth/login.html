@@ -21,5 +21,5 @@
   <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _('Kirish') }}</button>
 </form>
 {{ social_buttons(google_login, telegram_login, telegram_bot_id, csrf_token(), next=request.args.get('next')) }}
-<p class="alt">{{ _("Hisobingiz yo'qmi?") }} <a href="{{ url_for('register') }}">{{ _("Ro'yxatdan o'ting") }}</a></p>
+<p class="alt">{{ _("Akkauntingiz yo'qmi?") }} <a href="{{ url_for('register') }}">{{ _("Ro'yxatdan o'ting") }}</a></p>
 {% endblock %}

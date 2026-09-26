@@ -11,26 +11,26 @@
   <aside class="sidebar" id="sidebar">
     <div class="sb-head">
       <span class="sb-title">{% if ep.startswith('admin') %}Admin{% else %}SPARK CTF{% endif %}</span>
-      <button class="sb-collapse" data-sb-collapse aria-label="{{ _("Panelni yig'ish") }}">{{ icon('chevron-left') }}</button>
+      <button class="sb-collapse" data-sb-collapse aria-label="{{ _("Menyuni yig'ish") }}">{{ icon('chevron-left') }}</button>
     </div>
     <nav class="sb-nav">
       <div class="sb-group">{{ _('Platforma') }}</div>
-      {{ item('dashboard', 'grid', 'Dashboard') }}
-      {{ item('challenges', 'flag', _('Masalalar')) }}
+      {{ item('dashboard', 'grid', _('Boshqaruv paneli')) }}
+      {{ item('challenges', 'flag', _('Topshiriqlar')) }}
       {{ item('competitions', 'trophy', _('Musobaqalar')) }}
       {{ item('scoreboard', 'trend', _('Reyting')) }}
-      <div class="sb-group">{{ _('Hisob') }}</div>
+      <div class="sb-group">{{ _('Akkaunt') }}</div>
       {{ item('user_page', 'user', _('Profil'), active=(ep == 'user_page' and request.view_args.username|lower == current_user.username|lower), username=current_user.username) }}
       {{ item('notifications', 'bell', _('Bildirishnomalar'), count=unread or 0) }}
       {{ item('settings', 'settings', _('Sozlamalar')) }}
       {% if current_user.is_admin %}
       <div class="sb-group">Admin</div>
-      {{ item('admin_index', 'grid', _('Umumiy')) }}
-      {{ item('admin_challenges', 'flag', _('Masalalar boshqaruvi'), active=ep in ['admin_challenges', 'admin_challenge_form']) }}
+      {{ item('admin_index', 'grid', _('Umumiy ko‘rinish')) }}
+      {{ item('admin_challenges', 'flag', _('Topshiriqlar'), active=ep in ['admin_challenges', 'admin_challenge_form']) }}
       {{ item('admin_users', 'users', _('Foydalanuvchilar')) }}
-      {{ item('admin_submissions', 'list', _('Urinishlar')) }}
+      {{ item('admin_submissions', 'list', _('Flag urinishlari')) }}
       {{ item('admin_announcements', 'megaphone', _("E'lonlar")) }}
-      {{ item('admin_competitions', 'trophy', _('Musobaqalar boshqaruvi'), active=ep in ['admin_competitions', 'admin_competition_form']) }}
+      {{ item('admin_competitions', 'trophy', _('Musobaqalar'), active=ep in ['admin_competitions', 'admin_competition_form']) }}
       {% endif %}
     </nav>
     <div class="sb-mobile">
@@ -43,7 +43,7 @@
             <a href="{{ url_for('set_lang', code='en', next=request.full_path.rstrip('?')) }}" class="{{ 'on' if lang == 'en' }}"><span class="flag">EN</span> English</a>
           </div>
         </div>
-        <button class="tool-btn theme-btn" data-theme-toggle aria-label="{{ _('Kun / tun rejimi') }}"><span class="i-moon">{{ icon('moon') }}</span><span class="i-sun">{{ icon('sun') }}</span></button>
+        <button class="tool-btn theme-btn" data-theme-toggle aria-label="{{ _('Yorug‘ / qorong‘i rejim') }}"><span class="i-moon">{{ icon('moon') }}</span><span class="i-sun">{{ icon('sun') }}</span></button>
         <a href="{{ url_for('vpn') }}" class="tool-btn vpn-btn">{{ icon('power') }}<span>VPN</span></a>
       </div>
     </div>

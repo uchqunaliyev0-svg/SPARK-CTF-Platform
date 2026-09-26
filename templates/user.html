@@ -5,7 +5,7 @@
 {% block app %}
 <div class="app-page">
   <div class="page-head">
-    <div><span class="eyebrow">// {{ _('profil') }}</span><h1>{{ user.username }}</h1><p>{{ _("Ishtirokchining natijalari va yechgan masalalari.") }}</p></div>
+    <div><span class="eyebrow">// {{ _('profil') }}</span><h1>{{ user.username }}</h1><p>{{ _("Ishtirokchining natijalari va yechgan topshiriqlari.") }}</p></div>
     {% if user.id == current_user.id %}<a href="{{ url_for('settings') }}" class="btn btn-ghost">{{ icon('settings') }} {{ _('Sozlamalar') }}</a>{% endif %}
   </div>
 
@@ -13,7 +13,7 @@
     <div style="display:flex;flex-direction:column;gap:18px">
       {{ profile_card(user, stats, row, players) }}
       <div>
-        <div class="card-head"><h3>{{ icon('grid') }} {{ _("Yo'nalishlar bo'yicha") }}</h3></div>
+        <div class="card-head"><h3>{{ icon('grid') }} {{ _("Kategoriyalar bo'yicha") }}</h3></div>
         {{ cat_tiles(cats) }}
       </div>
     </div>
@@ -57,9 +57,9 @@
       {{ diff_rows(diffs) }}
     </div>
     <div class="card card-pad">
-      <div class="card-head"><h3>{{ icon('trophy') }} {{ _('Spark dinamikasi') }}</h3></div>
+      <div class="card-head"><h3>{{ icon('trophy') }} {{ _('Spark o‘sishi') }}</h3></div>
       {% if stats.series %}
-      <div class="chart-sm"><canvas id="myChart" aria-label="{{ _('Spark dinamikasi') }}"></canvas></div>
+      <div class="chart-sm"><canvas id="myChart" aria-label="{{ _('Spark o‘sishi') }}"></canvas></div>
       {% else %}
       <div class="chart-empty">{{ _("Hali ma'lumot yo'q") }}</div>
       {% endif %}
@@ -67,11 +67,11 @@
   </div>
 
   <div class="card">
-    <div class="card-pad" style="padding-bottom:0"><div class="card-head"><h3>{{ icon('flag') }} {{ _('Yechilgan masalalar') }} ({{ solves|length }})</h3></div></div>
+    <div class="card-pad" style="padding-bottom:0"><div class="card-head"><h3>{{ icon('flag') }} {{ _('Yechilgan topshiriqlar') }} ({{ solves|length }})</h3></div></div>
     {% if solves %}
     <div class="table-wrap">
       <table class="table">
-        <thead><tr><th>{{ _('Masala') }}</th><th>{{ _('Kategoriya') }}</th><th>{{ _('Qiyinlik') }}</th><th class="num">Spark</th><th>{{ _('Vaqt') }}</th></tr></thead>
+        <thead><tr><th>{{ _('Topshiriq') }}</th><th>{{ _('Kategoriya') }}</th><th>{{ _('Qiyinlik') }}</th><th class="num">Spark</th><th>{{ _('Vaqt') }}</th></tr></thead>
         <tbody>
         {% for s in solves %}
           {% set col = CATEGORY_META.get(s.challenge.category, ('#22d3ee', ''))[0] %}
@@ -94,7 +94,7 @@
     {% if events %}<div class="list-rows">{% for e in events %}{% set reg = e.registration %}
       <div class="lr{% if not reg.profile_visible %} is-hidden{% endif %}" style="--c:{{ 'var(--amber)' if e.placement == 1 else 'var(--violet)' }}"><span class="mi">{{ icon('trophy') }}</span>
         <div class="grow"><b><a href="{{ url_for('competition_detail', competition_id=e.event.id) }}">{{ e.event.title }}</a>{% if not reg.profile_visible %} <span class="badge b-muted">{{ _('yashirilgan') }}</span>{% endif %}</b>
-          <small>{{ e.event.starts_at.strftime('%Y-%m-%d') }} · {{ e.solves }} {{ _('masala') }} · {{ e.points }} {{ _('ball') }}{% if e.placement %} · <span style="color:var(--text);font-weight:700">#{{ e.placement }}</span>{% if e.players %} / {{ e.players }}{% endif %}{% elif e.event.state != 'ended' %} · {{ _('davom etmoqda') }}{% endif %}</small>
+          <small>{{ e.event.starts_at.strftime('%Y-%m-%d') }} · {{ e.solves }} {{ _('topshiriq') }} · {{ e.points }} {{ _('ball') }}{% if e.placement %} · <span style="color:var(--text);font-weight:700">#{{ e.placement }}</span>{% if e.players %} / {{ e.players }}{% endif %}{% elif e.event.state != 'ended' %} · {{ _('davom etmoqda') }}{% endif %}</small>
           {% if e.first_bloods or e.certificate %}<span style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">{% if e.first_bloods %}<span class="badge b-red">{{ icon('drop') }} {{ _('{n} ta first blood', n=e.first_bloods) }}</span>{% endif %}{% if e.certificate %}<a class="badge b-amber" href="{{ url_for('certificate', code=e.certificate.code) }}">{{ icon('award') }} {{ _('Sertifikat') }}</a>{% endif %}</span>{% endif %}</div>
         {% if current_user.is_authenticated and user.id == current_user.id %}<form method="post" action="{{ url_for('competition_profile_visibility', competition_id=e.event.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ghost btn-sm">{{ _('Profilimda ko‘rsatish') if not reg.profile_visible else _('Profilimda yashirish') }}</button></form>{% endif %}
       </div>{% endfor %}</div>{% else %}<div class="empty" style="padding:28px">{{ _('Hozircha ko‘rsatiladigan rasmiy natija yo‘q.') }}</div>{% endif %}
