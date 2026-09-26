@@ -309,26 +309,18 @@ def security_headers(resp):
     resp.headers['X-Content-Type-Options'] = 'nosniff'
     resp.headers['X-Frame-Options'] = 'DENY'
     resp.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    resp.headers['Permissions-Policy'] = (
-        'camera=(), microphone=(), geolocation=(), payment=(), usb=(), '
-        'interest-cohort=(), fullscreen=(self)'
-    )
-    resp.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
-    resp.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
-    csp = (
+    resp.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+    resp.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         f"script-src 'self'{TELEGRAM_SRC}; "
         f"frame-src {TELEGRAM_FRAME}; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; connect-src 'self'; "
-        "object-src 'none'; "
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     )
     if IS_PROD:
-        csp += '; upgrade-insecure-requests'
         resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    resp.headers['Content-Security-Policy'] = csp
     if request.path.startswith('/api/') or current_user.is_authenticated:
         resp.headers['Cache-Control'] = 'no-store'
     return resp
