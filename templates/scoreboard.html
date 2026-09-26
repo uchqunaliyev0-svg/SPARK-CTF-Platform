@@ -2,59 +2,58 @@
 {% from '_macros.html' import icon, avatar, time %}
 {% block title %}{{ _('Reyting') }} — SPARK CTF{% endblock %}
 {% block app %}
+{% macro mini_badges(list) -%}
+{% if list %}<span class="mini-badges">{% for b in list[-4:]|reverse %}<i style="--c: {{ b.color }}" title="{{ _(b.name) }}">{{ icon(b.icon) }}</i>{% endfor %}</span>{% endif %}
+{%- endmacro %}
 <div class="app-page">
   <div class="page-head">
-    <div><span class="eyebrow">// scoreboard</span><h1>{{ _('Reyting') }}</h1><p>{{ _('{n} ta ishtirokchi · teng ballda avvalroq yechgan yuqorida', n=rows|length) }}</p></div>
+    <div><span class="eyebrow">// scoreboard</span><h1>{{ _('Reyting') }}</h1>
+      <p>{{ _('{n} ta ishtirokchi · teng ballda avvalroq yechgan yuqorida', n=rows|length) }}</p></div>
+    <nav class="seg" aria-label="{{ _('Davr') }}">
+      <a href="{{ url_for('scoreboard') }}" class="{{ 'on' if period == 'all' }}">{{ _('Barcha vaqt') }}</a>
+      <a href="{{ url_for('scoreboard', period='month') }}" class="{{ 'on' if period == 'month' }}">{{ _('30 kun') }}</a>
+      <a href="{{ url_for('scoreboard', period='week') }}" class="{{ 'on' if period == 'week' }}">{{ _('7 kun') }}</a>
+    </nav>
   </div>
 
   {% set podium = rows|selectattr('solves')|list %}
   {% if podium %}
-  <div class="podium">
+  <div class="card lb-podium">
     {% for idx in [1, 0, 2] %}{% if podium|length > idx %}{% set r = podium[idx] %}
-    <a class="card pod p{{ idx + 1 }}" href="{{ url_for('user_page', username=r.user.username) }}" data-tilt="6" data-reveal="{{ idx }}">
-      <div class="medal">#{{ idx + 1 }} {{ ['GOLD', 'SILVER', 'BRONZE'][idx] }}</div>
-      {{ avatar(r.user.username, 'lg' if idx == 0 else 'md') }}
-      <span class="name">{{ r.user.username }}</span>
-      <div class="score">{{ r.score }}</div>
-      <div class="sv">{{ _('{n} ta flag', n=r.solves) }}</div>
+    <a class="lb-pod p{{ idx + 1 }}" href="{{ url_for('user_page', username=r.user.username) }}">
+      <span class="lb-ring">{{ avatar(r.user.username) }}</span>
+      <span class="lb-place">{{ idx + 1 }}</span>
+      <span class="lb-name">{{ r.user.username }}{% if idx == 0 %} <span class="lb-crown">{{ icon('crown') }}</span>{% endif %}</span>
+      <span class="lb-score">{{ r.score }}</span>
+      <span class="lb-sub">{{ _('{n} ta flag', n=r.solves) }}</span>
     </a>
     {% else %}<div></div>{% endif %}{% endfor %}
   </div>
-
-  <div class="card chart-card" data-reveal>
-    <div class="card-title">{{ icon('trophy') }} {{ _('Top 10 — ballar dinamikasi') }}</div>
-    <div class="chart-box"><canvas id="chart" aria-label="Top 10"></canvas></div>
-  </div>
   {% endif %}
 
-  <div class="card" data-reveal>
+  <div class="card">
     {% if rows %}
     <div class="table-wrap">
-      <table class="table">
-        <thead><tr><th style="width:70px">{{ _("O'rin") }}</th><th>{{ _('Ishtirokchi') }}</th><th class="num">{{ _('Flaglar') }}</th><th>{{ _('Oxirgi yechim') }}</th><th class="num">{{ _('Ball') }}</th></tr></thead>
+      <table class="table lb-table">
+        <thead><tr><th style="width:64px">#</th><th>{{ _('Ishtirokchi') }}</th><th class="num">{{ _('Ball') }}</th><th class="num hide-sm">{{ _('Flaglar') }}</th><th class="num hide-sm">{{ _('Oxirgi yechim') }}</th></tr></thead>
         <tbody>
         {% for r in rows %}
           <tr class="{{ 'me' if current_user.is_authenticated and r.user.id == current_user.id }}">
-            <td><span class="rank r{{ r.rank if r.rank <= 3 and r.solves else '' }}">#{{ r.rank }}</span></td>
-            <td><a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}{{ r.user.username }} <span class="badge" style="color:{{ r.tier.color }};border-color:{{ r.tier.color }}">{{ _(r.tier.name) }}</span>{% if current_user.is_authenticated and r.user.id == current_user.id %} <span class="badge b-cyan">{{ _('siz') }}</span>{% endif %}</a></td>
-            <td class="num">{{ r.solves }}</td>
-            <td class="muted">{{ time(r.last) if r.last else '—' }}</td>
-            <td class="num" style="color:var(--cyan);font-weight:700">{{ r.score }}</td>
+            <td><span class="rank r{{ r.rank if r.rank <= 3 and r.solves else '' }}">{{ r.rank }}</span></td>
+            <td><a class="user-cell" href="{{ url_for('user_page', username=r.user.username) }}">{{ avatar(r.user.username) }}<span class="lb-who"><b>{{ r.user.username }}</b><small style="color:{{ r.tier.color }}">{{ _(r.tier.name) }}</small></span>{{ mini_badges(r.badges) }}</a></td>
+            <td class="num lb-pts">{{ r.score }}</td>
+            <td class="num muted hide-sm">{{ r.solves }}</td>
+            <td class="num muted hide-sm">{{ time(r.last) if r.last else '—' }}</td>
           </tr>
         {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-    <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>{{ _("Reyting hali bo'sh") }}</h3><p>{{ _("Birinchi flagni topgan ishtirokchi bu yerda paydo bo'ladi.") }}</p></div>
+    <div class="empty"><div class="ico">{{ icon('trophy') }}</div>
+      <h3>{% if period == 'all' %}{{ _("Reyting hali bo'sh") }}{% else %}{{ _('Bu davrda hali yechim yo‘q') }}{% endif %}</h3>
+      <p>{{ _("Birinchi flagni topgan ishtirokchi bu yerda paydo bo'ladi.") }}</p></div>
     {% endif %}
   </div>
 </div>
-<script type="application/json" id="series">{{ series|tojson }}</script>
-{% endblock %}
-{% block scripts %}
-{% if rows|selectattr('solves')|list %}
-<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/scoreboard.js') }}?v=4"></script>
-{% endif %}
 {% endblock %}

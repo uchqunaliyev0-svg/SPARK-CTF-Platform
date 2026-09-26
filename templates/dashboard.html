@@ -10,7 +10,6 @@
 <div class="app-page">
   <div class="page-head">
     <div><span class="eyebrow">// dashboard</span><h1>{{ _('Xush kelibsiz, {name}', name=current_user.username) }}</h1><p>{{ _("Bugun qaysi flagni olamiz?") }}</p></div>
-    <a href="{{ url_for('user_page', username=current_user.username) }}" class="btn btn-ghost">{{ icon('user') }} {{ _('Profilim') }}</a>
   </div>
 
   <div class="kpi-row">
@@ -54,14 +53,14 @@
       <div class="sc-grid">
         <div class="sc" style="--c: var(--green)"><span class="mi">{{ icon('trend') }}</span><div><div class="k">{{ _('Ball') }}</div><div class="v">{{ m.points }} {{ delta(m.points, l.points) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.points }}</div></div></div>
         <div class="sc" style="--c: var(--cyan)"><span class="mi">{{ icon('flag') }}</span><div><div class="k">{{ _('Yechimlar') }}</div><div class="v">{{ m.solves }} {{ delta(m.solves, l.solves) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.solves }}</div></div></div>
-        <div class="sc" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><div class="k">{{ _('Turnirlar') }}</div><div class="v">{{ stats.events }}</div><div class="l">{{ _('Qatnashgan jami') }}</div></div></div>
+        <a class="sc" href="{{ url_for('user_page', username=current_user.username) }}" style="--c: var(--violet)"><span class="mi">{{ icon('award') }}</span><div><div class="k">{{ _('Yutuqlar') }}</div><div class="v">{{ badges_earned }}<small class="muted">/{{ badges_total }}</small></div><div class="l">{{ _('Profilda ko‘rish') }}</div></div></a>
         <div class="sc" style="--c: var(--amber)"><span class="mi">{{ icon('bulb') }}</span><div><div class="k">{{ _('Hintlar') }}</div><div class="v">{{ m.hints }} {{ delta(m.hints, l.hints) }}</div><div class="l">{{ _("O'tgan oy") }}: {{ l.hints }}</div></div></div>
       </div>
     </div>
     <div class="card card-pad">{{ heatmap(stats) }}</div>
   </div>
 
-  <div class="row-2">
+  <div class="{{ 'row-2' if next_event else '' }}">
     <div class="card card-pad">
       <div class="card-head"><h3>{{ icon('flag') }} {{ _("So'nggi yechimlar") }}</h3></div>
       {% if recent %}
@@ -78,18 +77,16 @@
       <div class="chart-empty" style="height:160px">{{ _('Hali yechimlar yo‘q') }}</div>
       {% endif %}
     </div>
-    <div class="card card-pad">
-      <div class="card-head"><h3>{{ icon('megaphone') }} {{ _("E'lonlar") }}</h3><a href="{{ url_for('notifications') }}" class="btn btn-ghost btn-sm">{{ _('Hammasi') }}</a></div>
-      {% if announcements %}
-      <div class="list-rows">
-        {% for a in announcements %}
-        <div class="lr" style="--c: var(--amber)"><span class="mi">{{ icon('megaphone') }}</span><div class="grow"><b>{{ a.title }}</b><small>{{ a.content|truncate(90) }}</small></div></div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="chart-empty" style="height:160px">{{ _("Hozircha e'lonlar yo'q") }}</div>
-      {% endif %}
-    </div>
+    {% if next_event %}
+    {% set live = next_event.state == 'live' %}
+    <a class="card card-pad next-event" href="{{ url_for('competition_detail', competition_id=next_event.id) }}" style="--c: {{ 'var(--green)' if live else 'var(--amber)' }}">
+      <div class="card-head"><h3>{{ icon('trophy') }} {{ _('Musobaqa jonli') if live else _('Navbatdagi musobaqa') }}</h3><span class="badge" style="color:var(--c);border-color:var(--c)">{{ _('Jonli') if live else _('Kutilmoqda') }}</span></div>
+      <b class="ne-title">{{ next_event.title }}</b>
+      <span class="muted">{{ (next_event.ends_at if live else next_event.starts_at).strftime('%Y-%m-%d %H:%M') }} UTC · {{ _('tugaydi') if live else _('boshlanadi') }}</span>
+      {% if next_event.prize %}<span class="ne-prize">{{ icon('award') }} {{ next_event.prize }}</span>{% endif %}
+      <span class="btn btn-primary btn-sm" style="align-self:flex-start;margin-top:auto">{{ _('Ochish') }} {{ icon('arrow') }}</span>
+    </a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

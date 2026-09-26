@@ -3,8 +3,12 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import case, func
 
-from models import (Challenge, Competition, CompetitionRegistration, CompetitionSolve, Hint,
-                    HintDebit, HintUnlock, Solve, User, db)
+import secrets
+
+from models import (Certificate, Challenge, Competition, CompetitionRegistration, CompetitionSolve,
+                    Hint, HintDebit, HintUnlock, Solve, User, db)
+
+CERTIFIED_PLACES = 3
 
 
 def challenge_value(ch, solve_count):
@@ -56,13 +60,20 @@ def _events(user_ids=None):
     return events
 
 
-def standings():
-    """Ranked list of dicts for all visible (non-admin, non-banned) users."""
+def standings(since=None):
+    """Ranked list of dicts for all visible (non-admin, non-banned) users.
+
+    With `since`, only points earned from that moment count (weekly / monthly boards) and
+    players with nothing in the window are left out."""
     users = User.query.filter_by(is_banned=False, is_admin=False, is_verified=True).all()
     events = _events([u.id for u in users])
     rows = []
     for u in users:
         evs = events.get(u.id, [])
+        if since is not None:
+            evs = [e for e in evs if e[0] >= since]
+            if not any(e[2] == 'solve' for e in evs):
+                continue
         score = sum(e[1] for e in evs)
         solves = sum(1 for e in evs if e[2] == 'solve')
         last = max((e[0] for e in evs if e[2] == 'solve'), default=None)
@@ -118,8 +129,41 @@ def competition_standings(event):
     return ranked
 
 
+def _new_certificate_code():
+    while True:
+        raw = secrets.token_hex(5).upper()
+        code = f'SPK-{raw[:5]}-{raw[5:]}'
+        if not Certificate.query.filter_by(code=code).first():
+            return code
+
+
+def _sync_certificates(event, standings):
+    """Podium certificates follow the final standings; anyone who drops off is revoked."""
+    podium = {row['user'].id: row for row in standings if row['rank'] <= CERTIFIED_PLACES}
+    changed = False
+    existing = {c.user_id: c for c in Certificate.query.filter_by(competition_id=event.id).all()}
+    for uid, cert in existing.items():
+        row = podium.get(uid)
+        if row is None:
+            if not cert.revoked:
+                cert.revoked, changed = True, True
+            continue
+        fresh = (row['rank'], row['score'], row['solves'], len(standings), False)
+        if (cert.placement, cert.points, cert.solves, cert.players, cert.revoked) != fresh:
+            cert.placement, cert.points, cert.solves, cert.players, cert.revoked = fresh
+            changed = True
+    for uid, row in podium.items():
+        if uid not in existing:
+            db.session.add(Certificate(code=_new_certificate_code(), competition_id=event.id, user_id=uid,
+                                       placement=row['rank'], points=row['score'], solves=row['solves'],
+                                       players=len(standings)))
+            changed = True
+    return changed
+
+
 def finalize_placements(event, standings=None):
-    """Persist final ranks once an event has ended. Returns True when a row changed."""
+    """Persist final ranks and podium certificates once an event has ended.
+    Returns True when anything changed."""
     if event.state != 'ended':
         return False
     standings = competition_standings(event) if standings is None else standings
@@ -130,6 +174,7 @@ def finalize_placements(event, standings=None):
         if reg.placement != placement:
             reg.placement = placement
             changed = True
+    changed = _sync_certificates(event, standings) or changed
     if changed:
         db.session.commit()
     return changed
@@ -167,7 +212,9 @@ def competition_results(user, include_hidden=False):
     for reg in q.order_by(Competition.starts_at.desc()).all():
         event = reg.competition
         standings = competition_standings(event)
+        finalize_placements(event, standings)
         mine = next((r for r in standings if r['user'].id == user.id), None)
+        cert = Certificate.query.filter_by(competition_id=event.id, user_id=user.id, revoked=False).first()
         placement = reg.placement
         if placement is None and event.state == 'ended' and mine:
             placement = mine['rank']
@@ -176,22 +223,8 @@ def competition_results(user, include_hidden=False):
                     'points': mine['score'] if mine else 0,
                     'first_bloods': mine['first_bloods'] if mine else 0,
                     'placement': placement if event.state == 'ended' else None,
-                    'players': len(standings)})
+                    'players': len(standings), 'certificate': cert})
     return out
-
-
-def graph_series(rows, limit=10):
-    top = [r for r in rows if r['solves'] > 0][:limit]
-    events = _events([r['user'].id for r in top])
-    series = []
-    for r in top:
-        total = 0
-        points = []
-        for at, delta, _, _ in events.get(r['user'].id, []):
-            total += delta
-            points.append({'t': at.isoformat() + 'Z', 'y': total})
-        series.append({'name': r['user'].username, 'points': points})
-    return series
 
 
 TIERS = [  # (minimum activity XP, display name, colour)

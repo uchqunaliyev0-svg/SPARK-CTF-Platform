@@ -251,6 +251,9 @@
     if (b) { b.disabled = true; b.insertAdjacentHTML('afterbegin', '<span class="spinner"></span>'); }
   }));
 
+  // ---------- print (certificates)
+  $$('[data-print]').forEach((b) => b.addEventListener('click', () => window.print()));
+
   // ---------- confirm dialogs
   $$('form[data-confirm]').forEach((f) => f.addEventListener('submit', (e) => {
     if (!window.confirm(f.dataset.confirm)) e.preventDefault();

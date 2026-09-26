@@ -1,5 +1,6 @@
 import hmac
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
@@ -12,15 +13,20 @@ from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import HTTPException
 
+import achievements
 import scoring
 from i18n import LANGS, _, get_lang, js_strings
 import mailer
+import notify
+import vpn as vpn_conf
 from mailer import mail_enabled, send_code, send_test
-from models import (Announcement, Attempt, Challenge, Competition, CompetitionAttempt,
+from models import (Announcement, Attempt, Certificate, Challenge, Competition, CompetitionAttempt,
                     CompetitionChallenge, CompetitionRegistration, CompetitionSolve, EmailCode,
-                    Hint, HintDebit, HintUnlock, Setting, Solve, User, db, utcnow)
+                    Hint, HintDebit, HintUnlock, Setting, SocialAccount, Solve, User, VpnPeer, db, utcnow)
 from security import (EMAIL_RE, rate_hit, rate_limited, code_fingerprint, consume_code_link, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
                       issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
+from social import (SocialError, google_auth_url, google_enabled, google_profile, suggest_username,
+                    telegram_bot_id, telegram_enabled, telegram_profile)
 
 CATEGORIES = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'OSINT', 'Misc']
 TOOLS = [
@@ -56,6 +62,9 @@ FLAG_WINDOW = timedelta(seconds=60)
 FLAG_MAX_WRONG = 10
 
 IS_PROD = bool(os.getenv('VERCEL') or os.getenv('FORCE_HTTPS'))
+# The Telegram login widget is a script from telegram.org that renders an iframe.
+TELEGRAM_SRC = ' https://telegram.org' if os.getenv('TELEGRAM_BOT_TOKEN') else ''
+TELEGRAM_FRAME = 'https://oauth.telegram.org' if os.getenv('TELEGRAM_BOT_TOKEN') else "'none'"
 
 
 def _db_url():
@@ -293,7 +302,8 @@ def security_headers(resp):
     resp.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     csp = (
         "default-src 'self'; "
-        "script-src 'self'; "
+        f"script-src 'self'{TELEGRAM_SRC}; "
+        f"frame-src {TELEGRAM_FRAME}; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; connect-src 'self'; "
@@ -312,6 +322,9 @@ def security_headers(resp):
 @app.context_processor
 def inject():
     ctx = {'csrf_token': csrf_token, 'CATEGORIES': CATEGORIES, 'DIFFICULTIES': DIFFICULTIES,
+           'google_login': google_enabled(), 'telegram_login': telegram_enabled(),
+           'telegram_channel': notify.channel_enabled(),
+           'telegram_bot_id': telegram_bot_id(),
            'CATEGORY_META': CATEGORY_META, 'mail_enabled': mail_enabled(),
            'lang': get_lang(), 'js_i18n': js_strings(), 'year': utcnow().year}
     if current_user.is_authenticated and current_user.is_verified:
@@ -455,6 +468,13 @@ def api_captcha():
     return jsonify(new_captcha())
 
 
+def _category_totals():
+    totals = {}
+    for (cat,) in practice_challenges_query().with_entities(Challenge.category).all():
+        totals[cat] = totals.get(cat, 0) + 1
+    return totals
+
+
 def _category_progress(user_id):
     chs = practice_challenges_query().all()
     solved = {s.challenge_id for s in Solve.query.filter_by(user_id=user_id).all()}
@@ -480,7 +500,6 @@ def dashboard():
     cats, diffs = _category_progress(current_user.id)
     recent = (Solve.query.filter_by(user_id=current_user.id).join(Challenge)
               .filter(Challenge.visible.is_(True)).order_by(Solve.created_at.desc()).limit(6).all())
-    anns = Announcement.query.order_by(Announcement.created_at.desc()).limit(3).all()
     values = scoring.current_values()
     counts = scoring.solve_counts()
     solved = {s.challenge_id for s in Solve.query.filter_by(user_id=current_user.id).all()}
@@ -496,9 +515,13 @@ def dashboard():
         if len(suggestions) == 4:
             break
     total = sum(c['total'] for c in cats)
+    next_event = (Competition.query.filter(Competition.published.is_(True), Competition.ends_at > utcnow())
+                  .order_by(Competition.starts_at).first())
+    my_badges = achievements.badges(current_user, _category_totals())
     return render_template('dashboard.html', row=me, players=len(rows), stats=stats, recent=recent,
-                           announcements=anns, values=values, counts=counts, suggestions=suggestions,
-                           total=total, earned=scoring.earned_values(current_user))
+                           values=values, counts=counts, suggestions=suggestions, total=total,
+                           earned=scoring.earned_values(current_user), next_event=next_event,
+                           badges_earned=sum(1 for b in my_badges if b['earned']), badges_total=len(my_badges))
 
 
 @app.route('/notifications')
@@ -511,7 +534,43 @@ def notifications():
 @app.route('/vpn')
 @verified_required
 def vpn():
-    return render_template('vpn.html')
+    peer = VpnPeer.query.filter_by(user_id=current_user.id).first()
+    return render_template('vpn.html', vpn_ready=vpn_conf.enabled(), peer=peer,
+                           address=vpn_conf.address_for(peer.id) if peer else None)
+
+
+@app.route('/vpn/config', methods=['POST'])
+@verified_required
+def vpn_config():
+    """Issues a fresh key pair (the old one stops working once the server syncs)."""
+    if not vpn_conf.enabled():
+        abort(404)
+    private_key, public_key = vpn_conf.keypair()
+    peer = VpnPeer.query.filter_by(user_id=current_user.id).first()
+    if peer:
+        peer.public_key, peer.issued_at = public_key, utcnow()
+    else:
+        peer = VpnPeer(user_id=current_user.id, public_key=public_key)
+        db.session.add(peer)
+    db.session.commit()
+    body = vpn_conf.client_conf(private_key, vpn_conf.address_for(peer.id))
+    resp = app.response_class(body, mimetype='application/octet-stream')
+    resp.headers['Content-Disposition'] = f'attachment; filename="spark-{current_user.username}.conf"'
+    return resp
+
+
+@app.route('/vpn/peers.conf')
+def vpn_peers():
+    """Pulled by the WireGuard server (cron + `wg syncconf`). Banned players are left out."""
+    token = os.getenv('VPN_SYNC_TOKEN', '')
+    sent = request.headers.get('Authorization', '').removeprefix('Bearer ').strip()
+    if not token or not vpn_conf.enabled() or not hmac.compare_digest(sent, token):
+        abort(404)
+    rows = (db.session.query(User.username, VpnPeer.public_key, VpnPeer.id)
+            .join(User, User.id == VpnPeer.user_id).filter(User.is_banned.is_(False))
+            .order_by(VpnPeer.id).all())
+    body = vpn_conf.peers_conf((u, k, vpn_conf.address_for(pid)) for u, k, pid in rows)
+    return app.response_class(body, mimetype='text/plain')
 
 
 @app.route('/lang/<code>')
@@ -530,11 +589,19 @@ def rules():
 @app.route('/scoreboard')
 @verified_required
 def scoreboard():
-    rows = scoring.standings()
-    xp = scoring.activity_xp_bulk([row['user'] for row in rows])
+    period = request.args.get('period')
+    now = utcnow()
+    since = {'week': now - timedelta(days=7), 'month': now - timedelta(days=30)}.get(period)
+    if since is None:
+        period = 'all'
+    rows = scoring.standings(since)
+    users = [row['user'] for row in rows]
+    xp = scoring.activity_xp_bulk(users)
+    earned = achievements.badges_bulk(users, _category_totals())
     for row in rows:
         row['tier'] = scoring.tier_info(xp[row['user'].id])
-    return render_template('scoreboard.html', rows=rows, series=scoring.graph_series(rows))
+        row['badges'] = [b for b in earned[row['user'].id] if b['earned']]
+    return render_template('scoreboard.html', rows=rows, period=period)
 
 
 @app.route('/users/<username>')
@@ -553,7 +620,19 @@ def user_page(username):
     is_me = current_user.is_authenticated and current_user.id == user.id
     return render_template('user.html', user=user, row=me, players=len(rows), stats=stats,
                            cats=cats, diffs=diffs, solves=solves, earned=scoring.earned_values(user),
-                           events=scoring.competition_results(user, include_hidden=is_me))
+                           events=scoring.competition_results(user, include_hidden=is_me),
+                           badges=achievements.badges(user, _category_totals()))
+
+
+@app.route('/certificates/<code>')
+def certificate(code):
+    """Public on purpose: anyone holding the link (an employer, a university) can verify it."""
+    cert = Certificate.query.filter_by(code=code.strip().upper()).first()
+    if not cert or not cert.competition.published:
+        abort(404, description=_('Sertifikat topilmadi.'))
+    return render_template('certificate.html', cert=cert, event=cert.competition,
+                           url=url_for('certificate', code=cert.code, _external=True,
+                                       _scheme='https' if IS_PROD else request.scheme))
 
 
 @app.route('/profile/competitions/<int:competition_id>/visibility', methods=['POST'])
@@ -764,6 +843,111 @@ def verify_resend():
     return redirect(url_for('verify'))
 
 
+# ---------------------------------------------------------------- social login
+
+def _unique_username(base):
+    base = base[:20]
+    name, n = base, 1
+    while User.query.filter(func.lower(User.username) == name.lower()).first():
+        n += 1
+        suffix = str(n)
+        name = base[:20 - len(suffix)] + suffix
+    return name
+
+
+def _social_finish(provider, profile, email=None, display=None):
+    """Log in (or link, or create) the account for a verified provider identity."""
+    nxt = safe_next(session.pop('oauth_next', None))
+    link = SocialAccount.query.filter_by(provider=provider, provider_id=profile['id']).first()
+    if current_user.is_authenticated:
+        if link and link.user_id != current_user.id:
+            flash(_('Bu hisob boshqa foydalanuvchiga ulangan.'), 'error')
+        elif not link:
+            db.session.add(SocialAccount(user_id=current_user.id, provider=provider,
+                                         provider_id=profile['id'], display=display))
+            db.session.commit()
+            flash(_('Hisob ulandi.'), 'success')
+        return redirect(url_for('settings'))
+    user = link.user if link else None
+    if not user and email:
+        # Google only hands out verified addresses, so the same email means the same person.
+        user = User.query.filter_by(email=email).first()
+    if not user:
+        if rate_limited('register'):
+            flash(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 'error')
+            return redirect(url_for('login'))
+        user = User(username=_unique_username(suggest_username(profile.get('username'), profile.get('name'), email)),
+                    email=email or f"{provider}-{profile['id']}@users.noreply.spark",
+                    password_hash=bcrypt.generate_password_hash(secrets.token_urlsafe(32)).decode(),
+                    is_verified=True)
+        db.session.add(user)
+        db.session.flush()
+        rate_hit('register')
+        flash(_("Xush kelibsiz! Hisobingiz yaratildi."), 'success')
+    if user.is_banned:
+        db.session.rollback()
+        flash(_('Hisobingiz bloklangan.'), 'error')
+        return redirect(url_for('login'))
+    if not link:
+        db.session.add(SocialAccount(user_id=user.id, provider=provider, provider_id=profile['id'],
+                                     display=display))
+    user.is_verified = True
+    start_login(user, remember=True)
+    return redirect(nxt or url_for('dashboard'))
+
+
+def _google_redirect_uri():
+    # Vercel terminates TLS in front of us, so the request itself looks like plain http.
+    return url_for('auth_google_callback', _external=True, _scheme='https' if IS_PROD else request.scheme)
+
+
+@app.route('/auth/google')
+def auth_google():
+    if not google_enabled():
+        abort(404)
+    state = secrets.token_urlsafe(24)
+    session['oauth_state'] = state
+    session['oauth_next'] = safe_next(request.args.get('next'))
+    return redirect(google_auth_url(_google_redirect_uri(), state))
+
+
+@app.route('/auth/google/callback')
+def auth_google_callback():
+    if not google_enabled():
+        abort(404)
+    expected = session.pop('oauth_state', None)
+    if not expected or not hmac.compare_digest(expected, request.args.get('state') or ''):
+        flash(_('Kirish sessiyasi eskirgan. Qayta urinib ko‘ring.'), 'error')
+        return redirect(url_for('login'))
+    if request.args.get('error') or not request.args.get('code'):
+        return redirect(url_for('login'))
+    try:
+        profile = google_profile(request.args['code'], _google_redirect_uri())
+    except SocialError as e:
+        print(f'[social] {e}')
+        flash(_('Google orqali kirib bo‘lmadi. Qayta urinib ko‘ring.'), 'error')
+        return redirect(url_for('login'))
+    return _social_finish('google', profile, email=profile['email'], display=profile['email'])
+
+
+@app.route('/auth/telegram', methods=['POST'])
+def auth_telegram():
+    """The login widget hands its signed payload to our JS, which posts it here with the CSRF token."""
+    if not telegram_enabled():
+        abort(404)
+    fields = ('id', 'first_name', 'last_name', 'username', 'photo_url', 'auth_date', 'hash')
+    payload = {k: request.form.get(k) for k in fields if request.form.get(k) is not None}
+    session['oauth_next'] = safe_next(request.form.get('next'))
+    try:
+        profile = telegram_profile(payload)
+    except SocialError as e:
+        print(f'[social] {e}')
+        flash(_('Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.'), 'error')
+        return redirect(url_for('login'))
+    return _social_finish('telegram', profile,
+                          display=f"@{profile['username']}" if profile['username'] else profile['name'])
+
+
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
     if request.method == 'POST':
@@ -869,7 +1053,8 @@ def challenges():
     names = CATEGORIES + sorted(k for k, _v in groups if k not in CATEGORIES)
     by_cat = dict(groups)
     overview = [{'name': n, 'total': len(by_cat.get(n, [])),
-                 'solved': sum(1 for c in by_cat.get(n, []) if c.id in solved)} for n in names]
+                 'solved': sum(1 for c in by_cat.get(n, []) if c.id in solved),
+                 'points': sum(values.get(c.id, 0) for c in by_cat.get(n, []))} for n in names]
     return render_template('challenges.html', state='practice', groups=groups,
                            counts=counts, values=values, solved=solved, announcements=anns,
                            overview=overview, released_ids=released_ids)
@@ -1001,7 +1186,10 @@ def admin_index():
             'port': os.getenv('SMTP_PORT', '587')}
     mail['last_ok'] = get_setting('mail_last_ok')
     mail['last_error'] = get_setting('mail_last_error')
-    return render_template('admin/index.html', stats=stats, recent=recent, weak_secret=weak_secret, mail=mail)
+    integrations = {'google': google_enabled(), 'telegram_login': telegram_enabled(),
+                    'telegram_channel': notify.channel_enabled()}
+    return render_template('admin/index.html', stats=stats, recent=recent, weak_secret=weak_secret, mail=mail,
+                           integrations=integrations)
 
 
 @app.route('/admin/mail-test', methods=['POST'])
@@ -1095,6 +1283,7 @@ def admin_challenge_form(cid=None):
     if cid and not ch:
         abort(404)
     if request.method == 'POST':
+        was_visible = bool(cid and ch.visible)
         errors = _challenge_from_form(ch)
         if errors:
             for e in errors:
@@ -1102,6 +1291,8 @@ def admin_challenge_form(cid=None):
         else:
             db.session.add(ch)
             db.session.commit()
+            if ch.visible and not was_visible and request.form.get('notify'):
+                notify.new_challenge(ch)
             flash(_('Masala saqlandi.'), 'success')
             return redirect(url_for('admin_challenges'))
     return render_template('admin/challenge_form.html', ch=ch, is_new=cid is None)
@@ -1113,6 +1304,8 @@ def admin_challenge_action(cid, action):
     ch = db.session.get(Challenge, cid) or abort(404)
     if action == 'toggle':
         ch.visible = not ch.visible
+        if ch.visible and not CompetitionChallenge.query.filter_by(challenge_id=ch.id).first():
+            notify.new_challenge(ch)
         flash(_("«{title}» ko'rinadigan qilindi.", title=ch.title) if ch.visible else _("«{title}» yashirildi.", title=ch.title), 'success')
     elif action == 'delete':
         if CompetitionChallenge.query.filter_by(challenge_id=ch.id).first():
@@ -1193,44 +1386,90 @@ def admin_competitions():
     return render_template('admin/competitions.html', competitions=events)
 
 
-@app.route('/admin/competitions/new', methods=['GET', 'POST'])
-@admin_required
-def admin_competition_new():
-    linked_ids = db.session.query(CompetitionChallenge.challenge_id)
+def _event_pool(event=None):
+    """Challenges an event may use: hidden, never solved in practice, not in another event."""
+    other_links = db.session.query(CompetitionChallenge.challenge_id)
+    if event is not None:
+        other_links = other_links.filter(CompetitionChallenge.competition_id != event.id)
     solved_ids = db.session.query(Solve.challenge_id)
-    available = (Challenge.query.filter_by(visible=False)
-                 .filter(~Challenge.id.in_(linked_ids), ~Challenge.id.in_(solved_ids))
-                 .order_by(Challenge.category, Challenge.title).all())
-    if request.method == 'POST':
-        title = (request.form.get('title') or '').strip()
-        description = (request.form.get('description') or '').strip()
-        prize = (request.form.get('prize') or '').strip()
-        starts_at = parse_iso(request.form.get('starts_at'))
-        ends_at = parse_iso(request.form.get('ends_at'))
-        ids = {int(v) for v in request.form.getlist('challenge_ids') if v.isdigit()}
+    return (Challenge.query.filter_by(visible=False)
+            .filter(~Challenge.id.in_(other_links), ~Challenge.id.in_(solved_ids))
+            .order_by(Challenge.category, Challenge.title).all())
+
+
+def _save_event(event, available):
+    """Validates the form into `event`. What may change depends on the event's state:
+    upcoming = everything, live = texts + a later end time, ended = texts only."""
+    f = request.form
+    state = event.state if event.id else 'upcoming'
+    title = (f.get('title') or '').strip()
+    errors = []
+    if not title or len(title) > 160:
+        errors.append(_('Musobaqa nomi 1–160 belgi bo\'lsin.'))
+    starts_at, ends_at = event.starts_at, event.ends_at
+    if state == 'upcoming':
+        starts_at, ends_at = parse_iso(f.get('starts_at')), parse_iso(f.get('ends_at'))
+    elif state == 'live':
+        ends_at = parse_iso(f.get('ends_at')) or event.ends_at
+        if ends_at <= utcnow():
+            errors.append(_('Jonli musobaqaning tugash vaqti kelajakda bo‘lishi kerak.'))
+    if not starts_at or not ends_at or ends_at <= starts_at:
+        errors.append(_('Boshlanish va tugash vaqtini to\'g\'ri kiriting.'))
+    selected, points = [], {}
+    if state == 'upcoming':
+        ids = {int(v) for v in f.getlist('challenge_ids') if v.isdigit()}
         selected = [c for c in available if c.id in ids]
-        errors = []
-        if not title or len(title) > 160:
-            errors.append(_('Musobaqa nomi 1–160 belgi bo\'lsin.'))
-        if not starts_at or not ends_at or ends_at <= starts_at:
-            errors.append(_('Boshlanish va tugash vaqtini to\'g\'ri kiriting.'))
         if not selected:
             errors.append(_('Musobaqaga kamida bitta yashirin masala tanlang.'))
-        if errors:
-            for error in errors:
-                flash(error, 'error')
-        else:
-            event = Competition(title=title, description=description, prize=prize or None,
-                                starts_at=starts_at, ends_at=ends_at, published=False)
+        for c in selected:
+            try:
+                points[c.id] = int(f.get(f'points_{c.id}') or c.value)
+            except ValueError:
+                points[c.id] = 0
+            if not 1 <= points[c.id] <= 10000:
+                errors.append(_("Ball 1–10000 oralig'ida bo'lsin."))
+                break
+    if errors:
+        return errors
+    event.title = title
+    event.description = (f.get('description') or '').strip()
+    event.prize = (f.get('prize') or '').strip()[:240] or None
+    event.starts_at, event.ends_at = starts_at, ends_at
+    if state == 'upcoming':
+        if not event.id:
             db.session.add(event)
             db.session.flush()
-            for position, challenge in enumerate(selected):
-                db.session.add(CompetitionChallenge(competition=event, challenge=challenge,
-                                                    points=challenge.value, position=position))
-            db.session.commit()
-            flash(_('Musobaqa qoralama sifatida yaratildi.'), 'success')
+        current = {link.challenge_id: link for link in event.challenges}
+        for cid, link in current.items():
+            if cid not in points:
+                db.session.delete(link)
+        for position, c in enumerate(selected):
+            link = current.get(c.id) or CompetitionChallenge(competition=event, challenge=c)
+            link.points, link.position = points[c.id], position
+            db.session.add(link)
+    db.session.commit()
+    return []
+
+
+@app.route('/admin/competitions/new', methods=['GET', 'POST'])
+@app.route('/admin/competitions/<int:competition_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_competition_form(competition_id=None):
+    event = (db.session.get(Competition, competition_id) or abort(404)) if competition_id else \
+        Competition(title='', description='', published=False)
+    available = _event_pool(event if competition_id else None)
+    if request.method == 'POST':
+        errors = _save_event(event, available)
+        if not errors:
+            flash(_('Saqlandi.') if competition_id else _('Musobaqa qoralama sifatida yaratildi.'), 'success')
             return redirect(url_for('admin_competitions'))
-    return render_template('admin/competition_form.html', challenges=available)
+        db.session.rollback()
+        for error in errors:
+            flash(error, 'error')
+    linked = {link.challenge_id: link.points for link in event.challenges} if competition_id else {}
+    return render_template('admin/competition_form.html', event=event if competition_id else None,
+                           state=event.state if competition_id else 'upcoming',
+                           challenges=available, linked=linked)
 
 
 @app.route('/admin/competitions/<int:competition_id>/<action>', methods=['POST'])
@@ -1245,6 +1484,8 @@ def admin_competition_action(competition_id, action):
         else:
             event.published = not event.published
             db.session.commit()
+            if event.published:
+                notify.new_competition(event)
             flash(_('Musobaqa e\'lon qilindi.' if event.published else 'Musobaqa yashirildi.'), 'success')
     elif action == 'delete':
         if event.state != 'upcoming' or event.registrations or CompetitionAttempt.query.filter_by(competition_id=event.id).first():
@@ -1269,6 +1510,8 @@ def admin_announcements():
         else:
             db.session.add(Announcement(title=title, content=content))
             db.session.commit()
+            if request.form.get('notify'):
+                notify.announcement(title, content)
             flash(_("E'lon joylandi."), 'success')
             return redirect(url_for('admin_announcements'))
     anns = Announcement.query.order_by(Announcement.created_at.desc()).all()

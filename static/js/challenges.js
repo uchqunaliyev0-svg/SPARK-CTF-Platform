@@ -16,9 +16,16 @@
     });
   });
 
-  // ---------- filters
+  // ---------- views: category cards  <->  tasks of one category (or search results)
   const f = { q: '', diff: '', status: '', cat: '' };
+  const catCards = $('#catCards');
+  const taskList = $('#taskList');
+  const back = $('[data-back]');
   function applyFilters() {
+    const listing = !!(f.cat || f.q || f.diff || f.status);
+    if (catCards) catCards.classList.toggle('hidden', listing);
+    if (taskList) taskList.classList.toggle('hidden', !listing);
+    if (back) back.classList.toggle('hidden', !listing);
     let shown = 0;
     cards.forEach((c) => {
       const ok = (!f.q || c.dataset.title.includes(f.q))
@@ -30,15 +37,26 @@
     });
     $$('[data-cat-section]').forEach((s) => s.classList.toggle('hidden', !$$('.ch-card:not(.hidden)', s).length));
     $('#noMatch')?.classList.toggle('hidden', shown > 0 || !cards.length);
+    const url = new URL(location.href);
+    if (f.cat) url.searchParams.set('cat', f.cat); else url.searchParams.delete('cat');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
   }
-  $('#q')?.addEventListener('input', (e) => { f.q = e.target.value.trim().toLowerCase(); applyFilters(); });
-  [['#cats', 'cat'], ['#diffs', 'diff'], ['#status', 'status']].forEach(([sel, key]) => {
-    $$(`${sel} .side-item`).forEach((b) => b.addEventListener('click', () => {
-      if (b.disabled) return;
-      $$(`${sel} .side-item`).forEach((x) => x.classList.remove('on'));
-      b.classList.add('on'); f[key] = b.dataset.v; applyFilters();
-    }));
+  function openCategory(name) {
+    f.cat = name;
+    applyFilters();
+    window.scrollTo({ top: 0, behavior: window.Spark.reduced ? 'auto' : 'smooth' });
+  }
+  $$('[data-open-cat]').forEach((b) => b.addEventListener('click', () => openCategory(b.dataset.openCat)));
+  back?.addEventListener('click', () => {
+    Object.assign(f, { q: '', diff: '', status: '', cat: '' });
+    ['#q', '#diff', '#status'].forEach((sel) => { const i = $(sel); if (i) i.value = ''; });
+    applyFilters();
   });
+  $('#q')?.addEventListener('input', (e) => { f.q = e.target.value.trim().toLowerCase(); applyFilters(); });
+  $('#diff')?.addEventListener('change', (e) => { f.diff = e.target.value; applyFilters(); });
+  $('#status')?.addEventListener('change', (e) => { f.status = e.target.value; applyFilters(); });
+  const startCat = new URLSearchParams(location.search).get('cat');
+  if (startCat && cards.some((c) => c.dataset.cat === startCat)) { f.cat = startCat; applyFilters(); }
 
   // ---------- helpers
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -246,12 +264,21 @@
       const bar = n.parentElement.querySelector('.mini i');
       if (bar && cs.length) bar.style.width = `${Math.round((done / cs.length) * 100)}%`;
     });
-    const all = $('#cats .side-item[data-v=""] .n'); if (all) all.textContent = `${solvedN}/${cards.length}`;
+    const pn = $('[data-progress-num]'); if (pn) pn.textContent = solvedN;
+    $$('[data-open-cat]').forEach((b) => {
+      const cs = cards.filter((c) => c.dataset.cat === b.dataset.openCat);
+      const done = cs.filter((c) => c.classList.contains('solved')).length;
+      const bar = $('.cc-bar i', b); if (bar && cs.length) bar.style.width = `${Math.round((done / cs.length) * 100)}%`;
+    });
   }
 
   cards.forEach((c) => c.addEventListener('click', () => openChallenge(c.dataset.id)));
   const m = location.hash.match(/^#c-(\d+)$/);
-  if (m) openChallenge(m[1]);
+  if (m) {
+    const target = cards.find((c) => c.dataset.id === m[1]);
+    if (target) { f.cat = target.dataset.cat; applyFilters(); }
+    openChallenge(m[1]);
+  }
 
   // ---------- confetti
   function confetti(big) {

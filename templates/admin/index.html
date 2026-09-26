@@ -22,6 +22,13 @@
 {% if mail.last_error %}<div class="warn" style="border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)">{{ icon('alert') }}<div><b>Oxirgi email xatosi:</b> {{ mail.last_error }}{% if mail.last_ok %}<br><span class="muted">Oxirgi muvaffaqiyatli: {{ mail.last_ok }}</span>{% endif %}</div></div>
 {% elif mail.last_ok %}<p class="muted" style="margin:-8px 0 18px;font-size:13px">Oxirgi muvaffaqiyatli xat: {{ mail.last_ok }}</p>{% endif %}
 {% endif %}
+<div class="card card-pad" style="margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <b style="margin-right:6px">{{ _('Integratsiyalar') }}</b>
+  <span class="badge {{ 'b-green' if integrations.google else 'b-muted' }}">Google login</span>
+  <span class="badge {{ 'b-green' if integrations.telegram_login else 'b-muted' }}">Telegram login</span>
+  <span class="badge {{ 'b-green' if integrations.telegram_channel else 'b-muted' }}">{{ _('Telegram kanal') }}</span>
+  <span class="dim" style="font-size:12.5px">{{ _('Kulrang = o‘chiq. Sozlash: README → Integratsiyalar.') }}</span>
+</div>
 {% if weak_secret %}
 <div class="warn">{{ icon('alert') }}<div><b>SECRET_KEY o'rnatilmagan.</b> Sessiyalar xavfsizligi uchun Vercel'da uzun tasodifiy <code>SECRET_KEY</code> qo'shing.</div></div>
 {% endif %}

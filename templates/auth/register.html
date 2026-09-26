@@ -1,5 +1,5 @@
 {% extends 'auth/_layout.html' %}
-{% from '_macros.html' import password_field, captcha %}
+{% from '_macros.html' import password_field, captcha, social_buttons %}
 {% block title %}{{ _("Ro'yxatdan o'tish") }} — SPARK CTF{% endblock %}
 {% block visual_title %}{{ _("O'yinga qo'shiling.") }}{% endblock %}
 {% block visual_text %}{{ _('Hisob yarating, emailingizni tasdiqlang va birinchi flagingizni toping.') }}{% endblock %}
@@ -22,5 +22,6 @@
   {{ captcha() }}
   <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _("Ro'yxatdan o'tish") }}</button>
 </form>
+{{ social_buttons(google_login, telegram_login, telegram_bot_id, csrf_token()) }}
 <p class="alt">{{ _('Hisobingiz bormi?') }} <a href="{{ url_for('login') }}">{{ _('Kirish') }}</a></p>
 {% endblock %}
