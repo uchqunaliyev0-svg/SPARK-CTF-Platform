@@ -9,9 +9,9 @@ JS_KEYS = [
     "{s} demoqchimisiz?",
     "Parollar mos kelmadi.", "6 xonali kodni to'liq kiriting.", "Juda zaif", "Zaif", "O'rtacha", "Kuchli",
     "Kamida 8 belgi, harf va raqam.", "Server javobi noto'g'ri.", "Xatolik yuz berdi.", "bepul",
-    "Bu hint {cost} Spark turadi. Avval balansingizdan, yetmasa shu masala mukofotidan ayriladi. Davom etasizmi?", "ta yechim", "muallif:",
-    "Hali hech kim yechmagan. Birinchi bo'ling!", "Siz bu masalani yechgansiz!", "Yuklab bo'lmadi.",
-    "{solved} / {total} ta masala yechilgan", "Musobaqa yakunlangan — flag qabul qilinmaydi.",
+    "Bu hint {cost} Spark turadi. Avval balansingizdan, yetmasa shu topshiriq mukofotidan ayriladi. Davom etasizmi?", "ta yechim", "muallif:",
+    "Hali hech kim yechmagan. Birinchi bo'ling!", "Siz bu topshiriqni yechgansiz!", "Yuklab bo'lmadi.",
+    "{solved} / {total} ta topshiriq yechilgan", "Musobaqa yakunlangan — flag qabul qilinmaydi.",
     "Tekshirilmoqda...", "Tasdiqlandi", "Xatolik. Qayta bosing.",
 ]
 

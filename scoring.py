@@ -228,9 +228,9 @@ def competition_results(user, include_hidden=False):
 
 
 TIERS = [  # (minimum activity XP, display name, colour)
-    (0, 'Yangi boshlovchi', '#94a3b8'),
+    (0, 'Boshlovchi', '#94a3b8'),
     (200, 'Tadqiqotchi', '#34d399'),
-    (600, 'Hacker', '#22d3ee'),
+    (600, 'Xaker', '#22d3ee'),
     (1500, 'Mutaxassis', '#a78bfa'),
     (3000, 'Usta', '#fbbf24'),
     (6000, 'Afsona', '#ff3b5c'),

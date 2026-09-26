@@ -32,7 +32,7 @@
     <div class="mini-stat" style="--c: var(--violet)"><span class="mi">{{ icon('trophy') }}</span><div><b>{{ stats.events }}</b><span>{{ _('Musobaqalarda qatnashgan') }}</span></div></div>
   </div>
   <div class="xp">
-    <div class="t"><span>{{ _('Faollik tajribasi') }} · {{ stats.xp }} XP</span><span>{{ lv.xp }}/{{ lv.need }}</span></div>
+    <div class="t"><span>{{ _('Tajriba (XP)') }} · {{ stats.xp }} XP</span><span>{{ lv.xp }}/{{ lv.need }}</span></div>
     <div class="bar"><i style="width:{{ (lv.xp / lv.need * 100)|round|int }}%"></i></div>
   </div>
 </div>
@@ -49,7 +49,7 @@
   <details class="xp-how">
     <summary>{{ _('Daraja qanday oshadi?') }}</summary>
     <ul>
-      {% for d, xp in XP.difficulty.items() %}<li><span>{{ _(d ~ ' masala') }}</span><b>+{{ xp }} XP</b></li>{% endfor %}
+      {% for d, xp in XP.difficulty.items() %}<li><span>{{ _(d ~ ' topshiriq') }}</span><b>+{{ xp }} XP</b></li>{% endfor %}
       <li><span>{{ _('Musobaqada qatnashish') }}</span><b>+{{ XP.event }} XP</b></li>
       <li><span>{{ _('Musobaqada 1 / 2 / 3-o‘rin') }}</span><b>+{{ XP.place[1] }} / {{ XP.place[2] }} / {{ XP.place[3] }}</b></li>
     </ul>

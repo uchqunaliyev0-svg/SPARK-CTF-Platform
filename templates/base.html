@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#05070f">
-  <meta name="description" content="{{ _('SPARK CTF — Capture The Flag platformasi: Web, Crypto, Reverse, Forensics, Pwn, OSINT masalalarini yeching va reytingda yuqoriga chiqing.') }}">
+  <meta name="description" content="{{ _('SPARK CTF — Capture The Flag platformasi: Web, Crypto, Reverse, Forensics, Pwn, OSINT topshiriqlarini yeching va reytingda yuqoriga chiqing.') }}">
   <title>{% block title %}SPARK CTF{% endblock %}</title>
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon-32.png') }}">
@@ -30,7 +30,7 @@
       <a href="{{ url_for('set_lang', code='en', next=here) }}" class="{{ 'on' if lang == 'en' }}"><span class="flag">EN</span> English</a>
     </div>
   </div>
-  <button class="tool-btn theme-btn" data-theme-toggle aria-label="{{ _('Kun / tun rejimi') }}" title="{{ _('Kun / tun rejimi') }}">
+  <button class="tool-btn theme-btn" data-theme-toggle aria-label="{{ _('Yorug‘ / qorong‘i rejim') }}" title="{{ _('Yorug‘ / qorong‘i rejim') }}">
     <span class="i-moon">{{ icon('moon') }}</span><span class="i-sun">{{ icon('sun') }}</span>
   </button>
   {%- endmacro %}
@@ -41,8 +41,8 @@
         <span><span class="s">SPARK</span> <span class="c">CTF</span></span>
       </a>
       <nav class="nav-links" id="navLinks">
-        {% if current_user.is_authenticated %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if ep == 'dashboard' }}">Dashboard</a>{% endif %}
-        <a href="{{ url_for('challenges') }}" class="{{ 'active' if ep == 'challenges' }}">{{ _('Masalalar') }}</a>
+        {% if current_user.is_authenticated %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if ep == 'dashboard' }}">{{ _('Boshqaruv paneli') }}</a>{% endif %}
+        <a href="{{ url_for('challenges') }}" class="{{ 'active' if ep == 'challenges' }}">{{ _('Topshiriqlar') }}</a>
         <a href="{{ url_for('scoreboard') }}" class="{{ 'active' if ep == 'scoreboard' }}">{{ _('Reyting') }}</a>
         <a href="{{ url_for('rules') }}" class="{{ 'active' if ep == 'rules' }}">{{ _('Qoidalar') }}</a>
         {% if current_user.is_authenticated and current_user.is_admin %}
@@ -63,7 +63,7 @@
               {{ avatar(current_user.username) }}<span class="uname">{{ current_user.username }}</span>
             </button>
             <div class="dropdown" id="userDrop">
-              <a href="{{ url_for('dashboard') }}">{{ icon('grid') }} Dashboard</a>
+              <a href="{{ url_for('dashboard') }}">{{ icon('grid') }} {{ _('Boshqaruv paneli') }}</a>
               <a href="{{ url_for('user_page', username=current_user.username) }}">{{ icon('user') }} {{ _('Profil') }}</a>
               <a href="{{ url_for('settings') }}">{{ icon('settings') }} {{ _('Sozlamalar') }}</a>
               <div class="sep"></div>
@@ -107,14 +107,14 @@
         <div>
           <h4>{{ _('Platforma') }}</h4>
           <ul>
-            <li><a href="{{ url_for('challenges') }}">{{ _('Masalalar') }}</a></li>
+            <li><a href="{{ url_for('challenges') }}">{{ _('Topshiriqlar') }}</a></li>
             <li><a href="{{ url_for('scoreboard') }}">{{ _('Reyting') }}</a></li>
             <li><a href="{{ url_for('index') }}#how">{{ _('Qanday ishlaydi') }}</a></li>
             <li><a href="{{ url_for('index') }}#categories">{{ _('Kategoriyalar') }}</a></li>
           </ul>
         </div>
         <div>
-          <h4>{{ _('Hisob') }}</h4>
+          <h4>{{ _('Akkaunt') }}</h4>
           <ul>
             {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('user_page', username=current_user.username) }}">{{ _('Profil') }}</a></li>

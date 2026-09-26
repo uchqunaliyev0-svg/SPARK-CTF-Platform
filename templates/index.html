@@ -8,10 +8,10 @@
     <div class="hero-copy">
       <span class="pill-live"><i></i>{{ _('Doimiy mashq platformasi') }}</span>
       <h1>{{ _('Xakerlik mahoratingizni') }} <span class="grad">{{ _('sinovdan') }}</span> {{ _("o'tkazing.") }} <span class="red">{{ _('Flagni') }}</span> {{ _('toping.') }}</h1>
-      <p class="lead">{{ _("SPARK CTF — kiberxavfsizlik bo'yicha amaliy masalalar platformasi. Zaifliklarni toping, shifrlarni buzing, izlarni tahlil qiling va reytingda yuqoriga chiqing.") }}</p>
+      <p class="lead">{{ _("SPARK CTF — kiberxavfsizlik bo'yicha amaliy topshiriqlar platformasi. Zaifliklarni toping, shifrlarni buzing, izlarni tahlil qiling va reytingda yuqoriga chiqing.") }}</p>
       <div class="hero-cta">
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">{{ _("Masalalarga o'tish") }} {{ icon('arrow') }}</a>
+          <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">{{ _("Topshiriqlarga o'tish") }} {{ icon('arrow') }}</a>
         {% else %}
           <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">{{ _('Boshlash — bepul') }} {{ icon('arrow') }}</a>
           <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">{{ _('Kirish') }}</a>
@@ -27,14 +27,14 @@
   <div class="container">
     <div class="stat-strip" data-reveal>
       <div><div class="v" data-count="{{ stats.users }}">0</div><div class="l">{{ _('Ishtirokchilar') }}</div></div>
-      <div><div class="v" data-count="{{ stats.challenges }}">0</div><div class="l">{{ _('Masalalar') }}</div></div>
+      <div><div class="v" data-count="{{ stats.challenges }}">0</div><div class="l">{{ _('Topshiriqlar') }}</div></div>
       <div><div class="v" data-count="{{ stats.solves }}">0</div><div class="l">{{ _('Topilgan flaglar') }}</div></div>
     </div>
   </div>
 </section>
 
 <section class="tools-section">
-  <p class="tools-label">{{ _("SANOATDA ISHLATILADIGAN HAQIQIY VOSITALARNI O'RGANASIZ") }}</p>
+  <p class="tools-label">{{ _("SOHADA ISHLATILADIGAN HAQIQIY VOSITALARNI O'RGANASIZ") }}</p>
   <div class="marquee">
     <div class="marquee-track">
       {% for ic, name, url in TOOLS + TOOLS %}
@@ -61,8 +61,8 @@
   <div class="container">
     <div class="section-head" data-reveal>
       <span class="eyebrow">// {{ _('kategoriyalar') }}</span>
-      <h2>{{ _("Har bir yo'nalishda sinovlar") }}</h2>
-      <p>{{ _("Haqiqiy hujum va himoya ssenariylariga asoslangan masalalar — boshlang'ichdan ekspertgacha.") }}</p>
+      <h2>{{ _("Har bir kategoriya bo‘yicha topshiriqlar") }}</h2>
+      <p>{{ _("Haqiqiy hujum va himoya ssenariylariga asoslangan topshiriqlar — boshlang'ichdan ekspertgacha.") }}</p>
     </div>
     <div class="cat-grid">
       {% for name in CATEGORIES %}
@@ -83,8 +83,8 @@
       <h2>{{ _('Uch qadamda boshlang') }}</h2>
     </div>
     <div class="steps">
-      <div class="card step" data-reveal="0"><span class="n">01</span><h3>{{ _("Ro'yxatdan o'ting") }}</h3><p>{{ _('Hisob yarating va emailingizga kelgan 6 xonali kod bilan uni tasdiqlang.') }}</p></div>
-      <div class="card step" data-reveal="1"><span class="n">02</span><h3>{{ _('Masalani tanlang') }}</h3><p>{{ _("Kategoriya va qiyinlik bo'yicha saralang. Kerak bo'lsa hint oching.") }}</p></div>
+      <div class="card step" data-reveal="0"><span class="n">01</span><h3>{{ _("Ro'yxatdan o'ting") }}</h3><p>{{ _('Akkaunt yarating va emailingizga kelgan 6 xonali kod bilan uni tasdiqlang.') }}</p></div>
+      <div class="card step" data-reveal="1"><span class="n">02</span><h3>{{ _('Topshiriqni tanlang') }}</h3><p>{{ _("Kategoriya va qiyinlik bo'yicha saralang. Kerak bo'lsa hint oching.") }}</p></div>
       <div class="card step" data-reveal="2"><span class="n">03</span><h3>{{ _('Flagni yuboring') }}</h3><p>{{ _('Yashirin flagni toping — odatda') }} <code>SPARK{...}</code> {{ _("ko'rinishida — va Spark oling.") }}</p></div>
     </div>
   </div>
@@ -114,14 +114,14 @@
 <section class="section">
   <div class="container narrow">
     <div class="card cta-final" data-reveal>
-      <span class="pill-live" style="margin-bottom:18px"><i></i>{{ _("Ochiq ro'yxatdan o'tish") }}</span>
+      <span class="pill-live" style="margin-bottom:18px"><i></i>{{ _("Ro'yxatdan o'tish ochiq") }}</span>
       <h2>{{ _('Birinchi flagingiz sizni kutmoqda') }}</h2>
       <p>{{ _("Ro'yxatdan o'tish bir daqiqa oladi. Qolgani — sizning mahoratingiz.") }}</p>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">{{ _("Masalalarga o'tish") }} {{ icon('arrow') }}</a>
+        <a href="{{ url_for('challenges') }}" class="btn btn-primary btn-lg">{{ _("Topshiriqlarga o'tish") }} {{ icon('arrow') }}</a>
       {% else %}
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative">
-          <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">{{ _('Hisob yaratish') }} {{ icon('arrow') }}</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">{{ _('Akkaunt yaratish') }} {{ icon('arrow') }}</a>
           <a href="{{ url_for('login') }}" class="btn btn-ghost btn-lg">{{ _('Kirish') }}</a>
         </div>
       {% endif %}

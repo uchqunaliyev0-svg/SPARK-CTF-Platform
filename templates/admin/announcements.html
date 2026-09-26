@@ -4,11 +4,11 @@
 <h1>E'lonlar</h1>
 <form method="post" class="card card-pad" style="margin-bottom:18px" data-loading>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <div class="field"><label for="title">Sarlavha</label><input class="input" id="title" name="title" maxlength="120" required placeholder="Masalan: Yangi Crypto masala qo'shildi"></div>
+  <div class="field"><label for="title">Sarlavha</label><input class="input" id="title" name="title" maxlength="120" required placeholder="Masalan: Yangi Crypto topshiriq qo'shildi"></div>
   <div class="field"><label for="content">Matn</label><textarea class="input" id="content" name="content" rows="3" required></textarea></div>
   {% if telegram_channel %}<label class="check" style="margin-bottom:14px"><input type="checkbox" name="notify" value="1" checked> {{ _('Telegram kanalga ham yuborish') }}</label>{% endif %}
   <button type="submit" class="btn btn-primary">{{ icon('megaphone') }} E'lon qilish</button>
-  <p class="hint dim" style="font-size:12px;margin-top:10px">E'lonlar «Masalalar» sahifasining tepasida ko'rinadi (oxirgi 5 tasi).</p>
+  <p class="hint dim" style="font-size:12px;margin-top:10px">E'lonlar «Topshiriqlar» sahifasining tepasida ko'rinadi (oxirgi 5 tasi).</p>
 </form>
 {% for a in announcements %}
 <div class="card ann" style="align-items:flex-start">

@@ -126,7 +126,7 @@
       w.append(body);
       b.addEventListener('click', async () => {
         if (h.unlocked) { body.classList.toggle('hidden'); return; }
-        if (h.cost && !window.confirm(t('Bu hint {cost} Spark turadi. Avval balansingizdan, yetmasa shu masala mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
+        if (h.cost && !window.confirm(t('Bu hint {cost} Spark turadi. Avval balansingizdan, yetmasa shu topshiriq mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
         b.disabled = true;
         const res = await api(`/api/hints/${h.id}/unlock`, { method: 'POST' });
         b.disabled = false;
@@ -177,7 +177,7 @@
       $('#mFiles').append(a);
     });
     renderHints(d.hints);
-    $('#mSolvedText').textContent = t('Siz bu masalani yechgansiz!');
+    $('#mSolvedText').textContent = t('Siz bu topshiriqni yechgansiz!');
     $('#mSolved').classList.toggle('hidden', !d.solved);
     const closed = !d.can_submit;
     $('#flagForm').classList.toggle('hidden', d.solved || closed);
@@ -252,7 +252,7 @@
     });
     const solvedN = $$('.ch-card.solved').length;
     const head = $('[data-progress-text]');
-    if (head) head.textContent = t('{solved} / {total} ta masala yechilgan', { solved: solvedN, total: cards.length });
+    if (head) head.textContent = t('{solved} / {total} ta topshiriq yechilgan', { solved: solvedN, total: cards.length });
     const k = $('[data-kpi-solved]'); if (k) k.textContent = solvedN;
     const pct = cards.length ? Math.round((solvedN / cards.length) * 100) : 0;
     const ring = $('[data-ring]'); if (ring) ring.style.strokeDashoffset = 163.36 * (1 - pct / 100);

@@ -16,7 +16,7 @@ HEADINGS = {
     'reset': 'Parolni tiklash',
 }
 INTROS = {
-    'verify': "SPARK CTF ga xush kelibsiz! Hisobingizni faollashtirish uchun quyidagi tugmani bosing yoki saytdagi maydonga kodni kiriting:",
+    'verify': "SPARK CTF ga xush kelibsiz! Akkauntingizni faollashtirish uchun quyidagi tugmani bosing yoki saytdagi maydonga kodni kiriting:",
     'reset': 'Parolni tiklash uchun quyidagi kodni kiriting:',
 }
 BUTTONS = {
@@ -97,7 +97,7 @@ def _deliver(msg):
 
 def describe_error(e):
     if isinstance(e, smtplib.SMTPAuthenticationError):
-        return ("Gmail loginni rad etdi (535). App Password aynan SMTP_USER dagi Gmail hisobida yaratilgan "
+        return ("Gmail loginni rad etdi (535). App Password aynan SMTP_USER dagi Gmail akkauntida yaratilgan "
                 "bo'lishi kerak va 2-bosqichli tekshiruv yoqilgan bo'lishi shart.")
     if isinstance(e, (smtplib.SMTPConnectError, TimeoutError, OSError)) and not isinstance(e, smtplib.SMTPException):
         return f'SMTP serverga ulanib bo\'lmadi ({type(e).__name__}: {e}).'

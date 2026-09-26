@@ -2,10 +2,10 @@
 {% from '_macros.html' import password_field, captcha, social_buttons %}
 {% block title %}{{ _("Ro'yxatdan o'tish") }} — SPARK CTF{% endblock %}
 {% block visual_title %}{{ _("O'yinga qo'shiling.") }}{% endblock %}
-{% block visual_text %}{{ _('Hisob yarating, emailingizni tasdiqlang va birinchi flagingizni toping.') }}{% endblock %}
+{% block visual_text %}{{ _('Akkaunt yarating, emailingizni tasdiqlang va birinchi flagingizni toping.') }}{% endblock %}
 {% block card %}
-<h1>{{ _('Hisob yaratish') }}</h1>
-<p class="sub">{% if mail_enabled %}{{ _("Ro'yxatdan o'tgach emailingizga 6 xonali tasdiqlash kodi yuboriladi.") }}{% else %}{{ _('Bir daqiqada hisob yarating.') }}{% endif %}</p>
+<h1>{{ _('Akkaunt yaratish') }}</h1>
+<p class="sub">{% if mail_enabled %}{{ _("Ro'yxatdan o'tgach emailingizga 6 xonali tasdiqlash kodi yuboriladi.") }}{% else %}{{ _('Bir daqiqada akkaunt yarating.') }}{% endif %}</p>
 <form method="post" action="{{ url_for('register') }}" data-loading data-match="password,password2" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="field">
@@ -23,5 +23,5 @@
   <button type="submit" class="btn btn-primary btn-block btn-lg">{{ _("Ro'yxatdan o'tish") }}</button>
 </form>
 {{ social_buttons(google_login, telegram_login, telegram_bot_id, csrf_token()) }}
-<p class="alt">{{ _('Hisobingiz bormi?') }} <a href="{{ url_for('login') }}">{{ _('Kirish') }}</a></p>
+<p class="alt">{{ _('Akkauntingiz bormi?') }} <a href="{{ url_for('login') }}">{{ _('Kirish') }}</a></p>
 {% endblock %}

@@ -8,7 +8,7 @@
 <div class="app-page">
   <div class="page-head">
     <div><span class="eyebrow">// scoreboard</span><h1>{{ _('Reyting') }}</h1>
-      <p>{{ _('{n} ta ishtirokchi · teng ballda avvalroq yechgan yuqorida', n=rows|length) }}</p></div>
+      <p>{{ _('{n} ta ishtirokchi · Spark teng bo‘lsa, avvalroq yetgan yuqorida', n=rows|length) }}</p></div>
     <nav class="seg" aria-label="{{ _('Davr') }}">
       <a href="{{ url_for('scoreboard') }}" class="{{ 'on' if period == 'all' }}">{{ _('Barcha vaqt') }}</a>
       <a href="{{ url_for('scoreboard', period='month') }}" class="{{ 'on' if period == 'month' }}">{{ _('30 kun') }}</a>

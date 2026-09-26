@@ -52,7 +52,7 @@ CATEGORY_META = {
     'Forensics': ('#34d399', "Tarmoq trafigi, xotira dampi va fayllardan raqamli izlarni topish."),
     'Pwn': ('#ff3b5c', "Xotira zaifliklari: buffer overflow, format string, ROP zanjirlari."),
     'OSINT': ('#60a5fa', "Ochiq manbalardan ma'lumot yig'ish va razvedka qilish."),
-    'Misc': ('#f472b6', "Mantiqiy jumboqlar, steganografiya va nostandart masalalar."),
+    'Misc': ('#f472b6', "Mantiqiy jumboqlar, steganografiya va nostandart topshiriqlar."),
 }
 DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Insane']
 MAX_LOGIN_FAILS = 5
@@ -299,7 +299,7 @@ def before():
     check_csrf()
     if current_user.is_authenticated and current_user.is_banned:
         logout_user()
-        flash(_('Hisobingiz bloklangan.'), 'error')
+        flash(_('Akkauntingiz bloklangan.'), 'error')
         return redirect(url_for('login'))
 
 
@@ -444,7 +444,7 @@ def competition_submit(competition_id, challenge_id):
         abort(403)
     if CompetitionSolve.query.filter_by(competition_id=event.id, user_id=current_user.id,
                                        challenge_id=challenge_id).first():
-        flash(_('Bu musobaqa masalasini allaqachon yechgansiz.'), 'info')
+        flash(_('Bu musobaqa topshirig‘ini allaqachon yechgansiz.'), 'info')
         return redirect(url_for('competition_detail', competition_id=event.id))
     since = utcnow() - FLAG_WINDOW
     wrong = CompetitionAttempt.query.filter_by(competition_id=event.id, user_id=current_user.id,
@@ -478,7 +478,7 @@ def competition_submit(competition_id, challenge_id):
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        flash(_('Bu masalani allaqachon yechgansiz.'), 'info')
+        flash(_('Bu topshiriqni allaqachon yechgansiz.'), 'info')
         return redirect(url_for('competition_detail', competition_id=event.id))
     flash(_('Birinchi flag! First blood!') if first_blood else _('To\'g\'ri flag! Musobaqa ballari alohida hisoblanadi.'), 'success')
     return redirect(url_for('competition_detail', competition_id=event.id))
@@ -733,7 +733,7 @@ def register():
         rate_hit('register')
         if user.is_verified:
             start_login(user)
-            flash(_("Xush kelibsiz! Hisobingiz yaratildi."), 'success')
+            flash(_("Xush kelibsiz! Akkauntingiz yaratildi."), 'success')
             return redirect(url_for('dashboard'))
         session['pending_uid'] = user.id
         send_verification(user)
@@ -759,7 +759,7 @@ def login():
         now = utcnow()
         if user and user.locked_until and user.locked_until > now:
             mins = int((user.locked_until - now).total_seconds() // 60) + 1
-            flash(_("Ko'p noto'g'ri urinish. Hisob {mins} daqiqaga vaqtincha bloklandi.", mins=mins), 'error')
+            flash(_("Ko'p noto'g'ri urinish. Akkaunt {mins} daqiqaga vaqtincha bloklandi.", mins=mins), 'error')
             return render_template('auth/login.html', ident=ident), 429
         valid = bcrypt.check_password_hash(user.password_hash if user else DUMMY_HASH, pw)
         if not user or not valid:
@@ -777,7 +777,7 @@ def login():
                 flash(_("Login yoki parol noto'g'ri."), 'error')
             return render_template('auth/login.html', ident=ident), 401
         if user.is_banned:
-            flash(_('Hisobingiz bloklangan.'), 'error')
+            flash(_('Akkauntingiz bloklangan.'), 'error')
             return render_template('auth/login.html', ident=ident), 403
         if not user.is_verified:
             if not mail_enabled():
@@ -887,12 +887,12 @@ def _social_finish(provider, profile, email=None, display=None):
     link = SocialAccount.query.filter_by(provider=provider, provider_id=profile['id']).first()
     if current_user.is_authenticated:
         if link and link.user_id != current_user.id:
-            flash(_('Bu hisob boshqa foydalanuvchiga ulangan.'), 'error')
+            flash(_('Bu akkaunt boshqa foydalanuvchiga ulangan.'), 'error')
         elif not link:
             db.session.add(SocialAccount(user_id=current_user.id, provider=provider,
                                          provider_id=profile['id'], display=display))
             db.session.commit()
-            flash(_('Hisob ulandi.'), 'success')
+            flash(_('Akkaunt ulandi.'), 'success')
         return redirect(url_for('settings'))
     user = link.user if link else None
     if not user and email:
@@ -909,10 +909,10 @@ def _social_finish(provider, profile, email=None, display=None):
         db.session.add(user)
         db.session.flush()
         rate_hit('register')
-        flash(_("Xush kelibsiz! Hisobingiz yaratildi."), 'success')
+        flash(_("Xush kelibsiz! Akkauntingiz yaratildi."), 'success')
     if user.is_banned:
         db.session.rollback()
-        flash(_('Hisobingiz bloklangan.'), 'error')
+        flash(_('Akkauntingiz bloklangan.'), 'error')
         return redirect(url_for('login'))
     if not link:
         db.session.add(SocialAccount(user_id=user.id, provider=provider, provider_id=profile['id'],
@@ -1090,7 +1090,7 @@ def _challenge_or_404(cid):
     ch = db.session.get(Challenge, cid)
     visible = practice_challenges_query(include_hidden=current_user.is_admin).filter(Challenge.id == cid).first()
     if not ch or not visible:
-        abort(404, description=_('Masala topilmadi.'))
+        abort(404, description=_('Topshiriq topilmadi.'))
     return ch
 
 
@@ -1127,7 +1127,7 @@ def api_challenge_solves(cid):
 def api_submit(cid):
     ch = _challenge_or_404(cid)
     if Solve.query.filter_by(user_id=current_user.id, challenge_id=ch.id).first():
-        return api_error(_('Bu masalani allaqachon yechgansiz.'), 400)
+        return api_error(_('Bu topshiriqni allaqachon yechgansiz.'), 400)
     since = utcnow() - FLAG_WINDOW
     wrong = Attempt.query.filter(Attempt.user_id == current_user.id, Attempt.correct.is_(False),
                                  Attempt.created_at >= since).count()
@@ -1153,7 +1153,7 @@ def api_submit(cid):
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return api_error(_('Bu masalani allaqachon yechgansiz.'), 400)
+        return api_error(_('Bu topshiriqni allaqachon yechgansiz.'), 400)
     counts = scoring.solve_counts()
     return jsonify({'status': 'correct', 'value': scoring.challenge_value(ch, counts.get(ch.id, 0)),
                     'score': scoring.user_score(current_user),
@@ -1177,7 +1177,7 @@ def api_unlock_hint(hid):
                          HintDebit.source == 'challenge reward').scalar())
         remaining_reward = max(hint.challenge.value - spent, 0)
         if remaining_reward < hint.cost:
-            return api_error(_("Umumiy balingiz ham, shu masalaning qolgan bali ham hint uchun yetarli emas."), 400)
+            return api_error(_("Hint uchun na balansingizdagi Spark, na shu topshiriqning qolgan mukofoti yetarli."), 400)
         source = 'challenge reward'
     db.session.add(HintUnlock(user_id=current_user.id, hint_id=hint.id))
     if hint.cost:
@@ -1319,7 +1319,7 @@ def admin_challenge_form(cid=None):
             db.session.commit()
             if ch.visible and not was_visible and request.form.get('notify'):
                 notify.new_challenge(ch)
-            flash(_('Masala saqlandi.'), 'success')
+            flash(_('Topshiriq saqlandi.'), 'success')
             return redirect(url_for('admin_challenges'))
     return render_template('admin/challenge_form.html', ch=ch, is_new=cid is None)
 
@@ -1335,14 +1335,14 @@ def admin_challenge_action(cid, action):
         flash(_("«{title}» ko'rinadigan qilindi.", title=ch.title) if ch.visible else _("«{title}» yashirildi.", title=ch.title), 'success')
     elif action == 'delete':
         if CompetitionChallenge.query.filter_by(challenge_id=ch.id).first():
-            flash(_('Musobaqaga biriktirilgan masalani o‘chirmang; avval tadbirni boshqaring.'), 'error')
+            flash(_('Musobaqaga biriktirilgan topshiriqni o‘chirmang; avval musobaqani tahrirlang.'), 'error')
             return redirect(url_for('admin_challenges'))
         Attempt.query.filter_by(challenge_id=ch.id).delete()
         Solve.query.filter_by(challenge_id=ch.id).delete()
         for h in ch.hints:
             HintUnlock.query.filter_by(hint_id=h.id).delete()
         db.session.delete(ch)
-        flash(_("Masala o'chirildi."), 'success')
+        flash(_("Topshiriq o'chirildi."), 'success')
     else:
         abort(404)
     db.session.commit()
@@ -1446,7 +1446,7 @@ def _save_event(event, available):
         ids = {int(v) for v in f.getlist('challenge_ids') if v.isdigit()}
         selected = [c for c in available if c.id in ids]
         if not selected:
-            errors.append(_('Musobaqaga kamida bitta yashirin masala tanlang.'))
+            errors.append(_('Musobaqaga kamida bitta yashirin topshiriq tanlang.'))
         for c in selected:
             try:
                 points[c.id] = int(f.get(f'points_{c.id}') or c.value)
@@ -1506,7 +1506,7 @@ def admin_competition_action(competition_id, action):
         if event.state != 'upcoming':
             flash(_('Boshlangan musobaqa holatini endi o‘zgartirib bo‘lmaydi.'), 'error')
         elif not event.challenges:
-            flash(_('Musobaqani e\'lon qilish uchun kamida bitta masala kerak.'), 'error')
+            flash(_('Musobaqani e\'lon qilish uchun kamida bitta topshiriq kerak.'), 'error')
         else:
             event.published = not event.published
             db.session.commit()
