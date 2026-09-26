@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import icon, logo %}
+{% block title %}{{ _('Sertifikat') }} {{ cert.code }} — SPARK CTF{% endblock %}
+{% block body_class %}cert-page{% endblock %}
+{% block content %}
+{% set medal = {1: ('var(--gold)', _('1-o‘rinni egalladi')), 2: ('var(--silver)', _('2-o‘rinni egalladi')), 3: ('var(--bronze)', _('3-o‘rinni egalladi'))}[cert.placement] %}
+<div class="container cert-wrap">
+  <div class="cert-bar no-print">
+    {% if cert.revoked %}
+    <span class="badge b-red">{{ icon('alert') }} {{ _('Bu sertifikat bekor qilingan') }}</span>
+    {% else %}
+    <span class="badge b-green">{{ icon('check') }} {{ _('Haqiqiy sertifikat — SPARK CTF tomonidan tasdiqlangan') }}</span>
+    <button type="button" class="btn btn-primary btn-sm" data-print>{{ icon('download2') }} {{ _('PDF sifatida saqlash') }}</button>
+    {% endif %}
+  </div>
+
+  <article class="cert{% if cert.revoked %} revoked{% endif %}" style="--m: {{ medal[0] }}">
+    <header class="cert-head">
+      <span class="cert-brand">{{ logo(40) }}<span><b>SPARK</b> CTF</span></span>
+      <span class="cert-code">№ {{ cert.code }}</span>
+    </header>
+    <div class="cert-body">
+      <span class="cert-kicker" style="margin-top:8px">{{ _('Natija sertifikati') }}</span>
+      <p class="cert-lead">{{ _('Ushbu sertifikat bilan tasdiqlanadiki') }}</p>
+      <h1 class="cert-name">{{ cert.user.username }}</h1>
+      <p class="cert-lead">{{ _('quyidagi rasmiy onlayn CTF musobaqasida') }}</p>
+      <h2 class="cert-event">{{ event.title }}</h2>
+      <div class="cert-place"><span class="cert-medal">{{ icon('award') }}</span>{{ medal[1] }}</div>
+      <dl class="cert-facts">
+        <div><dt>{{ _('Ball') }}</dt><dd>{{ cert.points }}</dd></div>
+        <div><dt>{{ _('Yechilgan masalalar') }}</dt><dd>{{ cert.solves }}</dd></div>
+        <div><dt>{{ _('Ishtirokchilar') }}</dt><dd>{{ cert.players }}</dd></div>
+        <div><dt>{{ _('Sana') }}</dt><dd>{{ event.starts_at.strftime('%d.%m.%Y') }}</dd></div>
+      </dl>
+    </div>
+    <footer class="cert-foot">
+      <p>{{ _('Format: onlayn, jamoasiz (individual), {h} soat. Natija musobaqa davomidagi to‘g‘ri flaglar asosida avtomatik hisoblangan.', h=((event.ends_at - event.starts_at).total_seconds() / 3600)|round(1)) }}</p>
+      <p class="cert-verify">{{ _('Tekshirish') }}: <span class="mono">{{ url }}</span></p>
+    </footer>
+  </article>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

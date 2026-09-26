@@ -1,4 +1,4 @@
-{% from '_macros.html' import icon, avatar, logo %}<!DOCTYPE html>
+{% from '_macros.html' import icon, avatar, logo, coin %}<!DOCTYPE html>
 <html lang="{{ lang }}" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=13">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=15">
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -57,21 +57,7 @@
         <div class="tools">{{ tools('d') }}</div>
         {% if current_user.is_authenticated %}
           <a href="{{ url_for('vpn') }}" class="tool-btn vpn-btn {{ 'on' if ep == 'vpn' }}" title="VPN">{{ icon('power') }}<span>VPN</span></a>
-          {% if bell is defined %}
-          <div class="bell-menu">
-            <button class="tool-btn bell-btn" data-dropdown="bellDrop" data-bell="{{ bell[0].id if bell else 0 }}" aria-label="{{ _('Bildirishnomalar') }}" aria-haspopup="true" aria-expanded="false">{{ icon('bell') }}<i class="bell-dot"></i></button>
-            <div class="dropdown bell-drop" id="bellDrop">
-              <div class="bell-head"><b>{{ _('Bildirishnomalar') }}</b></div>
-              {% for a in bell %}
-              <a href="{{ url_for('notifications') }}#n{{ a.id }}" class="bell-item"><span class="bi">{{ icon('megaphone') }}</span><span><b>{{ a.title }}</b><small>{{ a.content|truncate(70) }}</small></span></a>
-              {% else %}
-              <div class="bell-empty">{{ icon('bell') }}<span>{{ _("Hozircha bildirishnomalar yo'q") }}</span></div>
-              {% endfor %}
-              <a href="{{ url_for('notifications') }}" class="btn btn-primary btn-sm btn-block bell-all">{{ _("Barchasini ko'rish") }}</a>
-            </div>
-          </div>
-          {% endif %}
-          {% if my_score is defined %}<span class="score-pill" data-my-score>{{ my_score }} pts</span>{% endif %}
+          {% if my_score is defined %}<a href="{{ url_for('user_page', username=current_user.username) }}" class="score-pill coin-pill" data-my-score>{{ coin(my_score) }}</a>{% endif %}
           <div class="user-menu">
             <button class="user-btn" data-dropdown="userDrop" aria-haspopup="true" aria-expanded="false">
               {{ avatar(current_user.username) }}<span class="uname">{{ current_user.username }}</span>
@@ -91,7 +77,7 @@
           <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">{{ _('Kirish') }}</a>
           <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm guest-reg">{{ _("Ro'yxatdan o'tish") }}</a>
         {% endif %}
-        <button class="burger" data-burger aria-label="{{ _('Menyu') }}">{{ icon('menu') }}</button>
+        <button class="burger" data-burger aria-label="{{ _('Menyu') }}">{{ icon('menu') }}{% if unread %}<i class="nav-count">{{ unread if unread < 10 else '9+' }}</i>{% endif %}</button>
       </div>
     </div>
   </header>
@@ -112,7 +98,7 @@
       <div class="top">
         <div class="about">
           <a href="{{ url_for('index') }}" class="brand">{{ logo(30) }}<span><span class="s">SPARK</span> <span class="c">CTF</span></span></a>
-          <p>{{ _("Kiberxavfsizlik bo'yicha amaliy CTF platformasi. Nazariya emas — amaliyot: flagni toping, ball oling.") }}</p>
+          <p>{{ _("Kiberxavfsizlik bo'yicha amaliy CTF platformasi. Nazariya emas — amaliyot: flagni toping, Spark yig'ing.") }}</p>
           <div class="socials">
             <a href="https://t.me/SparkCTF_bot" target="_blank" rel="noopener" aria-label="Telegram">{{ icon('telegram') }}</a>
             <a href="https://github.com/uchqunaliyev0-svg" target="_blank" rel="noopener" aria-label="GitHub">{{ icon('github') }}</a>
@@ -158,7 +144,7 @@
   {% endblock %}
 
   <script type="application/json" id="i18n">{{ js_i18n|tojson }}</script>
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=8"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=10"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -234,3 +234,49 @@ class CaptchaUse(db.Model):
     __tablename__ = 'captcha_uses'
     sig = db.Column(db.String(64), primary_key=True)
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
+
+
+class SocialAccount(db.Model):
+    """A Google or Telegram identity linked to a user (one row per provider account)."""
+    __tablename__ = 'social_accounts'
+    __table_args__ = (db.UniqueConstraint('provider', 'provider_id'),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    provider = db.Column(db.String(16), nullable=False)  # google | telegram
+    provider_id = db.Column(db.String(64), nullable=False)
+    display = db.Column(db.String(120), nullable=True)  # email / @username, for the settings page
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('social_accounts', cascade='all, delete-orphan'))
+
+
+class Certificate(db.Model):
+    """A podium result in an official event. Kept in sync with the final standings, so a
+    disqualified (banned) player's certificate turns into a revoked one instead of vanishing."""
+    __tablename__ = 'certificates'
+    __table_args__ = (db.UniqueConstraint('competition_id', 'user_id'),)
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), unique=True, nullable=False, index=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    placement = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Integer, nullable=False)
+    solves = db.Column(db.Integer, nullable=False, default=0)
+    players = db.Column(db.Integer, nullable=False, default=0)
+    revoked = db.Column(db.Boolean, default=False, nullable=False)
+    issued_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    user = db.relationship('User')
+    competition = db.relationship('Competition')
+
+
+class VpnPeer(db.Model):
+    """One WireGuard peer per player. Only the public key is kept; the private key lives in the
+    config file the player downloaded."""
+    __tablename__ = 'vpn_peers'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True)
+    public_key = db.Column(db.String(64), nullable=False)
+    issued_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    user = db.relationship('User')

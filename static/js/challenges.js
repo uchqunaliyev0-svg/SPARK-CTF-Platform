@@ -16,9 +16,16 @@
     });
   });
 
-  // ---------- filters
+  // ---------- views: category cards  <->  tasks of one category (or search results)
   const f = { q: '', diff: '', status: '', cat: '' };
+  const catCards = $('#catCards');
+  const taskList = $('#taskList');
+  const back = $('[data-back]');
   function applyFilters() {
+    const listing = !!(f.cat || f.q || f.diff || f.status);
+    if (catCards) catCards.classList.toggle('hidden', listing);
+    if (taskList) taskList.classList.toggle('hidden', !listing);
+    if (back) back.classList.toggle('hidden', !listing);
     let shown = 0;
     cards.forEach((c) => {
       const ok = (!f.q || c.dataset.title.includes(f.q))
@@ -30,15 +37,26 @@
     });
     $$('[data-cat-section]').forEach((s) => s.classList.toggle('hidden', !$$('.ch-card:not(.hidden)', s).length));
     $('#noMatch')?.classList.toggle('hidden', shown > 0 || !cards.length);
+    const url = new URL(location.href);
+    if (f.cat) url.searchParams.set('cat', f.cat); else url.searchParams.delete('cat');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
   }
-  $('#q')?.addEventListener('input', (e) => { f.q = e.target.value.trim().toLowerCase(); applyFilters(); });
-  [['#cats', 'cat'], ['#diffs', 'diff'], ['#status', 'status']].forEach(([sel, key]) => {
-    $$(`${sel} .side-item`).forEach((b) => b.addEventListener('click', () => {
-      if (b.disabled) return;
-      $$(`${sel} .side-item`).forEach((x) => x.classList.remove('on'));
-      b.classList.add('on'); f[key] = b.dataset.v; applyFilters();
-    }));
+  function openCategory(name) {
+    f.cat = name;
+    applyFilters();
+    window.scrollTo({ top: 0, behavior: window.Spark.reduced ? 'auto' : 'smooth' });
+  }
+  $$('[data-open-cat]').forEach((b) => b.addEventListener('click', () => openCategory(b.dataset.openCat)));
+  back?.addEventListener('click', () => {
+    Object.assign(f, { q: '', diff: '', status: '', cat: '' });
+    ['#q', '#diff', '#status'].forEach((sel) => { const i = $(sel); if (i) i.value = ''; });
+    applyFilters();
   });
+  $('#q')?.addEventListener('input', (e) => { f.q = e.target.value.trim().toLowerCase(); applyFilters(); });
+  $('#diff')?.addEventListener('change', (e) => { f.diff = e.target.value; applyFilters(); });
+  $('#status')?.addEventListener('change', (e) => { f.status = e.target.value; applyFilters(); });
+  const startCat = new URLSearchParams(location.search).get('cat');
+  if (startCat && cards.some((c) => c.dataset.cat === startCat)) { f.cat = startCat; applyFilters(); }
 
   // ---------- helpers
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -102,13 +120,13 @@
       label.innerHTML = ICON.bulb;
       label.append(` Hint ${i + 1}`);
       label.style.display = 'inline-flex'; label.style.gap = '8px'; label.style.alignItems = 'center';
-      b.append(label, el('span', 'mono', h.unlocked ? '' : (h.cost ? `−${h.cost} pts` : t('bepul'))));
+      b.append(label, h.unlocked ? el('span') : (h.cost ? window.Spark.coin(h.cost, '−') : el('span', 'mono', t('bepul'))));
       w.append(b);
       const body = el('div', 'body' + (h.unlocked ? '' : ' hidden'), h.content || '');
       w.append(body);
       b.addEventListener('click', async () => {
         if (h.unlocked) { body.classList.toggle('hidden'); return; }
-        if (h.cost && !window.confirm(t('Bu hint {cost} ball turadi. Avval umumiy balldan, yetmasa masala mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
+        if (h.cost && !window.confirm(t('Bu hint {cost} Spark turadi. Avval balansingizdan, yetmasa shu masala mukofotidan ayriladi. Davom etasizmi?', { cost: h.cost }))) return;
         b.disabled = true;
         const res = await api(`/api/hints/${h.id}/unlock`, { method: 'POST' });
         b.disabled = false;
@@ -145,7 +163,7 @@
     meta.append(el('span', 'badge b-cyan', d.category), el('span', `badge d-${d.difficulty}`, d.difficulty));
     $('#mTitle').textContent = d.title;
     const sub = $('#mSub');
-    const v = el('span'); v.append(el('b', null, String(d.value)), ` ${t('ball')}`);
+    const v = el('span'); v.append(window.Spark.coin(d.value));
     const s = el('span'); s.append(el('b', null, String(d.solves)), ` ${t('ta yechim')}`);
     sub.append(v, s);
     if (d.author) { const a = el('span'); a.append(`${t('muallif:')} `, el('b', null, d.author)); sub.append(a); }
@@ -190,7 +208,7 @@
 
   function updateScore(score) {
     const pill = $('[data-my-score]');
-    if (pill) pill.textContent = `${score} pts`;
+    const pb = pill && $('.coin b', pill); if (pb) pb.textContent = score;
     const k = $('[data-kpi-score]'); if (k) k.textContent = score;
   }
 
@@ -215,7 +233,7 @@
       const c = current.card;
       c.classList.add('solved');
       const sv = $('[data-solves]', c); sv.textContent = parseInt(sv.textContent, 10) + 1;
-      $('[data-val]', c).firstChild.textContent = res.value;
+      const cv = $('[data-val] .coin b', c); if (cv) cv.textContent = res.value;
       updateScore(res.score);
       refreshProgress();
       confetti();
@@ -246,12 +264,21 @@
       const bar = n.parentElement.querySelector('.mini i');
       if (bar && cs.length) bar.style.width = `${Math.round((done / cs.length) * 100)}%`;
     });
-    const all = $('#cats .side-item[data-v=""] .n'); if (all) all.textContent = `${solvedN}/${cards.length}`;
+    const pn = $('[data-progress-num]'); if (pn) pn.textContent = solvedN;
+    $$('[data-open-cat]').forEach((b) => {
+      const cs = cards.filter((c) => c.dataset.cat === b.dataset.openCat);
+      const done = cs.filter((c) => c.classList.contains('solved')).length;
+      const bar = $('.cc-bar i', b); if (bar && cs.length) bar.style.width = `${Math.round((done / cs.length) * 100)}%`;
+    });
   }
 
   cards.forEach((c) => c.addEventListener('click', () => openChallenge(c.dataset.id)));
   const m = location.hash.match(/^#c-(\d+)$/);
-  if (m) openChallenge(m[1]);
+  if (m) {
+    const target = cards.find((c) => c.dataset.id === m[1]);
+    if (target) { f.cat = target.dataset.cat; applyFilters(); }
+    openChallenge(m[1]);
+  }
 
   // ---------- confetti
   function confetti(big) {

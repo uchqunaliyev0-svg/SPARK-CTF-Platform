@@ -23,6 +23,7 @@
     <div class="field" style="display:flex;flex-direction:column;justify-content:center;gap:12px;padding-top:22px">
       <label class="check"><input type="checkbox" name="case_insensitive" value="1" {{ 'checked' if (f.case_insensitive if f else ch.case_insensitive) }}> Katta-kichik harf farqlanmasin</label>
       <label class="check"><input type="checkbox" name="visible" value="1" {{ 'checked' if (f.visible if f else ch.visible) }}> Ishtirokchilarga ko'rinadi</label>
+      {% if telegram_channel and not (ch.id and ch.visible) %}<label class="check"><input type="checkbox" name="notify" value="1" checked> {{ _('Ko‘rinadigan bo‘lsa, Telegram kanalga e’lon qilish') }}</label>{% endif %}
     </div>
     <div class="field full"><div class="hint">Practice masalalarining balli doimiy: yechuvchilar soni ko'payganda kamaymaydi.</div></div>
     <div class="field full"><label for="files">Fayl havolalari (har qatorda bitta)</label><textarea class="input mono" id="files" name="files" rows="3" placeholder="https://github.com/.../task.zip">{{ f.files if f else ch.files or '' }}</textarea><div class="hint">Fayllarni GitHub Releases, Google Drive va h.k.ga joylab, havolasini qo'ying.</div></div>

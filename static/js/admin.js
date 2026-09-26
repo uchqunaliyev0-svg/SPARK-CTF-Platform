@@ -34,9 +34,19 @@
     $('[data-clear-times]', form).addEventListener('click', () => { locals.forEach((i) => { i.value = ''; }); });
   }
   const eventForm = $('[data-event-form]');
-  if (eventForm) eventForm.addEventListener('submit', () => {
-    $$('input[type="datetime-local"]', eventForm).forEach((inp) => {
-      eventForm.elements[inp.dataset.target].value = inp.value ? new Date(inp.value).toISOString() : '';
+  if (eventForm) {
+    const inputs = $$('input[type="datetime-local"]', eventForm);
+    inputs.forEach((inp) => {
+      if (inp.dataset.utc) {
+        const d = new Date(inp.dataset.utc);
+        if (!isNaN(d)) inp.value = toLocalInput(d);
+      }
     });
-  });
+    eventForm.addEventListener('submit', () => {
+      inputs.forEach((inp) => {
+        if (inp.disabled) return;
+        eventForm.elements[inp.dataset.target].value = inp.value ? new Date(inp.value).toISOString() : '';
+      });
+    });
+  }
 })();

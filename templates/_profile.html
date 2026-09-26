@@ -23,7 +23,7 @@
     </div>
     <div style="flex:1;min-width:200px">
       <div class="p-name">{{ user.username }}{% if user.is_admin %} <span class="badge b-amber">admin</span>{% endif %}</div>
-      <div class="p-sub"><i class="dot"></i><b style="color:var(--tc)">{{ t.name }}</b> · Tier {{ t.index }} · <span class="i14">{{ icon('clock') }}</span> {{ time(user.created_at) }}</div>
+      <div class="p-sub"><i class="dot"></i><b style="color:var(--tc)">{{ _(t.name) }}</b> · Tier {{ t.index }} · <span class="i14">{{ icon('clock') }}</span> {{ time(user.created_at) }}</div>
     </div>
   </div>
   <div class="p-stats">
@@ -43,9 +43,17 @@
 <div class="card tier-card" style="--tc: {{ t.color }}">
   <div class="th"><span>TIER {{ t.index }}</span><span class="badge b-green">{{ _('JORIY') }}</span></div>
   <div class="emblem">{{ emblem(t) }}</div>
-  <div class="tier-name">{{ t.name }}</div>
-  <div class="tn"><span>{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span><span>{% if t.next %}{{ stats.xp }}/{{ t.next_at }}{% else %}MAX{% endif %}</span></div>
+  <div class="tier-name">{{ _(t.name) }}</div>
+  <div class="tn"><span>{% if t.next %}{{ _('Keyingisi: {name}', name=_(t.next)) }}{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span><span>{% if t.next %}{{ stats.xp }}/{{ t.next_at }}{% else %}MAX{% endif %}</span></div>
   <div class="tier-bar"><i style="width:{{ t.progress }}%"></i></div>
+  <details class="xp-how">
+    <summary>{{ _('Daraja qanday oshadi?') }}</summary>
+    <ul>
+      {% for d, xp in XP.difficulty.items() %}<li><span>{{ _(d ~ ' masala') }}</span><b>+{{ xp }} XP</b></li>{% endfor %}
+      <li><span>{{ _('Musobaqada qatnashish') }}</span><b>+{{ XP.event }} XP</b></li>
+      <li><span>{{ _('Musobaqada 1 / 2 / 3-o‘rin') }}</span><b>+{{ XP.place[1] }} / {{ XP.place[2] }} / {{ XP.place[3] }}</b></li>
+    </ul>
+  </details>
 </div>
 {%- endmacro %}
 

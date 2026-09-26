@@ -1,5 +1,5 @@
 {% extends 'app_layout.html' %}
-{% from '_macros.html' import icon, time %}
+{% from '_macros.html' import icon, time, coin %}
 {% block title %}{{ _('Masalalar') }} — SPARK CTF{% endblock %}
 {% block app %}
 {% set DCOL = {'Easy': 'var(--green)', 'Medium': 'var(--amber)', 'Hard': 'var(--red)', 'Insane': 'var(--violet)'} %}
@@ -8,13 +8,13 @@
   {% set total = namespace(n=0, s=0) %}
   {% for o in overview %}{% set total.n = total.n + o.total %}{% set total.s = total.s + o.solved %}{% endfor %}
 
+  {% set pts = namespace(n=0) %}{% for o in overview %}{% set pts.n = pts.n + o.points %}{% endfor %}
   <div class="page-head">
     <div>
       <span class="eyebrow">// challenges</span>
       <h1>{{ _('Masalalar') }}</h1>
-      <p data-progress-text>{{ _('{solved} / {total} ta masala yechilgan', solved=total.s, total=total.n) }}</p>
+      <p class="ch-stats"><b data-progress-num>{{ total.s }}</b>/{{ total.n }} {{ _('yechilgan') }} · <b>{{ overview|selectattr('total')|list|length }}</b> {{ _('bo‘lim') }} · {{ coin(pts.n) }}</p>
     </div>
-    <a class="btn btn-ghost btn-sm" href="{{ url_for('competitions') }}">{{ icon('trophy') }} {{ _('Musobaqalar') }}</a>
   </div>
 
   {% for a in announcements %}
@@ -25,93 +25,77 @@
   </div>
   {% endfor %}
 
-  <div class="board">
-    <aside class="card board-side">
-      {% if groups %}
-      <label class="search" style="max-width:none">{{ icon('search') }}<input class="input" id="q" type="search" placeholder="{{ _('Masala qidirish...') }}" autocomplete="off"></label>
-      {% endif %}
-      <div class="frow">
-        <div class="side-label">{{ _('Kategoriyalar') }}</div>
-        <div class="side-list scroll-x" id="cats">
-          <button class="side-item on" data-v=""><span class="ic">{{ icon('grid') }}</span>{{ _('Barchasi') }}<span class="n">{{ total.s }}/{{ total.n }}</span></button>
-          {% for o in overview %}
-          {% set col = CATEGORY_META.get(o.name, ('#22d3ee', ''))[0] %}
-          <button class="side-item" data-v="{{ o.name }}" style="--c: {{ col }}" {% if not o.total %}disabled title="{{ _('Tez orada') }}"{% endif %}>
-            <span class="ic">{{ icon(o.name) }}</span>{{ o.name }}<span class="n" data-cat-count="{{ o.name }}">{{ o.solved }}/{{ o.total }}</span>
-            <span class="mini"><i style="width:{{ ((o.solved / o.total * 100)|round|int) if o.total else 0 }}%"></i></span>
-          </button>
-          {% endfor %}
-        </div>
-      </div>
-      {% if groups %}
-      <div class="frow">
-        <div class="side-label">{{ _('Qiyinlik') }}</div>
-        <div class="side-list scroll-x" id="diffs">
-          <button class="side-item on" data-v=""><span class="dotc" style="background:var(--muted)"></span>{{ _('Barchasi') }}<span></span></button>
-          {% for d in DIFFICULTIES %}<button class="side-item" data-v="{{ d }}"><span class="dotc" style="background:{{ DCOL[d] }};box-shadow:0 0 8px {{ DCOL[d] }}"></span>{{ d }}<span></span></button>{% endfor %}
-        </div>
-      </div>
-      <div class="frow">
-        <div class="side-label">{{ _('Holat') }}</div>
-        <div class="side-list scroll-x" id="status">
-          <button class="side-item on" data-v=""><span class="dotc" style="background:var(--muted)"></span>{{ _('Hammasi') }}<span></span></button>
-          <button class="side-item" data-v="open"><span class="dotc" style="background:var(--cyan)"></span>{{ _('Yechilmagan') }}<span></span></button>
-          <button class="side-item" data-v="solved"><span class="dotc" style="background:var(--green)"></span>{{ _('Yechilgan') }}<span></span></button>
-        </div>
-      </div>
-      {% endif %}
-    </aside>
+  {% if groups %}
+  <div class="ch-toolbar card">
+    <button type="button" class="btn btn-ghost btn-sm hidden" data-back>{{ icon('chevron-left') }} {{ _('Bo‘limlar') }}</button>
+    <label class="search">{{ icon('search') }}<input class="input" id="q" type="search" placeholder="{{ _('Masala qidirish...') }}" autocomplete="off"></label>
+    <select class="input" id="diff" aria-label="{{ _('Qiyinlik') }}"><option value="">{{ _('Barcha qiyinlik') }}</option>{% for d in DIFFICULTIES %}<option value="{{ d }}">{{ d }}</option>{% endfor %}</select>
+    <select class="input" id="status" aria-label="{{ _('Holat') }}"><option value="">{{ _('Hammasi') }}</option><option value="open">{{ _('Yechilmagan') }}</option><option value="solved">{{ _('Yechilgan') }}</option></select>
+  </div>
 
-    <div class="board-main">
-    {% if groups %}
-      {% for cat, items in groups %}
-      {% set done = items|selectattr('id', 'in', solved)|list|length %}
-      {% set meta = CATEGORY_META.get(cat, ('#22d3ee', '')) %}
-      <section class="cat-section" data-cat-section="{{ cat }}" style="--c: {{ meta[0] }}">
-        <div class="cat-head">
-          <span class="ic">{{ icon(cat) }}</span>
-          <div><h2>{{ cat }}</h2>{% if meta[1] %}<div class="desc-line">{{ _(meta[1]) }}</div>{% endif %}</div>
-          <span class="prog">{{ done }}/{{ items|length }}</span>
-          <span class="bar"><i style="width:{{ (done / items|length * 100)|round|int }}%"></i></span>
-        </div>
-        <div class="ch-grid">
-          {% for c in items %}
-          <button type="button" class="card ch-card{% if c.id in solved %} solved{% endif %}{% if not c.visible and c.id not in released_ids %} is-hidden{% endif %}" data-tilt="7"
-                  data-id="{{ c.id }}" data-title="{{ c.title|lower }}" data-cat="{{ c.category }}" data-diff="{{ c.difficulty }}">
-            <span class="tick">{{ icon('check') }}</span>
-            <div class="top">
-              <span class="cat-dot">{{ icon(cat) }} {{ cat }}</span>
-              <span style="display:flex;gap:6px">{% if not c.visible and c.id not in released_ids %}<span class="badge b-muted">{{ _('yashirin') }}</span>{% endif %}<span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span></span>
-            </div>
-            <h3>{{ c.title }}</h3>
-            <div class="bottom">
-              <span class="val" data-val>{{ values[c.id] }}<small>pts</small></span>
-              <span class="solves" title="{{ _('Yechganlar') }}">{{ icon('users') }} <span data-solves>{{ counts.get(c.id, 0) }}</span></span>
-            </div>
-          </button>
-          {% endfor %}
-        </div>
-      </section>
-      {% endfor %}
-      <div class="card empty hidden" id="noMatch"><div class="ico">{{ icon('search') }}</div><h3>{{ _('Hech narsa topilmadi') }}</h3><p>{{ _("Filtrlarni o'zgartirib ko'ring.") }}</p></div>
-    {% else %}
-      <div class="card board-empty-head">
-        <span class="ic">{{ icon('flag') }}</span>
-        <div><h3>{{ _('Masalalar tez orada ochiladi') }}</h3><p>{{ _("Quyidagi yo'nalishlar bo'yicha masalalar tayyorlanmoqda. E'lonlarni kuzatib boring!") }}</p></div>
+  <div class="cat-cards" id="catCards">
+    {% for o in overview if o.total %}
+    {% set meta = CATEGORY_META.get(o.name, ('#22d3ee', '')) %}
+    <button type="button" class="card cat-card2" data-open-cat="{{ o.name }}" style="--c: {{ meta[0] }}">
+      <span class="cc-art" aria-hidden="true"><span class="cc-ic">{{ icon(o.name) }}</span></span>
+      <span class="cc-body">
+        <span class="cc-top"><b>{{ o.name }}</b><span class="cc-count">{{ o.total }}</span></span>
+        {% if meta[1] %}<span class="cc-desc">{{ _(meta[1]) }}</span>{% endif %}
+        <span class="cc-foot"><span class="mono" data-cat-count="{{ o.name }}">{{ o.solved }}/{{ o.total }}</span> {{ _('yechilgan') }}<span class="cc-pts">{{ coin(o.points) }}</span></span>
+        <span class="cc-bar"><i style="width:{{ ((o.solved / o.total * 100)|round|int) if o.total else 0 }}%"></i></span>
+      </span>
+    </button>
+    {% endfor %}
+  </div>
+
+  <div class="board-main hidden" id="taskList">
+    {% for cat, items in groups %}
+    {% set done = items|selectattr('id', 'in', solved)|list|length %}
+    {% set meta = CATEGORY_META.get(cat, ('#22d3ee', '')) %}
+    <section class="cat-section" data-cat-section="{{ cat }}" style="--c: {{ meta[0] }}">
+      <div class="cat-head">
+        <span class="ic">{{ icon(cat) }}</span>
+        <div><h2>{{ cat }}</h2>{% if meta[1] %}<div class="desc-line">{{ _(meta[1]) }}</div>{% endif %}</div>
+        <span class="prog">{{ done }}/{{ items|length }}</span>
+        <span class="bar"><i style="width:{{ (done / items|length * 100)|round|int }}%"></i></span>
       </div>
-      <div class="locked-grid">
-        {% for name in CATEGORIES %}
-        <div class="card locked" style="--c: {{ CATEGORY_META[name][0] }}" data-reveal="{{ loop.index0 % 3 }}">
-          <span class="badge b-muted soon">{{ icon('lock') }} {{ _('Tez orada') }}</span>
-          <div class="ic">{{ icon(name) }}</div>
-          <h3>{{ name }}</h3>
-          <p>{{ _(CATEGORY_META[name][1]) }}</p>
-        </div>
+      <div class="ch-grid">
+        {% for c in items %}
+        <button type="button" class="card ch-card{% if c.id in solved %} solved{% endif %}{% if not c.visible and c.id not in released_ids %} is-hidden{% endif %}"
+                data-id="{{ c.id }}" data-title="{{ c.title|lower }}" data-cat="{{ c.category }}" data-diff="{{ c.difficulty }}">
+          <span class="tick">{{ icon('check') }}</span>
+          <div class="top">
+            <span class="badge d-{{ c.difficulty }}">{{ c.difficulty }}</span>
+            {% if not c.visible and c.id not in released_ids %}<span class="badge b-muted">{{ _('yashirin') }}</span>{% endif %}
+          </div>
+          <h3>{{ c.title }}</h3>
+          <div class="bottom">
+            <span class="val" data-val>{{ coin(values[c.id]) }}</span>
+            <span class="solves" title="{{ _('Yechganlar') }}">{{ icon('users') }} <span data-solves>{{ counts.get(c.id, 0) }}</span></span>
+          </div>
+        </button>
         {% endfor %}
       </div>
-    {% endif %}
-    </div>
+    </section>
+    {% endfor %}
+    <div class="card empty hidden" id="noMatch"><div class="ico">{{ icon('search') }}</div><h3>{{ _('Hech narsa topilmadi') }}</h3><p>{{ _("Filtrlarni o'zgartirib ko'ring.") }}</p></div>
   </div>
+  {% else %}
+  <div class="card board-empty-head">
+    <span class="ic">{{ icon('flag') }}</span>
+    <div><h3>{{ _('Masalalar tez orada ochiladi') }}</h3><p>{{ _("Quyidagi yo'nalishlar bo'yicha masalalar tayyorlanmoqda. E'lonlarni kuzatib boring!") }}</p></div>
+  </div>
+  <div class="locked-grid">
+    {% for name in CATEGORIES %}
+    <div class="card locked" style="--c: {{ CATEGORY_META[name][0] }}" data-reveal="{{ loop.index0 % 3 }}">
+      <span class="badge b-muted soon">{{ icon('lock') }} {{ _('Tez orada') }}</span>
+      <div class="ic">{{ icon(name) }}</div>
+      <h3>{{ name }}</h3>
+      <p>{{ _(CATEGORY_META[name][1]) }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 
 <div class="modal-bg" id="modal" aria-hidden="true">
@@ -144,5 +128,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/challenges.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/challenges.js') }}?v=6"></script>
 {% endblock %}

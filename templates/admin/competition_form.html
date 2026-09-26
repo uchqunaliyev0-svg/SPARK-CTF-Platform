@@ -1,9 +1,31 @@
 {% extends 'admin/_layout.html' %}
 {% from '_macros.html' import icon %}
 {% block admin %}
-<h1>{{ _('Yangi musobaqa') }} <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_competitions') }}">← {{ _('Ro‘yxatga') }}</a></h1>
+{% set f = request.form %}
+{% set editable = state == 'upcoming' %}
+<h1>{{ _('Musobaqani tahrirlash') if event else _('Yangi musobaqa') }} <a class="btn btn-ghost btn-sm" href="{{ url_for('admin_competitions') }}">← {{ _('Ro‘yxatga') }}</a></h1>
+{% if event and state != 'upcoming' %}
+<div class="warn">{{ icon('alert') }}<div>{% if state == 'live' %}{{ _('Musobaqa jonli: faqat nom, tavsif, sovrin va tugash vaqtini (kechroqqa) o‘zgartirish mumkin.') }}{% else %}{{ _('Musobaqa yakunlangan: faqat nom, tavsif va sovrinni o‘zgartirish mumkin.') }}{% endif %}</div></div>
+{% endif %}
 <form method="post" class="card card-pad" data-event-form><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<div class="form-grid"><div class="field full"><label>{{ _('Nomi') }}</label><input class="input" name="title" maxlength="160" required value="{{ request.form.get('title','') }}"></div><div class="field full"><label>{{ _('Tavsif') }}</label><textarea class="input" name="description" rows="4">{{ request.form.get('description','') }}</textarea></div>
-<div class="field"><label>{{ _('Boshlanishi') }} ({{ _('mahalliy vaqt') }})</label><input class="input" type="datetime-local" data-target="starts_at" required></div><input type="hidden" name="starts_at"><div class="field"><label>{{ _('Tugashi') }} ({{ _('mahalliy vaqt') }})</label><input class="input" type="datetime-local" data-target="ends_at" required></div><input type="hidden" name="ends_at"><div class="field full"><label>{{ _('Sovrin') }}</label><input class="input" name="prize" maxlength="240"></div></div>
-<div class="field" style="margin-top:18px"><label>{{ _('Musobaqa masalalari') }}</label><p class="hint">{{ _('Tanlangan masalalar musobaqa tugagach practice’da ochiladi.') }}</p>{% for challenge in challenges %}<label class="check" style="display:flex;margin:10px 0"><input type="checkbox" name="challenge_ids" value="{{ challenge.id }}"> {{ challenge.title }} · {{ challenge.category }} · {{ challenge.difficulty }} · {{ challenge.value }} pts</label>{% else %}<p>{{ _('Avval yashirin, hali yechilmagan masalalar tayyorlang.') }}</p>{% endfor %}</div><button class="btn btn-primary" type="submit">{{ _('Qoralama yaratish') }}</button></form>
+<div class="form-grid">
+  <div class="field full"><label>{{ _('Nomi') }}</label><input class="input" name="title" maxlength="160" required value="{{ f.get('title', event.title if event else '') }}"></div>
+  <div class="field full"><label>{{ _('Tavsif') }}</label><textarea class="input" name="description" rows="4">{{ f.get('description', event.description if event else '') }}</textarea></div>
+  <div class="field"><label>{{ _('Boshlanishi') }} ({{ _('mahalliy vaqt') }})</label><input class="input" type="datetime-local" data-target="starts_at" {% if event %}data-utc="{{ event.starts_at.isoformat() }}Z"{% endif %} {% if editable %}required{% else %}disabled{% endif %}></div><input type="hidden" name="starts_at">
+  <div class="field"><label>{{ _('Tugashi') }} ({{ _('mahalliy vaqt') }})</label><input class="input" type="datetime-local" data-target="ends_at" {% if event %}data-utc="{{ event.ends_at.isoformat() }}Z"{% endif %} {% if state in ['upcoming', 'live'] %}required{% else %}disabled{% endif %}></div><input type="hidden" name="ends_at">
+  <div class="field full"><label>{{ _('Sovrin') }}</label><input class="input" name="prize" maxlength="240" value="{{ f.get('prize', (event.prize or '') if event else '') }}"></div>
+</div>
+{% if editable %}
+<div class="field" style="margin-top:18px"><label>{{ _('Musobaqa masalalari va ballari') }}</label><p class="hint">{{ _('Tanlangan masalalar musobaqa tugagach practice’da ochiladi.') }}</p>
+  {% for challenge in challenges %}
+  <div class="pick-row"><label class="check"><input type="checkbox" name="challenge_ids" value="{{ challenge.id }}" {% if challenge.id in linked or (f and challenge.id|string in f.getlist('challenge_ids')) %}checked{% endif %}> {{ challenge.title }} <span class="muted">· {{ challenge.category }} · {{ challenge.difficulty }}</span></label>
+    <input class="input mono" type="number" min="1" max="10000" name="points_{{ challenge.id }}" value="{{ f.get('points_' ~ challenge.id, linked.get(challenge.id, challenge.value)) }}" aria-label="{{ _('Ball') }}"><span class="muted">{{ _('ball') }}</span></div>
+  {% else %}<p>{{ _('Avval yashirin, hali yechilmagan masalalar tayyorlang.') }}</p>{% endfor %}
+</div>
+{% elif event %}
+<div class="field" style="margin-top:18px"><label>{{ _('Musobaqa masalalari') }}</label>
+  {% for link in event.challenges %}<div class="pick-row"><span>{{ link.challenge.title }} <span class="muted">· {{ link.challenge.category }}</span></span><span class="mono">{{ link.points }} {{ _('ball') }}</span></div>{% endfor %}
+</div>
+{% endif %}
+<button class="btn btn-primary" type="submit" style="margin-top:12px">{{ _('Saqlash') if event else _('Qoralama yaratish') }}</button></form>
 {% endblock %}

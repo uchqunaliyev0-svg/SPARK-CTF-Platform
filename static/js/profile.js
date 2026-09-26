@@ -22,7 +22,7 @@
       responsive: true, maintainAspectRatio: false,
       animation: window.Spark?.reduced ? false : { duration: 1000 },
       interaction: { mode: 'nearest', intersect: false },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (i) => fmt.format(new Date(i[0].parsed.x)), label: (c) => ` ${c.parsed.y} pts` } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (i) => fmt.format(new Date(i[0].parsed.x)), label: (c) => ` ${c.parsed.y} Spark` } } },
       scales: {
         x: { type: 'linear', grid: { color: 'rgba(130,170,255,.06)' }, ticks: { maxTicksLimit: 5, callback: (v) => fmt.format(new Date(v)) } },
         y: { beginAtZero: true, grid: { color: 'rgba(130,170,255,.06)' } },

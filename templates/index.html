@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from '_macros.html' import icon, avatar %}
+{% from '_macros.html' import icon, avatar, coin %}
 {% block title %}SPARK CTF — Capture The Flag{% endblock %}
 {% block content %}
 <section class="hero">
@@ -85,7 +85,7 @@
     <div class="steps">
       <div class="card step" data-reveal="0"><span class="n">01</span><h3>{{ _("Ro'yxatdan o'ting") }}</h3><p>{{ _('Hisob yarating va emailingizga kelgan 6 xonali kod bilan uni tasdiqlang.') }}</p></div>
       <div class="card step" data-reveal="1"><span class="n">02</span><h3>{{ _('Masalani tanlang') }}</h3><p>{{ _("Kategoriya va qiyinlik bo'yicha saralang. Kerak bo'lsa hint oching.") }}</p></div>
-      <div class="card step" data-reveal="2"><span class="n">03</span><h3>{{ _('Flagni yuboring') }}</h3><p>{{ _('Yashirin flagni toping — odatda') }} <code>SPARK{...}</code> {{ _("ko'rinishida — va ball oling.") }}</p></div>
+      <div class="card step" data-reveal="2"><span class="n">03</span><h3>{{ _('Flagni yuboring') }}</h3><p>{{ _('Yashirin flagni toping — odatda') }} <code>SPARK{...}</code> {{ _("ko'rinishida — va Spark oling.") }}</p></div>
     </div>
   </div>
 </section>
@@ -100,8 +100,8 @@
       {% for r in top %}
       <div class="row">
         <span class="rk">#{{ r.rank }}</span>
-        <span class="user-cell">{{ avatar(r.user.username) }}{{ r.user.username }}</span>
-        <span class="pts">{{ r.score }} pts</span>
+        <span class="user-cell">{{ avatar(r.user.username) }}<span class="lb-who"><b>{{ r.user.username }}</b><small style="color:{{ r.tier.color }}">{{ _(r.tier.name) }}</small></span></span>
+        <span class="pts">{{ coin(r.score) }}</span>
       </div>
       {% else %}
       <div class="empty"><div class="ico">{{ icon('trophy') }}</div><h3>{{ _("Reyting hali bo'sh") }}</h3><p>{{ _("Birinchi flagni topib, ro'yxatni siz ochib bering.") }}</p></div>
