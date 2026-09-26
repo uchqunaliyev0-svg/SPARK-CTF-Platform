@@ -417,6 +417,7 @@ tr.me { background: rgba(34, 211, 238, .05) !important; box-shadow: inset 3px 0 
 .ch-card.solved .tick { display: grid; animation: pop .4s cubic-bezier(.2, 1.4, .4, 1); }
 @keyframes pop { from { transform: scale(0); } }
 .ch-card.is-hidden { opacity: .6; border-style: dashed; }
+.list-rows .lr.is-hidden { opacity: .55; }
 
 /* ---------- modal ---------- */
 .modal-bg { position: fixed; inset: 0; z-index: 500; background: var(--overlay); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity .25s; }

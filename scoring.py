@@ -1,10 +1,10 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 
-from models import (Challenge, CompetitionRegistration, CompetitionSolve, Hint, HintDebit,
-                    HintUnlock, Solve, User, db, utcnow)
+from models import (Challenge, Competition, CompetitionRegistration, CompetitionSolve, Hint,
+                    HintDebit, HintUnlock, Solve, User, db)
 
 
 def challenge_value(ch, solve_count):
@@ -80,6 +80,106 @@ def user_score(user):
     return sum(e[1] for e in evs)
 
 
+def earned_values(user):
+    """{challenge_id: points actually credited} for one user's practice solves.
+
+    A hint paid out of the task's own reward is already subtracted, so this is what the
+    scoreboard counts (the raw challenge value can be higher)."""
+    return {cid: delta for _at, delta, kind, cid in _events([user.id]).get(user.id, [])
+            if kind == 'solve'}
+
+
+# ---------------------------------------------------------------- competitions
+
+def competition_standings(event):
+    """Ranked rows for one event, highest points first; on a tie whoever got there first wins.
+
+    Admins and banned users never appear. Each row: user, score, solves, first_bloods,
+    last_solve, rank. This is the single source of truth for event ranks, placements and XP."""
+    rows = (db.session.query(CompetitionSolve.user_id,
+                             func.sum(CompetitionSolve.points).label('score'),
+                             func.count(CompetitionSolve.id).label('solves'),
+                             func.sum(case((CompetitionSolve.first_blood.is_(True), 1), else_=0))
+                             .label('first_bloods'),
+                             func.max(CompetitionSolve.created_at).label('last_solve'))
+            .filter(CompetitionSolve.competition_id == event.id)
+            .group_by(CompetitionSolve.user_id).all())
+    if not rows:
+        return []
+    users = {u.id: u for u in User.query.filter(User.id.in_([r.user_id for r in rows])).all()}
+    ranked = []
+    for r in sorted(rows, key=lambda r: (-r.score, r.last_solve)):
+        u = users.get(r.user_id)
+        if not u or u.is_banned or u.is_admin:
+            continue
+        ranked.append({'user': u, 'score': int(r.score), 'solves': int(r.solves),
+                       'first_bloods': int(r.first_bloods or 0), 'last_solve': r.last_solve,
+                       'rank': len(ranked) + 1})
+    return ranked
+
+
+def finalize_placements(event, standings=None):
+    """Persist final ranks once an event has ended. Returns True when a row changed."""
+    if event.state != 'ended':
+        return False
+    standings = competition_standings(event) if standings is None else standings
+    rank_of = {row['user'].id: row['rank'] for row in standings}
+    changed = False
+    for reg in event.registrations:
+        placement = rank_of.get(reg.user_id) if reg.participated else None
+        if reg.placement != placement:
+            reg.placement = placement
+            changed = True
+    if changed:
+        db.session.commit()
+    return changed
+
+
+def _placement(reg, standings_cache):
+    """Stored placement, or the live rank for an ended event that was never finalized."""
+    event = reg.competition
+    if reg.placement is not None or event.state != 'ended':
+        return reg.placement
+    if event.id not in standings_cache:
+        standings_cache[event.id] = {row['user'].id: row['rank']
+                                     for row in competition_standings(event)}
+    return standings_cache[event.id].get(reg.user_id)
+
+
+def _played_registrations(user_ids):
+    return (CompetitionRegistration.query.join(Competition)
+            .filter(CompetitionRegistration.user_id.in_(user_ids),
+                    CompetitionRegistration.participated.is_(True),
+                    Competition.published.is_(True)).all())
+
+
+def competition_results(user, include_hidden=False):
+    """Profile rows, newest event first: one per published event the user actually played.
+
+    Rows the user hid from their profile are only returned with include_hidden (their own page)."""
+    q = (CompetitionRegistration.query.join(Competition)
+         .filter(CompetitionRegistration.user_id == user.id,
+                 CompetitionRegistration.participated.is_(True),
+                 Competition.published.is_(True)))
+    if not include_hidden:
+        q = q.filter(CompetitionRegistration.profile_visible.is_(True))
+    out = []
+    for reg in q.order_by(Competition.starts_at.desc()).all():
+        event = reg.competition
+        standings = competition_standings(event)
+        mine = next((r for r in standings if r['user'].id == user.id), None)
+        placement = reg.placement
+        if placement is None and event.state == 'ended' and mine:
+            placement = mine['rank']
+        out.append({'registration': reg, 'event': event,
+                    'solves': mine['solves'] if mine else 0,
+                    'points': mine['score'] if mine else 0,
+                    'first_bloods': mine['first_bloods'] if mine else 0,
+                    'placement': placement if event.state == 'ended' else None,
+                    'players': len(standings)})
+    return out
+
+
 def graph_series(rows, limit=10):
     top = [r for r in rows if r['solves'] > 0][:limit]
     events = _events([r['user'].id for r in top])
@@ -105,37 +205,32 @@ TIERS = [  # (minimum activity XP, display name, colour)
 LEVEL_XP = 100
 
 
-def activity_xp(user):
-    """Rank progress is based on solved challenge difficulty and verified events, not score."""
-    xp_by_difficulty = {'Easy': 25, 'Medium': 50, 'Hard': 100, 'Insane': 150}
-    xp = sum(xp_by_difficulty.get(d, 25) for (d,) in
-             db.session.query(Challenge.difficulty).join(Solve, Solve.challenge_id == Challenge.id)
-             .filter(Solve.user_id == user.id).all())
-    registrations = CompetitionRegistration.query.filter_by(user_id=user.id, participated=True).all()
-    for registration in registrations:
-        xp += 100
-        placement = registration.placement
-        if placement is None and registration.competition.ends_at <= utcnow():
-            results = (db.session.query(CompetitionSolve.user_id,
-                                        func.sum(CompetitionSolve.points).label('points'),
-                                        func.min(CompetitionSolve.created_at).label('first_solve'))
-                       .filter(CompetitionSolve.competition_id == registration.competition_id)
-                       .group_by(CompetitionSolve.user_id)
-                       .order_by(func.sum(CompetitionSolve.points).desc(),
-                                 func.min(CompetitionSolve.created_at)).all())
-            eligible = []
-            for row in results:
-                player = db.session.get(User, row.user_id)
-                if player and not player.is_banned and not player.is_admin:
-                    eligible.append(row.user_id)
-            placement = next((rank for rank, uid in enumerate(eligible, 1) if uid == user.id), None)
-        if placement == 1:
-            xp += 150
-        elif placement == 2:
-            xp += 100
-        elif placement == 3:
-            xp += 50
+XP_BY_DIFFICULTY = {'Easy': 25, 'Medium': 50, 'Hard': 100, 'Insane': 150}
+XP_PER_EVENT = 100
+XP_BY_PLACEMENT = {1: 150, 2: 100, 3: 50}
+
+
+def activity_xp_bulk(users):
+    """{user_id: XP} for many users in a handful of queries (the scoreboard needs everyone).
+
+    Rank progress is based on solved challenge difficulty and played events, not score, so
+    competition points never leak into the practice ladder."""
+    ids = [u.id for u in users]
+    xp = {uid: 0 for uid in ids}
+    if not ids:
+        return xp
+    for uid, difficulty in (db.session.query(Solve.user_id, Challenge.difficulty)
+                            .join(Challenge, Challenge.id == Solve.challenge_id)
+                            .filter(Solve.user_id.in_(ids)).all()):
+        xp[uid] += XP_BY_DIFFICULTY.get(difficulty, 25)
+    standings_cache = {}
+    for reg in _played_registrations(ids):
+        xp[reg.user_id] += XP_PER_EVENT + XP_BY_PLACEMENT.get(_placement(reg, standings_cache), 0)
     return xp
+
+
+def activity_xp(user):
+    return activity_xp_bulk([user])[user.id]
 
 
 def tier_info(xp):
@@ -187,7 +282,7 @@ def profile_stats(user, now):
     for at, delta, _k, _c in events:
         total += delta
         series.append({'t': at.isoformat() + 'Z', 'y': total})
-    event_count = CompetitionRegistration.query.filter_by(user_id=user.id, participated=True).count()
+    event_count = len(_played_registrations([user.id]))
     return {'score': score, 'solves': len(solves), 'xp': xp, 'events': event_count, 'this_month': this_m,
             'last_month': last_m, 'activity': activity, 'streak': streak, 'best_streak': best,
             'tier': tier_info(xp), 'level': level_info(xp), 'series': series,

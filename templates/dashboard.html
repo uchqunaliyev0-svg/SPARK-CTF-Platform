@@ -23,8 +23,8 @@
   <div class="card tier-strip" style="--tc: {{ t.color }}">
     <span class="lvl-badge">LVL {{ lv.level }}</span>
     <div class="ts-main">
-      <div class="ts-top"><b style="color:var(--tc)">{{ t.name }}</b><span>Tier {{ t.index }}</span>
-        <span class="ts-next">{% if t.next %}{{ _('Keyingisi: {name}', name=t.next) }} · {{ stats.xp }}/{{ t.next_at }} XP{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span></div>
+      <div class="ts-top"><b style="color:var(--tc)">{{ _(t.name) }}</b><span>Tier {{ t.index }}</span>
+        <span class="ts-next">{% if t.next %}{{ _('Keyingisi: {name}', name=_(t.next)) }} · {{ stats.xp }}/{{ t.next_at }} XP{% else %}{{ _('Eng yuqori daraja') }}{% endif %}</span></div>
       <div class="tier-bar"><i style="width:{{ t.progress }}%"></i></div>
     </div>
   </div>
@@ -70,7 +70,7 @@
         <div class="lr" style="--c: {{ CATEGORY_META.get(s.challenge.category, ('#22d3ee', ''))[0] }}">
           <span class="mi">{{ icon(s.challenge.category) }}</span>
           <div class="grow"><b>{{ s.challenge.title }}</b><small>{{ s.challenge.category }} · {{ time(s.created_at) }}</small></div>
-          <span class="pts">+{{ values.get(s.challenge_id, 0) }}</span>
+          <span class="pts">+{{ earned.get(s.challenge_id, 0) }}</span>
         </div>
         {% endfor %}
       </div>

@@ -368,29 +368,8 @@ def competitions():
 @verified_required
 def competition_detail(competition_id):
     event = Competition.query.filter_by(id=competition_id, published=True).first_or_404()
-    rows = (db.session.query(CompetitionSolve.user_id, func.sum(CompetitionSolve.points).label('score'),
-                             func.min(CompetitionSolve.created_at).label('first_solve'))
-            .filter(CompetitionSolve.competition_id == event.id)
-            .group_by(CompetitionSolve.user_id).order_by(func.sum(CompetitionSolve.points).desc(),
-                                                          func.min(CompetitionSolve.created_at)).all())
-    blood_ids = {uid for (uid,) in db.session.query(CompetitionSolve.user_id)
-                 .filter_by(competition_id=event.id, first_blood=True).all()}
-    standings = []
-    placements_changed = False
-    for row in rows:
-        player = db.session.get(User, row.user_id)
-        if player and not player.is_banned and not player.is_admin:
-            rank = len(standings) + 1
-            standings.append({'user': player, 'score': row.score, 'rank': rank,
-                              'first_blood': player.id in blood_ids})
-            if event.state == 'ended':
-                reg = CompetitionRegistration.query.filter_by(competition_id=event.id,
-                                                               user_id=player.id).first()
-                if reg and reg.placement != rank:
-                    reg.placement = rank
-                    placements_changed = True
-    if placements_changed:
-        db.session.commit()
+    standings = scoring.competition_standings(event)
+    scoring.finalize_placements(event, standings)
     registration = (CompetitionRegistration.query.filter_by(
         competition_id=event.id, user_id=current_user.id).first()
         if current_user.is_authenticated else None)
@@ -519,7 +498,7 @@ def dashboard():
     total = sum(c['total'] for c in cats)
     return render_template('dashboard.html', row=me, players=len(rows), stats=stats, recent=recent,
                            announcements=anns, values=values, counts=counts, suggestions=suggestions,
-                           total=total)
+                           total=total, earned=scoring.earned_values(current_user))
 
 
 @app.route('/notifications')
@@ -552,8 +531,9 @@ def rules():
 @verified_required
 def scoreboard():
     rows = scoring.standings()
+    xp = scoring.activity_xp_bulk([row['user'] for row in rows])
     for row in rows:
-        row['tier'] = scoring.tier_info(scoring.activity_xp(row['user']))
+        row['tier'] = scoring.tier_info(xp[row['user'].id])
     return render_template('scoreboard.html', rows=rows, series=scoring.graph_series(rows))
 
 
@@ -570,41 +550,10 @@ def user_page(username):
     practice_ids = [c.id for c in practice_challenges_query().all()]
     solves = (Solve.query.filter_by(user_id=user.id).join(Challenge)
               .filter(Challenge.id.in_(practice_ids)).order_by(Solve.created_at.desc()).all())
-    event_query = (CompetitionRegistration.query.join(Competition)
-                   .filter(CompetitionRegistration.user_id == user.id,
-                           CompetitionRegistration.participated.is_(True),
-                           Competition.published.is_(True)))
-    if not (current_user.is_authenticated and current_user.id == user.id):
-        event_query = event_query.filter(CompetitionRegistration.profile_visible.is_(True))
-    event_results = event_query.order_by(Competition.starts_at.desc()).all()
-    event_stats = {}
-    for result in event_results:
-        contest_rows = (db.session.query(CompetitionSolve.user_id,
-                                         func.sum(CompetitionSolve.points).label('points'),
-                                         func.min(CompetitionSolve.created_at).label('first_solve'))
-                        .filter(CompetitionSolve.competition_id == result.competition_id)
-                        .group_by(CompetitionSolve.user_id)
-                        .order_by(func.sum(CompetitionSolve.points).desc(),
-                                  func.min(CompetitionSolve.created_at)).all())
-        eligible = []
-        for row in contest_rows:
-            player = db.session.get(User, row.user_id)
-            if player and not player.is_banned and not player.is_admin:
-                eligible.append(row)
-        placement = next((i for i, row in enumerate(eligible, 1) if row.user_id == user.id), None)
-        event_stats[result.competition_id] = {
-            'solves': CompetitionSolve.query.filter_by(competition_id=result.competition_id,
-                                                       user_id=user.id).count(),
-            'points': db.session.query(func.coalesce(func.sum(CompetitionSolve.points), 0)).filter(
-                CompetitionSolve.competition_id == result.competition_id,
-                CompetitionSolve.user_id == user.id).scalar(),
-            'first_bloods': CompetitionSolve.query.filter_by(competition_id=result.competition_id,
-                                                              user_id=user.id, first_blood=True).count(),
-            'placement': placement if result.competition.state == 'ended' else None,
-        }
+    is_me = current_user.is_authenticated and current_user.id == user.id
     return render_template('user.html', user=user, row=me, players=len(rows), stats=stats,
-                           cats=cats, diffs=diffs, solves=solves, values=scoring.current_values(),
-                           event_results=event_results, event_stats=event_stats)
+                           cats=cats, diffs=diffs, solves=solves, earned=scoring.earned_values(user),
+                           events=scoring.competition_results(user, include_hidden=is_me))
 
 
 @app.route('/profile/competitions/<int:competition_id>/visibility', methods=['POST'])
