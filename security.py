@@ -1,7 +1,9 @@
 import hashlib
 import hmac
+import json
 import re
 import secrets
+import sys
 from datetime import timedelta
 
 from flask import abort, current_app, request, session
@@ -11,6 +13,17 @@ from models import CaptchaUse, EmailCode, RateHit, db, utcnow
 
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{3,20}$')
 EMAIL_RE = re.compile(r'^[^@\s]{1,64}@[^@\s]+\.[A-Za-z]{2,}$')
+
+COMMON_PASSWORDS = frozenset([
+    'password', '12345678', '123456789', '1234567890', 'qwerty123', 'abc12345',
+    'password1', 'iloveyou', '11111111', 'admin123', 'letmein12', 'welcome1',
+    'monkey123', 'dragon12', 'master12', 'qwerty12', 'login123', 'princess1',
+    'football1', 'shadow12', 'sunshine1', 'trustno1', 'superman1', 'batman123',
+    'access14', 'michael1', 'charlie1', 'ashley12', 'jessica1', 'passw0rd',
+    'test1234', 'guest1234', 'root1234', 'toor1234', 'changeme1', 'p@ssw0rd',
+    'password123', 'qwerty1234', 'asdf1234', 'zxcv1234', '1q2w3e4r',
+    '1qaz2wsx', 'qazwsx123', 'abcd1234', 'pass1234', '12341234',
+])
 
 _DOMAIN_TYPOS = {
     'gmail.com': ['gmai', 'gmail', 'gmial', 'gmal', 'gmaill', 'gamil', 'gnail', 'gmsil', 'gmali', 'gmai.com',
@@ -57,8 +70,16 @@ def password_problem(pw):
         return _("Parol kamida 8 ta belgidan iborat bo'lishi kerak.")
     if len(pw) > 128:
         return _('Parol juda uzun.')
-    if not re.search(r'[A-Za-z]', pw) or not re.search(r'\d', pw):
-        return _("Parolda kamida bitta harf va bitta raqam bo'lishi kerak.")
+    if not re.search(r'[a-z]', pw):
+        return _("Parolda kamida bitta kichik harf bo'lishi kerak.")
+    if not re.search(r'[A-Z]', pw):
+        return _("Parolda kamida bitta katta harf bo'lishi kerak.")
+    if not re.search(r'\d', pw):
+        return _("Parolda kamida bitta raqam bo'lishi kerak.")
+    if not re.search(r'[^A-Za-z0-9]', pw):
+        return _("Parolda kamida bitta maxsus belgi bo'lishi kerak (!@#$%^&* va h.k.).")
+    if pw.lower() in COMMON_PASSWORDS:
+        return _("Bu parol juda keng tarqalgan. Boshqa parol tanlang.")
     return None
 
 
@@ -183,12 +204,15 @@ def consume_code_link(user, purpose, fingerprint):
     return None
 
 
-# (limit, window) per client IP; generous for humans, tight for scripts
 RATE_LIMITS = {
     'login_fail': (20, timedelta(minutes=15)),
     'register': (6, timedelta(hours=1)),
     'forgot': (6, timedelta(minutes=15)),
     'code_fail': (25, timedelta(minutes=15)),
+    'flag_submit': (60, timedelta(minutes=5)),
+    'hint_unlock': (30, timedelta(minutes=5)),
+    'password_change': (5, timedelta(minutes=15)),
+    'api_general': (120, timedelta(minutes=1)),
 }
 
 
@@ -210,3 +234,51 @@ def rate_hit(bucket):
     if secrets.randbelow(50) == 0:  # opportunistic cleanup
         RateHit.query.filter(RateHit.created_at < utcnow() - timedelta(days=1)).delete()
     db.session.commit()
+
+
+MAX_JSON_DEPTH = 4
+MAX_JSON_BYTES = 8 * 1024  # 8 KB
+
+
+def _json_depth(obj, current=0):
+    if current > MAX_JSON_DEPTH:
+        return current
+    if isinstance(obj, dict):
+        return max((_json_depth(v, current + 1) for v in obj.values()), default=current)
+    if isinstance(obj, list):
+        return max((_json_depth(v, current + 1) for v in obj), default=current)
+    return current
+
+
+def check_json_payload():
+    if request.content_type and 'json' in request.content_type:
+        raw = request.get_data(cache=True)
+        if len(raw) > MAX_JSON_BYTES:
+            abort(413, description=_("So'rov hajmi juda katta."))
+        data = request.get_json(silent=True)
+        if data is not None and _json_depth(data) > MAX_JSON_DEPTH:
+            abort(400, description=_("So'rov tuzilishi juda chuqur."))
+
+
+def _request_cost():
+    cost = 1
+    if request.content_type and 'json' in request.content_type:
+        raw = request.get_data(cache=True)
+        cost += len(raw) // 1024
+    if request.method == 'POST':
+        cost += 2
+    return cost
+
+
+MAX_REQUEST_COST = 50
+
+
+def check_request_cost():
+    cost = _request_cost()
+    if cost > MAX_REQUEST_COST:
+        abort(429, description=_("So'rov juda og'ir. Oddiyroq so'rov yuboring."))
+
+
+def sanitize_filename(name):
+    clean = re.sub(r'[^A-Za-z0-9_.-]', '_', (name or 'file')[:60])
+    return clean.lstrip('.')

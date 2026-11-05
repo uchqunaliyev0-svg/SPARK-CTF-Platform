@@ -25,7 +25,8 @@ from models import (Announcement, Attempt, Certificate, Challenge, Competition, 
                     CompetitionChallenge, CompetitionRegistration, CompetitionSolve, EmailCode,
                     Hint, HintDebit, HintUnlock, Setting, SocialAccount, Solve, User, VpnPeer, db, utcnow)
 from security import (EMAIL_RE, rate_hit, rate_limited, code_fingerprint, consume_code_link, email_suggestion, USERNAME_RE, check_csrf, client_ip, consume_code, csrf_token,
-                      issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha)
+                      issue_code, new_captcha, password_problem, resend_wait_seconds, verify_captcha,
+                      check_json_payload, check_request_cost, sanitize_filename)
 from social import (SocialError, google_auth_url, google_enabled, google_profile, suggest_username,
                     telegram_bot_id, telegram_enabled, telegram_profile)
 
@@ -80,10 +81,10 @@ app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
     SQLALCHEMY_ENGINE_OPTIONS={'pool_pre_ping': True, 'pool_recycle': 280},
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SAMESITE='Strict',
     SESSION_COOKIE_SECURE=IS_PROD,
     REMEMBER_COOKIE_HTTPONLY=True,
-    REMEMBER_COOKIE_SAMESITE='Lax',
+    REMEMBER_COOKIE_SAMESITE='Strict',
     REMEMBER_COOKIE_SECURE=IS_PROD,
     REMEMBER_COOKIE_DURATION=timedelta(days=14),
     PERMANENT_SESSION_LIFETIME=timedelta(days=14),
@@ -298,6 +299,8 @@ def note_mail_result(ok, to_email):
 @app.before_request
 def before():
     check_csrf()
+    check_json_payload()
+    check_request_cost()
     if current_user.is_authenticated and current_user.is_banned:
         logout_user()
         flash(_('Akkauntingiz bloklangan.'), 'error')
@@ -330,7 +333,9 @@ def security_headers(resp):
         resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     resp.headers['Content-Security-Policy'] = csp
     if request.path.startswith('/api/') or current_user.is_authenticated:
-        resp.headers['Cache-Control'] = 'no-store'
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
     return resp
 
 
@@ -581,8 +586,9 @@ def vpn_config():
         db.session.add(peer)
     db.session.commit()
     body = vpn_conf.client_conf(private_key, vpn_conf.address_for(peer.id))
+    safe_name = sanitize_filename(current_user.username)
     resp = app.response_class(body, mimetype='application/octet-stream')
-    resp.headers['Content-Disposition'] = f'attachment; filename="spark-{current_user.username}.conf"'
+    resp.headers['Content-Disposition'] = f'attachment; filename="spark-{safe_name}.conf"'
     return resp
 
 
@@ -1041,9 +1047,13 @@ def logout():
 @verified_required
 def settings():
     if request.method == 'POST':
+        if rate_limited('password_change'):
+            flash(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 'error')
+            return render_template('settings.html'), 429
         cur = request.form.get('current_password') or ''
         pw, pw2 = request.form.get('password') or '', request.form.get('password2') or ''
         if not bcrypt.check_password_hash(current_user.password_hash, cur):
+            rate_hit('password_change')
             flash(_("Joriy parol noto'g'ri."), 'error')
         elif password_problem(pw):
             flash(password_problem(pw), 'error')
@@ -1127,6 +1137,8 @@ def api_challenge_solves(cid):
 @app.route('/api/challenges/<int:cid>/submit', methods=['POST'])
 @verified_required
 def api_submit(cid):
+    if rate_limited('flag_submit'):
+        return api_error(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 429)
     ch = _challenge_or_404(cid)
     if Solve.query.filter_by(user_id=current_user.id, challenge_id=ch.id).first():
         return api_error(_('Bu topshiriqni allaqachon yechgansiz.'), 400)
@@ -1148,6 +1160,7 @@ def api_submit(cid):
     db.session.add(Attempt(user_id=current_user.id, challenge_id=ch.id, submission=submitted,
                            correct=correct, ip=client_ip()))
     if not correct:
+        rate_hit('flag_submit')
         db.session.commit()
         return jsonify({'status': 'wrong', 'message': _("Noto'g'ri flag. Yana urinib ko'ring.")})
     db.session.add(Solve(user_id=current_user.id, challenge_id=ch.id))
@@ -1165,6 +1178,9 @@ def api_submit(cid):
 @app.route('/api/hints/<int:hid>/unlock', methods=['POST'])
 @verified_required
 def api_unlock_hint(hid):
+    if rate_limited('hint_unlock'):
+        return api_error(_("Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring."), 429)
+    rate_hit('hint_unlock')
     hint = db.session.get(Hint, hid)
     if not hint:
         abort(404)

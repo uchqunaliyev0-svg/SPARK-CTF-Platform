@@ -171,13 +171,13 @@
     inp.addEventListener('input', () => {
       const v = inp.value; let s = 0;
       if (v.length >= 8) s++;
-      if (/[a-z]/i.test(v) && /\d/.test(v)) s++;
-      if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
-      if (/[^A-Za-z0-9]/.test(v) || v.length >= 14) s++;
-      if (!v) { bars.forEach((b) => { b.style.background = ''; }); label.textContent = t('Kamida 8 belgi, harf va raqam.'); label.style.color = ''; return; }
-      const [c, t] = LEVELS[Math.max(s - 1, 0)];
+      if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
+      if (/\d/.test(v)) s++;
+      if (/[^A-Za-z0-9]/.test(v)) s++;
+      if (!v) { bars.forEach((b) => { b.style.background = ''; }); label.textContent = t('Kamida 8 belgi: katta/kichik harf, raqam, maxsus belgi.'); label.style.color = ''; return; }
+      const [c, lbl] = LEVELS[Math.max(s - 1, 0)];
       bars.forEach((b, i) => { b.style.background = i < s ? c : ''; });
-      label.textContent = t; label.style.color = c;
+      label.textContent = lbl; label.style.color = c;
     });
   });
   $$('form[data-match]').forEach((f) => f.addEventListener('submit', (e) => {
